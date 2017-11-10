@@ -320,7 +320,7 @@ def train(sess, env, args, actor, critic, actor_noise):
     # summary_ops, summary_vars = build_summaries()
 
     sess.run(tf.global_variables_initializer())
-    writer = tf.summary.FileWriter(args['summary_dir'], sess.graph)
+    # writer = tf.summary.FileWriter(args['summary_dir'], sess.graph)
 
     # Initialize target network weights
     actor.update_target_network()
@@ -428,7 +428,9 @@ def train(sess, env, args, actor, critic, actor_noise):
 
 def main(args):
 
-    logger.configure(dir=args['summary_dir'],format_strs=['stdout', 'json', 'tensorboard'])
+    # logger.configure(dir=args['summary_dir'],format_strs=['stdout', 'json', 'tensorboard'])
+    logger.configure(dir=args['summary_dir'],format_strs=['stdout'])
+
 
     with tf.Session() as sess:
 
@@ -463,7 +465,7 @@ def main(args):
         train(sess, env, args, actor, critic, actor_noise)
 
         if args['use_gym_monitor']:
-            env.monitor.close()
+            env.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='provide arguments for DDPG agent')
