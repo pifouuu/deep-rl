@@ -14,12 +14,12 @@ class GoalContinuousMCWrapper(object):
         self.eps = 0.2
         self.has_goal = True
 
-    def process_observation(self, observation, state):
-        return np.concatenate([observation,state[self.state_to_goal]])
+    def process_observation(self, observation, goal):
+        return np.concatenate([observation,goal])
 
-    def process_step(self, state0, action, new_obs, r_env, done_env, info):
+    def process_step(self, state0, goal, action, new_obs, r_env, done_env, info):
         # Compute next complete state
-        state1 = self.process_observation(new_obs, state0)
+        state1 = self.process_observation(new_obs, goal)
 
         # Compute reward and terminal condition
         r, done = self.evaluate_transition(state0, action, state1)

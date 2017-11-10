@@ -352,7 +352,7 @@ def train(sess, env, args, actor, critic, actor_noise, memory, env_wrapper):
             action = actor.predict(np.reshape(state0, (1, actor.s_dim))) + actor_noise()
 
             new_obs, r_env, done_env, info = env.step(action[0])
-            buffer_item = env_wrapper.process_step(state0, action, new_obs, r_env, done_env, info)
+            buffer_item = env_wrapper.process_step(state0, goal_episode, action, new_obs, r_env, done_env, info)
             memory.append(buffer_item)
 
             # Keep adding experience to the memory until
@@ -428,8 +428,9 @@ def train(sess, env, args, actor, critic, actor_noise, memory, env_wrapper):
                 break
 
 def main(args):
-
-    logger.configure(dir=args['summary_dir'],format_strs=['stdout', 'json', 'tensorboard'])
+    dirname = '_tau_'+str(args['tau'])+'batchsize_'+str(args['minibatch_size'])+'goal_'+str(args['with_goal'])+'hindsight_'+str(args['with_hindsight'])
+    dir = args['summary_dir']+dirname
+    logger.configure(dir=dir,format_strs=['stdout', 'json', 'tensorboard'])
     #logger.configure(dir=args['summary_dir'],format_strs=['stdout'])
 
 
@@ -440,7 +441,11 @@ def main(args):
         tf.set_random_seed(int(args['random_seed']))
         env.seed(int(args['random_seed']))
 
-        env_wrapper = ContinuousMCWrapper()
+        if args['with_goal']:
+            env_wrapper = GoalContinuousMCWrapper()
+        else:
+            env_wrapper = ContinuousMCWrapper()
+
         # state_dim = env.observation_space.shape[0]
         # action_dim = env.action_space.shape[0]
         state_dim = env_wrapper.state_shape[0]
@@ -461,7 +466,10 @@ def main(args):
         actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
 
         # Initialize replay memory
-        memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
+        if args['with_hindsight']:
+            memory = HerMemory(env_wrapper, with_reward=True, limit=int(1e6), strategy='last')
+        else:
+            memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
 
         if args['use_gym_monitor']:
             if not args['render_env']:
@@ -485,6 +493,8 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
+    parser.add_argument('--with-goal', help='concatenate goal and observation in states', action='store_true')
+    parser.add_argument('--with-hindsight', help='use hindsight experience replay', action='store_true')
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
@@ -498,6 +508,8 @@ if __name__ == '__main__':
 
     parser.set_defaults(render_env=False)
     parser.set_defaults(use_gym_monitor=True)
+    parser.set_defaults(with_goal=True)
+    parser.set_defaults(with_hindsight=False)
     
     args = vars(parser.parse_args())
     
