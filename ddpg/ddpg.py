@@ -16,8 +16,9 @@ from gym import wrappers
 import tflearn
 import argparse
 import pprint as pp
-import logging
 from baselines import logger
+import os
+import pickle
 
 from replay_buffer import ReplayBuffer
 import time
@@ -43,6 +44,8 @@ class ActorNetwork(object):
         self.action_bound = action_bound
         self.learning_rate = learning_rate
         self.tau = tau
+        self.stats_ops = []
+        self.stats_names = []
 
         # Actor Network
         self.inputs, self.out, self.scaled_out = self.create_actor_network()
@@ -75,6 +78,12 @@ class ActorNetwork(object):
 
         self.num_trainable_vars = len(
             self.network_params) + len(self.target_network_params)
+
+        # Setting up stats
+        self.stats_ops += [tf.reduce_mean(self.scaled_out)]
+        self.stats_names += ['reference_action_mean']
+        self.stats_ops += [reduce_std(self.scaled_out)]
+        self.stats_names += ['reference_action_std']
 
     def create_actor_network(self):
         inputs = tflearn.input_data(shape=[None, self.s_dim])
@@ -114,6 +123,17 @@ class ActorNetwork(object):
     def get_num_trainable_vars(self):
         return self.num_trainable_vars
 
+    def get_stats(self, stats_sample):
+        actor_values = self.sess.run(self.stats_ops, feed_dict={
+            self.inputs: stats_sample[0],
+        })
+
+        names = self.stats_names[:]
+        assert len(names) == len(actor_values)
+        stats = dict(zip(names, actor_values))
+
+        return stats
+
 
 class CriticNetwork(object):
     """
@@ -129,6 +149,8 @@ class CriticNetwork(object):
         self.learning_rate = learning_rate
         self.tau = tau
         self.gamma = gamma
+        self.stats_ops = []
+        self.stats_names = []
 
         # Create the critic network
         self.inputs, self.action, self.out = self.create_critic_network()
@@ -161,6 +183,13 @@ class CriticNetwork(object):
         # w.r.t. that action. Each output is independent of all
         # actions except for one.
         self.action_grads = tf.gradients(self.out, self.action)
+
+        # Setting up stats
+        self.stats_ops += [tf.reduce_mean(self.out)]
+        self.stats_names += ['reference_Q_mean']
+        self.stats_ops += [reduce_std(self.out)]
+        self.stats_names += ['reference_Q_std']
+
 
     def create_critic_network(self):
         inputs = tflearn.input_data(shape=[None, self.s_dim])
@@ -211,6 +240,26 @@ class CriticNetwork(object):
     def update_target_network(self):
         self.sess.run(self.update_target_network_params)
 
+    def get_stats(self, stats_sample):
+        critic_values = self.sess.run(self.stats_ops, feed_dict={
+            self.inputs: stats_sample[0],
+            self.action: stats_sample[1],
+        })
+
+        names = self.stats_names[:]
+        assert len(names) == len(critic_values)
+        stats = dict(zip(names, critic_values))
+
+        # critic_with_actor_values = self.sess.run(self.stats_ops, feed_dict={
+        #     self.inputs: stats_sample[0],
+        #     self.action: stats_sample['action'],
+        # })
+        #
+        # for name, val in zip(names, critic_with_actor_values):
+        #     stats[name+'_actor'] = val
+
+        return stats
+
 # Taken from https://github.com/openai/baselines/blob/master/baselines/ddpg/noise.py, which is
 # based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
 class OrnsteinUhlenbeckActionNoise:
@@ -238,16 +287,28 @@ class OrnsteinUhlenbeckActionNoise:
 #   Tensorflow Summary Ops
 # ===========================
 
-def build_summaries():
-    episode_reward = tf.Variable(0.)
-    tf.summary.scalar("Reward", episode_reward)
-    episode_ave_max_q = tf.Variable(0.)
-    tf.summary.scalar("Qmax Value", episode_ave_max_q)
+# def build_summaries():
+#     episode_reward = tf.Variable(0.)
+#     tf.summary.scalar("Reward", episode_reward)
+#     episode_ave_max_q = tf.Variable(0.)
+#     tf.summary.scalar("Qmax Value", episode_ave_max_q)
+#
+#     summary_vars = [episode_reward, episode_ave_max_q]
+#     summary_ops = tf.summary.merge_all()
+#
+#     return summary_ops, summary_vars
 
-    summary_vars = [episode_reward, episode_ave_max_q]
-    summary_ops = tf.summary.merge_all()
+def reduce_var(x, axis=None, keepdims=False):
+    m = tf.reduce_mean(x, axis=axis, keep_dims=True)
+    devs_squared = tf.square(x - m)
+    return tf.reduce_mean(devs_squared, axis=axis, keep_dims=keepdims)
 
-    return summary_ops, summary_vars
+
+def reduce_std(x, axis=None, keepdims=False):
+    return tf.sqrt(reduce_var(x, axis=axis, keepdims=keepdims))
+
+
+
 
 # ===========================
 #   Agent Training
@@ -256,7 +317,7 @@ def build_summaries():
 def train(sess, env, args, actor, critic, actor_noise):
 
     # Set up summary Ops
-    summary_ops, summary_vars = build_summaries()
+    # summary_ops, summary_vars = build_summaries()
 
     sess.run(tf.global_variables_initializer())
     writer = tf.summary.FileWriter(args['summary_dir'], sess.graph)
@@ -264,6 +325,9 @@ def train(sess, env, args, actor, critic, actor_noise):
     # Initialize target network weights
     actor.update_target_network()
     critic.update_target_network()
+
+    # Init stats sample
+    stats_sample = None
 
     # Initialize replay memory
     replay_buffer = ReplayBuffer(int(args['buffer_size']), int(args['random_seed']))
@@ -325,20 +389,46 @@ def train(sess, env, args, actor, critic, actor_noise):
             ep_reward += r
 
             if terminal:
+                if stats_sample is None:
+                    # Get a sample and keep that fixed for all further computations.
+                    # This allows us to estimate the change in value for the same set of inputs.
+                    stats_sample = replay_buffer.sample_batch(batch_size=int(args['minibatch_size']))
 
-                summary_str = sess.run(summary_ops, feed_dict={
-                    summary_vars[0]: ep_reward,
-                    summary_vars[1]: ep_ave_max_q / float(j)
-                })
+                combined_stats = {}
+                actor_stats = actor.get_stats(stats_sample)
+                for key in sorted(actor_stats.keys()):
+                    combined_stats[key] = (actor_stats[key])
+                critic_stats = critic.get_stats(stats_sample)
+                for key in sorted(critic_stats.keys()):
+                    combined_stats[key] = (critic_stats[key])
+                combined_stats['Reward'] = ep_reward
+                combined_stats['Qmax value'] = ep_ave_max_q / float(j)
 
-                writer.add_summary(summary_str, i)
-                writer.flush()
+                for key in sorted(combined_stats.keys()):
+                    logger.record_tabular(key, combined_stats[key])
+                logger.dump_tabular()
+                logger.info('')
+                logdir = logger.get_dir()
+                if logdir:
+                    if hasattr(env, 'get_state'):
+                        with open(os.path.join(logdir, 'env_state.pkl'), 'wb') as f:
+                            pickle.dump(env.get_state(), f)
+
+                # summary_str = sess.run(summary_ops, feed_dict={
+                #     summary_vars[0]: ep_reward,
+                #     summary_vars[1]: ep_ave_max_q / float(j)
+                # })
+                #
+                # writer.add_summary(summary_str, i)
+                # writer.flush()
 
                 print('| Reward: {:d} | Episode: {:d} | Qmax: {:.4f} | Duration: {:.4f}'.format(int(ep_reward), \
                         i, (ep_ave_max_q / float(j)), time.time() - epoch_start_time))
                 break
 
 def main(args):
+
+    logger.configure(dir=args['summary_dir'],format_strs=['stdout', 'json', 'tensorboard'])
 
     with tf.Session() as sess:
 
@@ -389,7 +479,7 @@ if __name__ == '__main__':
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=37)
-    parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=50000)
+    parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=500)
     parser.add_argument('--max-episode-len', help='max length of 1 episode', default=1000)
     parser.add_argument('--render-env', help='render the gym env', action='store_true')
     parser.add_argument('--use-gym-monitor', help='record gym results', action='store_true')
