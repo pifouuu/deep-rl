@@ -16,8 +16,12 @@ from gym import wrappers
 import tflearn
 import argparse
 import pprint as pp
+import logging
+from baselines import logger
 
 from replay_buffer import ReplayBuffer
+import time
+
 
 # ===========================
 #   Actor and Critic DNNs
@@ -75,10 +79,10 @@ class ActorNetwork(object):
     def create_actor_network(self):
         inputs = tflearn.input_data(shape=[None, self.s_dim])
         net = tflearn.fully_connected(inputs, 400)
-        net = tflearn.layers.normalization.batch_normalization(net)
+        #net = tflearn.layers.normalization.batch_normalization(net)
         net = tflearn.activations.relu(net)
         net = tflearn.fully_connected(net, 300)
-        net = tflearn.layers.normalization.batch_normalization(net)
+        #net = tflearn.layers.normalization.batch_normalization(net)
         net = tflearn.activations.relu(net)
         # Final layer weights are init to Uniform[-3e-3, 3e-3]
         w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
@@ -162,7 +166,7 @@ class CriticNetwork(object):
         inputs = tflearn.input_data(shape=[None, self.s_dim])
         action = tflearn.input_data(shape=[None, self.a_dim])
         net = tflearn.fully_connected(inputs, 400)
-        net = tflearn.layers.normalization.batch_normalization(net)
+        #net = tflearn.layers.normalization.batch_normalization(net)
         net = tflearn.activations.relu(net)
 
         # Add the action tensor in the 2nd hidden layer
@@ -263,7 +267,7 @@ def train(sess, env, args, actor, critic, actor_noise):
 
     # Initialize replay memory
     replay_buffer = ReplayBuffer(int(args['buffer_size']), int(args['random_seed']))
-
+    epoch_start_time = time.time()
     for i in range(int(args['max_episodes'])):
 
         s = env.reset()
@@ -330,8 +334,8 @@ def train(sess, env, args, actor, critic, actor_noise):
                 writer.add_summary(summary_str, i)
                 writer.flush()
 
-                print('| Reward: {:d} | Episode: {:d} | Qmax: {:.4f}'.format(int(ep_reward), \
-                        i, (ep_ave_max_q / float(j))))
+                print('| Reward: {:d} | Episode: {:d} | Qmax: {:.4f} | Duration: {:.4f}'.format(int(ep_reward), \
+                        i, (ep_ave_max_q / float(j)), time.time() - epoch_start_time))
                 break
 
 def main(args):
@@ -383,8 +387,8 @@ if __name__ == '__main__':
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
     # run parameters
-    parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='Pendulum-v0')
-    parser.add_argument('--random-seed', help='random seed for repeatability', default=1234)
+    parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
+    parser.add_argument('--random-seed', help='random seed for repeatability', default=37)
     parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=50000)
     parser.add_argument('--max-episode-len', help='max length of 1 episode', default=1000)
     parser.add_argument('--render-env', help='render the gym env', action='store_true')
