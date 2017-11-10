@@ -17,10 +17,10 @@ import tflearn
 import argparse
 import pprint as pp
 from baselines import logger
+from env_wrapper import GoalContinuousMCWrapper, ContinuousMCWrapper
+from memory import Memory, HerMemory
 import os
 import pickle
-
-from replay_buffer import ReplayBuffer
 import time
 
 
@@ -125,7 +125,7 @@ class ActorNetwork(object):
 
     def get_stats(self, stats_sample):
         actor_values = self.sess.run(self.stats_ops, feed_dict={
-            self.inputs: stats_sample[0],
+            self.inputs: stats_sample['state0'],
         })
 
         names = self.stats_names[:]
@@ -242,8 +242,8 @@ class CriticNetwork(object):
 
     def get_stats(self, stats_sample):
         critic_values = self.sess.run(self.stats_ops, feed_dict={
-            self.inputs: stats_sample[0],
-            self.action: stats_sample[1],
+            self.inputs: stats_sample['state0'],
+            self.action: stats_sample['action'],
         })
 
         names = self.stats_names[:]
@@ -314,7 +314,7 @@ def reduce_std(x, axis=None, keepdims=False):
 #   Agent Training
 # ===========================
 
-def train(sess, env, args, actor, critic, actor_noise):
+def train(sess, env, args, actor, critic, actor_noise, memory, env_wrapper):
 
     # Set up summary Ops
     # summary_ops, summary_vars = build_summaries()
@@ -329,12 +329,13 @@ def train(sess, env, args, actor, critic, actor_noise):
     # Init stats sample
     stats_sample = None
 
-    # Initialize replay memory
-    replay_buffer = ReplayBuffer(int(args['buffer_size']), int(args['random_seed']))
     epoch_start_time = time.time()
     for i in range(int(args['max_episodes'])):
 
-        s = env.reset()
+        obs = env.reset()
+
+        # Selects a goal for the current episode
+        goal_episode = env_wrapper.sample_goal(obs)
 
         ep_reward = 0
         ep_ave_max_q = 0
@@ -344,55 +345,55 @@ def train(sess, env, args, actor, critic, actor_noise):
             if args['render_env']:
                 env.render()
 
+            state0 = env_wrapper.process_observation(obs, goal_episode)
+
             # Added exploration noise
             #a = actor.predict(np.reshape(s, (1, 3))) + (1. / (1. + i))
-            a = actor.predict(np.reshape(s, (1, actor.s_dim))) + actor_noise()
+            action = actor.predict(np.reshape(state0, (1, actor.s_dim))) + actor_noise()
 
-            s2, r, terminal, info = env.step(a[0])
-
-            replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r,
-                              terminal, np.reshape(s2, (actor.s_dim,)))
+            new_obs, r_env, done_env, info = env.step(action[0])
+            buffer_item = env_wrapper.process_step(state0, action, new_obs, r_env, done_env, info)
+            memory.append(buffer_item)
 
             # Keep adding experience to the memory until
             # there are at least minibatch size samples
-            if replay_buffer.size() > int(args['minibatch_size']):
-                s_batch, a_batch, r_batch, t_batch, s2_batch = \
-                    replay_buffer.sample_batch(int(args['minibatch_size']))
+            if memory.nb_entries > int(args['minibatch_size']):
+                sample = memory.sample(int(args['minibatch_size']))
 
                 # Calculate targets
                 target_q = critic.predict_target(
-                    s2_batch, actor.predict_target(s2_batch))
+                    sample['state1'], actor.predict_target(sample['state1']))
 
                 y_i = []
                 for k in range(int(args['minibatch_size'])):
-                    if t_batch[k]:
-                        y_i.append(r_batch[k])
+                    if sample['terminal1'][k]:
+                        y_i.append(sample['reward'][k])
                     else:
-                        y_i.append(r_batch[k] + critic.gamma * target_q[k])
+                        y_i.append(sample['reward'][k] + critic.gamma * target_q[k])
 
                 # Update the critic given the targets
                 predicted_q_value, _ = critic.train(
-                    s_batch, a_batch, np.reshape(y_i, (int(args['minibatch_size']), 1)))
+                    sample['state0'], sample['action'], np.reshape(y_i, (int(args['minibatch_size']), 1)))
 
                 ep_ave_max_q += np.amax(predicted_q_value)
 
                 # Update the actor policy using the sampled gradient
-                a_outs = actor.predict(s_batch)
-                grads = critic.action_gradients(s_batch, a_outs)
-                actor.train(s_batch, grads[0])
+                a_outs = actor.predict(sample['state0'])
+                grads = critic.action_gradients(sample['state0'], a_outs)
+                actor.train(sample['state0'], grads[0])
 
                 # Update target networks
                 actor.update_target_network()
                 critic.update_target_network()
 
-            s = s2
-            ep_reward += r
+            obs = new_obs
+            ep_reward += buffer_item['reward']
 
-            if terminal:
+            if done_env or buffer_item['terminal1']:
                 if stats_sample is None:
                     # Get a sample and keep that fixed for all further computations.
                     # This allows us to estimate the change in value for the same set of inputs.
-                    stats_sample = replay_buffer.sample_batch(batch_size=int(args['minibatch_size']))
+                    stats_sample = memory.sample(batch_size=int(args['minibatch_size']))
 
                 combined_stats = {}
                 actor_stats = actor.get_stats(stats_sample)
@@ -428,8 +429,8 @@ def train(sess, env, args, actor, critic, actor_noise):
 
 def main(args):
 
-    # logger.configure(dir=args['summary_dir'],format_strs=['stdout', 'json', 'tensorboard'])
-    logger.configure(dir=args['summary_dir'],format_strs=['stdout'])
+    logger.configure(dir=args['summary_dir'],format_strs=['stdout', 'json', 'tensorboard'])
+    #logger.configure(dir=args['summary_dir'],format_strs=['stdout'])
 
 
     with tf.Session() as sess:
@@ -439,8 +440,12 @@ def main(args):
         tf.set_random_seed(int(args['random_seed']))
         env.seed(int(args['random_seed']))
 
-        state_dim = env.observation_space.shape[0]
-        action_dim = env.action_space.shape[0]
+        env_wrapper = ContinuousMCWrapper()
+        # state_dim = env.observation_space.shape[0]
+        # action_dim = env.action_space.shape[0]
+        state_dim = env_wrapper.state_shape[0]
+        action_dim = env_wrapper.action_shape[0]
+
         action_bound = env.action_space.high
         # Ensure action bound is symmetric
         assert (env.action_space.high == -env.action_space.low)
@@ -455,6 +460,9 @@ def main(args):
         
         actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
 
+        # Initialize replay memory
+        memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
+
         if args['use_gym_monitor']:
             if not args['render_env']:
                 env = wrappers.Monitor(
@@ -462,7 +470,7 @@ def main(args):
             else:
                 env = wrappers.Monitor(env, args['monitor_dir'], force=True)
 
-        train(sess, env, args, actor, critic, actor_noise)
+        train(sess, env, args, actor, critic, actor_noise, memory, env_wrapper)
 
         if args['use_gym_monitor']:
             env.close()
@@ -480,7 +488,7 @@ if __name__ == '__main__':
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
-    parser.add_argument('--random-seed', help='random seed for repeatability', default=37)
+    parser.add_argument('--random-seed', help='random seed for repeatability', default=0)
     parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=500)
     parser.add_argument('--max-episode-len', help='max length of 1 episode', default=1000)
     parser.add_argument('--render-env', help='render the gym env', action='store_true')
