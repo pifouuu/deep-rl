@@ -58,6 +58,12 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
             # Keep adding experience to the memory until
             # there are at least minibatch size samples
             if memory.nb_entries > int(args['minibatch_size']):
+
+                if stats_sample is None:
+                    # Get a sample and keep that fixed for all further computations.
+                    # This allows us to estimate the change in value for the same set of inputs.
+                    stats_sample = memory.sample(int(args['minibatch_size']))
+
                 sample = memory.sample(int(args['minibatch_size']))
 
                 # Calculate targets
@@ -94,10 +100,7 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
                 obs = env.reset()
                 break
 
-        if stats_sample is None:
-            # Get a sample and keep that fixed for all further computations.
-            # This allows us to estimate the change in value for the same set of inputs.
-            stats_sample = memory.sample(batch_size=int(args['minibatch_size']))
+
 
         combined_stats = {}
         actor_stats = actor.get_stats(stats_sample)
