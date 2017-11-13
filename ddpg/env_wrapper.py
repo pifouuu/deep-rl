@@ -124,6 +124,9 @@ class ContinuousMCWrapper(object):
     def sample_goal(self, obs):
         return [0.45]
 
+    def sample_eval_goal(self):
+        return [0.45]
+
     def process_step(self, state0, goal, action, new_obs, r_env, done_env, info):
         # Compute next complete state
         state1 = self.process_observation(new_obs, goal)
