@@ -41,8 +41,8 @@ class CriticNetwork(object):
         self.predicted_q_value = tf.placeholder(tf.float32, [None, 1])
 
         # Define loss and optimization Op
-        self.loss = tf.losses.huber_loss(self.predicted_q_value, self.out, delta=delta)
-        #self.loss = tflearn.mean_square(self.predicted_q_value, self.out)
+        #self.loss = tf.losses.huber_loss(self.predicted_q_value, self.out, delta=delta)
+        self.loss = tflearn.mean_square(self.predicted_q_value, self.out)
         self.optimize = tf.train.AdamOptimizer(
             self.learning_rate).minimize(self.loss)
 

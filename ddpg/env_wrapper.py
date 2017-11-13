@@ -106,7 +106,7 @@ class ContinuousMCWrapper(object):
         self.terminal_shape = (1,)
         self.obs_to_goal = [0]
 
-    def process_observation(self, observation, state):
+    def process_observation(self, observation, goal):
         return observation
 
     def evaluate_transition(self, state0, action, state1):
@@ -124,9 +124,9 @@ class ContinuousMCWrapper(object):
     def sample_goal(self, obs):
         return [0.45]
 
-    def process_step(self, state0, action, new_obs, r_env, done_env, info):
+    def process_step(self, state0, goal, action, new_obs, r_env, done_env, info):
         # Compute next complete state
-        state1 = self.process_observation(new_obs, state0)
+        state1 = self.process_observation(new_obs, goal)
 
         # Compute reward and terminal condition
         r, done = self.evaluate_transition(state0, action, state1)
