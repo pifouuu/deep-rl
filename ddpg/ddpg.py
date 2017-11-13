@@ -104,7 +104,7 @@ def main(args):
 
         critic = CriticNetwork(sess, state_dim, action_dim,
                                float(args['critic_lr']), float(args['tau']),
-                               float(args['gamma']),
+                               float(args['gamma']), float(args['delta']),
                                actor.get_num_trainable_vars())
         
         actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
@@ -133,6 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('--actor-lr', help='actor network learning rate', default=0.0001)
     parser.add_argument('--critic-lr', help='critic network learning rate', default=0.001)
     parser.add_argument('--gamma', help='discount factor for critic updates', default=0.99)
+    parser.add_argument('--delta', help='delta in huber loss', default=1.)
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
@@ -150,7 +151,7 @@ if __name__ == '__main__':
     parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/tf_ddpg')
     parser.add_argument('--eval', help='perform regular evaluation on the main task', action='store_true')
-    parser.add_argument('--eval-freq', help='evaluation frequency', default=2)
+    parser.add_argument('--eval-freq', help='evaluation frequency', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)
 
 

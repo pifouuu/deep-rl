@@ -45,7 +45,7 @@ class GoalContinuousMCWrapper(object):
         goal_found = False
         while not goal_found:
             goal = np.random.uniform([-1.2], [0.6], (1,))
-            goal_found = (obs[self.obs_to_goal]-goal) > self.eps
+            goal_found = obs[self.obs_to_goal]-goal > self.eps
         return goal
 
     def sample_eval_goal(self):

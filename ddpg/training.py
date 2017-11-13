@@ -40,9 +40,11 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
 
         # Selects a goal for the current episode
         goal_episode = env_wrapper.sample_goal(obs)
+        init_state = obs
 
         ep_reward = 0
         ep_ave_max_q = 0
+        critic_losses = []
 
         for j in range(int(args['max_episode_len'])):
 
@@ -76,7 +78,7 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
                         y_i.append(sample['reward'][k] + critic.gamma * target_q[k])
 
                 # Update the critic given the targets
-                predicted_q_value, _ = critic.train(
+                predicted_q_value, critic_loss, _ = critic.train(
                     sample['state0'], sample['action'], np.reshape(y_i, (int(args['minibatch_size']), 1)))
 
                 ep_ave_max_q += np.amax(predicted_q_value)
@@ -92,6 +94,7 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
 
             obs = new_obs
             ep_reward += buffer_item['reward']
+            critic_losses.append(critic_loss)
 
             if buffer_item['terminal1']:
                 obs = env.reset()
@@ -111,6 +114,7 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
             combined_stats[key] = (critic_stats[key])
         combined_stats['Reward'] = ep_reward
         combined_stats['Qmax value'] = ep_ave_max_q / float(j)
+        combined_stats['Critic loss'] = np.mean(critic_losses)
 
         log(env, combined_stats)
 
@@ -124,8 +128,8 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
         # writer.add_summary(summary_str, i)
         # writer.flush()
 
-        print('| Reward: {:d} | Episode: {:d} | Goal: {:.2f} | Qmax: {:.4f} | Duration: {:.4f}'.format(int(ep_reward), \
-                                                                                        i, goal_episode[0],
+        print('| Reward: {:d} | Episode: {:d} | Init_state: {:.2f} | Goal: {:.2f} | Qmax: {:.4f} | Duration: {:.4f}'.format(int(ep_reward), \
+                                                                                        i, init_state[0], goal_episode[0],
                                                                                         (ep_ave_max_q / float(j)),
                                                                                         time.time() - epoch_start_time))
 
