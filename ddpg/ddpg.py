@@ -21,6 +21,7 @@ from memory import Memory, HerMemory
 import os
 import pickle
 import time
+import datetime
 from ActorNetwork import ActorNetwork
 from CriticNetwork import CriticNetwork
 from training import train
@@ -69,6 +70,7 @@ class OrnsteinUhlenbeckActionNoise:
 def main(args):
     dirname = '_tau_'+str(args['tau'])+'_batchsize_'+str(args['minibatch_size'])+'_goal_'+str(args['with_goal'])+'_hindsight_'+str(args['with_hindsight'])
     dir = args['summary_dir']+dirname
+    dir = dir+'_'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     logger.configure(dir=dir,format_strs=['stdout', 'json', 'tensorboard'])
     #logger.configure(dir=args['summary_dir'],format_strs=['stdout'])
 

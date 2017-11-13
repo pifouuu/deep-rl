@@ -80,6 +80,7 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
                 # Update the critic given the targets
                 predicted_q_value, critic_loss, _ = critic.train(
                     sample['state0'], sample['action'], np.reshape(y_i, (int(args['minibatch_size']), 1)))
+                critic_losses.append(critic_loss)
 
                 ep_ave_max_q += np.amax(predicted_q_value)
 
@@ -94,7 +95,6 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
 
             obs = new_obs
             ep_reward += buffer_item['reward']
-            critic_losses.append(critic_loss)
 
             if buffer_item['terminal1']:
                 obs = env.reset()
