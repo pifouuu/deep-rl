@@ -6,16 +6,10 @@ import os
 import pickle
 import time
 
-def log(env, stats):
+def log(stats):
     for key in sorted(stats.keys()):
         logger.record_tabular(key, stats[key])
     logger.dump_tabular()
-    logger.info('')
-    logdir = logger.get_dir()
-    if logdir:
-        if hasattr(env, 'get_state'):
-            with open(os.path.join(logdir, 'env_state.pkl'), 'wb') as f:
-                pickle.dump(env.get_state(), f)
 
 
 def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wrapper):
@@ -116,18 +110,6 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
         combined_stats['Qmax_value'] = ep_ave_max_q / float(j)
         combined_stats['Critic_loss'] = np.mean(critic_losses)
 
-        log(env, combined_stats)
-
-
-
-        # summary_str = sess.run(summary_ops, feed_dict={
-        #     summary_vars[0]: ep_reward,
-        #     summary_vars[1]: ep_ave_max_q / float(j)
-        # })
-        #
-        # writer.add_summary(summary_str, i)
-        # writer.flush()
-
         print('| Reward: {:d} | Episode: {:d} | Init_state: {:.2f} | Goal: {:.2f} | Qmax: {:.4f} | Duration: {:.4f}'.format(int(ep_reward), \
                                                                                         i, init_state[0], goal_episode[0],
                                                                                         (ep_ave_max_q / float(j)),
@@ -154,8 +136,6 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
                     break
                 else:
                     eval_obs = new_eval_obs
+            combined_stats['Eval_reward'] = ep_eval_reward
 
-            eval_combined_stats = {}
-            eval_combined_stats['Eval_reward'] = ep_eval_reward
-
-            log(eval_env, eval_combined_stats)
+        log(combined_stats)
