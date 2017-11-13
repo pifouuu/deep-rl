@@ -68,7 +68,8 @@ class OrnsteinUhlenbeckActionNoise:
 
 
 def main(args):
-    dirname = '_tau_'+str(args['tau'])+'_batchsize_'+str(args['minibatch_size'])+'_goal_'+str(args['with_goal'])+'_hindsight_'+str(args['with_hindsight'])
+    dirname = '_tau_'+str(args['tau'])+'_batchsize_'+str(args['minibatch_size'])+'_goal_'+str(args['with_goal'])+\
+              '_hindsight_'+str(args['with_hindsight'])+'_eval_'+str(args['eval'])
     dir = args['summary_dir']+dirname
     dir = dir+'_'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     logger.configure(dir=dir,format_strs=['stdout', 'json', 'tensorboard'])
@@ -78,6 +79,7 @@ def main(args):
     with tf.Session() as sess:
 
         env = gym.make(args['env'])
+        eval_env = None
         if args['eval']:
             eval_env = gym.make(args['env'])
         np.random.seed(int(args['random_seed']))
@@ -160,9 +162,9 @@ if __name__ == '__main__':
     parser.set_defaults(render_env=False)
     parser.set_defaults(render_eval_env=False)
     parser.set_defaults(use_gym_monitor=False)
-    parser.set_defaults(with_goal=False)
+    parser.set_defaults(with_goal=True)
     parser.set_defaults(with_hindsight=False)
-    parser.set_defaults(eval=True)
+    parser.set_defaults(eval=False)
     
     args = vars(parser.parse_args())
     

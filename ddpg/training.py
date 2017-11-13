@@ -113,8 +113,8 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
         for key in sorted(critic_stats.keys()):
             combined_stats[key] = (critic_stats[key])
         combined_stats['Reward'] = ep_reward
-        combined_stats['Qmax value'] = ep_ave_max_q / float(j)
-        combined_stats['Critic loss'] = np.mean(critic_losses)
+        combined_stats['Qmax_value'] = ep_ave_max_q / float(j)
+        combined_stats['Critic_loss'] = np.mean(critic_losses)
 
         log(env, combined_stats)
 
@@ -156,6 +156,6 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
                     eval_obs = new_eval_obs
 
             eval_combined_stats = {}
-            eval_combined_stats['Eval reward'] = ep_eval_reward
+            eval_combined_stats['Eval_reward'] = ep_eval_reward
 
             log(eval_env, eval_combined_stats)
