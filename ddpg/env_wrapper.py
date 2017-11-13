@@ -48,6 +48,8 @@ class GoalContinuousMCWrapper(object):
             goal_found = (obs[self.obs_to_goal]-goal) > self.eps
         return goal
 
+    def sample_eval_goal(self):
+        return [0.45]
 
 class HandmadeCurriculum(object):
     def __init__(self):
