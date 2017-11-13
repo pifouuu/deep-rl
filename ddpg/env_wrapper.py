@@ -11,7 +11,7 @@ class GoalContinuousMCWrapper(object):
         self.action_shape = (1,)
         self.reward_shape = (1,)
         self.terminal_shape = (1,)
-        self.eps = 0.2
+        self.eps = 0.1
         self.has_goal = True
 
     def process_observation(self, observation, goal):
