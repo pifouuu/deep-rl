@@ -164,7 +164,7 @@ if __name__ == '__main__':
     parser.set_defaults(use_gym_monitor=False)
     parser.set_defaults(with_goal=True)
     parser.set_defaults(with_hindsight=False)
-    parser.set_defaults(eval=False)
+    parser.set_defaults(eval=True)
     
     args = vars(parser.parse_args())
     
