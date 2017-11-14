@@ -11,7 +11,7 @@ def log(stats):
         logger.record_tabular(key, stats[key])
     logger.dump_tabular()
 
-EVAL_FREQ = 100
+EVAL_FREQ = 10
 EVAL_EPISODES = 20
 
 def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
@@ -38,7 +38,8 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
 
         # Selects a goal for the current episode
         goal_episode = env_wrapper.sample_goal(obs)
-        obs = env.reset()
+        if args['episode_reset']:
+            obs = env.reset()
         init_state = obs
 
         ep_reward = 0
@@ -117,7 +118,6 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
 
         combined_stats = {}
 
-        combined_stats['Reward'] = ep_reward
         combined_stats['episode'] = i
         combined_stats['Env steps'] = total_env_steps
         combined_stats['Train steps'] = total_train_steps
@@ -132,6 +132,8 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
 
         combined_stats['Qmax_value'] = np.mean(ep_ave_max_q)
         combined_stats['Critic_loss'] = np.mean(critic_losses)
+        combined_stats['Reward'] = ep_reward
+
 
         print('| Reward: {:d} | Episode: {:d} | Init_state: {:.2f} | Goal: {:.2f} | Duration: {:.4f}'.format(int(ep_reward), \
                                                                                         i, init_state[0], goal_episode[0],

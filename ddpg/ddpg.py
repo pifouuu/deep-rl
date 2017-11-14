@@ -82,11 +82,13 @@ def main(args):
         eval_env = None
         if args['eval']:
             eval_env = gym.make(args['env'])
-        np.random.seed(int(args['random_seed']))
-        tf.set_random_seed(int(args['random_seed']))
-        env.seed(int(args['random_seed']))
-        if args['eval']:
-            eval_env.seed(int(args['random_seed']))
+
+        if args['reproducible']:
+            np.random.seed(int(args['random_seed']))
+            tf.set_random_seed(int(args['random_seed']))
+            env.seed(int(args['random_seed']))
+            if args['eval']:
+                eval_env.seed(int(args['random_seed']))
 
 
         if args['with_goal']:
@@ -157,14 +159,18 @@ if __name__ == '__main__':
     parser.add_argument('--eval', help='perform regular evaluation on the main task', action='store_true')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
+    parser.add_argument('--reproducible', help='whether to seed everything for reproductibility or not', action='store_true')
+    parser.add_argument('--episode-reset', help='whether to reset the env when max steps reached', action='store_true')
 
 
     parser.set_defaults(render_env=False)
     parser.set_defaults(render_eval_env=False)
     parser.set_defaults(use_gym_monitor=False)
     parser.set_defaults(with_goal=True)
-    parser.set_defaults(with_hindsight=False)
+    parser.set_defaults(with_hindsight=True)
     parser.set_defaults(eval=True)
+    parser.set_defaults(reproducible=False)
+    parser.set_defaults(episode_reset=False)
     
     args = vars(parser.parse_args())
     
