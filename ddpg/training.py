@@ -11,8 +11,8 @@ def log(stats):
         logger.record_tabular(key, stats[key])
     logger.dump_tabular()
 
-TRAIN_FREQ = 10
-TRAIN_STEPS = 50
+TRAIN_FREQ = 1
+TRAIN_STEPS = 100
 
 EVAL_FREQ = 100
 EVAL_EPISODES = 20
