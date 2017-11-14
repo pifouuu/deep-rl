@@ -105,22 +105,28 @@ class HerMemory(Memory):
         if not self.data:
             return
 
+        state_to_goal = self.env_wrapper.state_to_goal
+        state_to_obs = self.env_wrapper.state_to_obs
+        obs_to_goal = self.env_wrapper.obs_to_goal
+
         for buffer_item in self.data:
             super().append(buffer_item)
         if self.strategy=='last':
-            state_to_goal = self.env_wrapper.state_to_goal
-            state_to_obs = self.env_wrapper.state_to_obs
-            obs_to_goal = self.env_wrapper.obs_to_goal
-            final_state = self.data[-1]['state1']
-            new_goal = final_state[state_to_obs][obs_to_goal]
-            for buffer_item in self.data:
-                buffer_item['state0'][state_to_goal] = new_goal
-                buffer_item['state1'][state_to_goal] = new_goal
-                buffer_item['reward'], buffer_item['terminal'] = \
-                    self.env_wrapper.evaluate_transition(buffer_item['state0'],
-                                                           buffer_item['action'],
-                                                           buffer_item['state1'])
-                super().append(buffer_item)
+            final_buffer = self.data[-1]
+            _, reached = self.env_wrapper.evaluate_transition(final_buffer['state0'],
+                                                    final_buffer['action'],
+                                                    final_buffer['state1'])
+            if not reached:
+                final_state = self.data[-1]['state1']
+                new_goal = final_state[state_to_obs][obs_to_goal]
+                for buffer_item in self.data:
+                    buffer_item['state0'][state_to_goal] = new_goal
+                    buffer_item['state1'][state_to_goal] = new_goal
+                    buffer_item['reward'], buffer_item['terminal1'] = \
+                        self.env_wrapper.evaluate_transition(buffer_item['state0'],
+                                                               buffer_item['action'],
+                                                               buffer_item['state1'])
+                    super().append(buffer_item)
         else:
             print('error her strategy')
             return
