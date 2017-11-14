@@ -41,6 +41,7 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
 
         # Selects a goal for the current episode
         goal_episode = env_wrapper.sample_goal(obs)
+        obs = env.reset()
         init_state = obs
 
         ep_reward = 0
@@ -69,7 +70,6 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
             ep_reward += r
 
             if buffer_item['terminal1']:
-                obs = env.reset()
                 break
 
         if args['with_hindsight']:
