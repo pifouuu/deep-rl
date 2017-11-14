@@ -149,7 +149,7 @@ if __name__ == '__main__':
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=0)
-    parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=500)
+    parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=20)
     parser.add_argument('--max-episode-len', help='max length of 1 episode', default=1000)
     parser.add_argument('--render-env', help='render the gym env', action='store_true')
     parser.add_argument('--render-eval-env', help='render the gym env', action='store_true')
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     parser.set_defaults(render_eval_env=False)
     parser.set_defaults(use_gym_monitor=False)
     parser.set_defaults(with_goal=True)
-    parser.set_defaults(with_hindsight=True)
+    parser.set_defaults(with_hindsight=False)
     parser.set_defaults(eval=True)
     parser.set_defaults(reproducible=False)
     parser.set_defaults(episode_reset=False)
