@@ -12,9 +12,10 @@ def log(stats):
     logger.dump_tabular()
 
 TRAIN_FREQ = 10
-TRAIN_STEPS = 10
+TRAIN_STEPS = 50
 
-EVAL_FREQ = 10
+EVAL_FREQ = 100
+EVAL_EPISODES = 20
 
 def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
 
@@ -45,7 +46,6 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
         init_state = obs
 
         ep_reward = 0
-        ep_ave_max_q = 0
 
         combined_stats = {}
 
@@ -72,6 +72,10 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
             if buffer_item['terminal1']:
                 break
 
+        combined_stats['Reward'] = ep_reward
+        combined_stats['episode'] = i
+        combined_stats['Env steps'] = total_env_steps
+
         if args['with_hindsight']:
             memory.flush()
 
@@ -82,16 +86,14 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
             critic_stats = critic.get_stats(stats_sample)
             for key in sorted(critic_stats.keys()):
                 combined_stats[key] = (critic_stats[key])
-        combined_stats['Reward'] = ep_reward
-        combined_stats['Qmax_value'] = ep_ave_max_q / float(j)
-        combined_stats['episode'] = i
-        combined_stats['Env steps'] = total_env_steps
+
 
         # Keep adding experience to the memory until
         # there are at least minibatch size samples
         if i % TRAIN_FREQ == 0 and memory.nb_entries > int(args['minibatch_size']):
 
             critic_losses = []
+            ep_ave_max_q = []
 
             if stats_sample is None:
                 # Get a sample and keep that fixed for all further computations.
@@ -118,7 +120,7 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
                     sample['state0'], sample['action'], np.reshape(y_i, (int(args['minibatch_size']), 1)))
                 critic_losses.append(critic_loss)
 
-                ep_ave_max_q += np.amax(predicted_q_value)
+                ep_ave_max_q.append(np.amax(predicted_q_value))
 
                 # Update the actor policy using the sampled gradient
                 a_outs = actor.predict(sample['state0'])
@@ -132,35 +134,42 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
             total_train_steps += TRAIN_STEPS
 
             combined_stats['Critic_loss'] = np.mean(critic_losses)
+            combined_stats['Qmax_value'] = np.mean(ep_ave_max_q)
 
         combined_stats['Train steps'] = total_train_steps
 
-        print('| Reward: {:d} | Episode: {:d} | Init_state: {:.2f} | Goal: {:.2f} | Qmax: {:.4f} | Duration: {:.4f}'.format(int(ep_reward), \
+        print('| Reward: {:d} | Episode: {:d} | Init_state: {:.2f} | Goal: {:.2f} | Duration: {:.4f}'.format(int(ep_reward), \
                                                                                         i, init_state[0], goal_episode[0],
-                                                                                        (ep_ave_max_q / float(j)),
                                                                                         time.time() - epoch_start_time))
 
         if args['eval'] and i % EVAL_FREQ == 0 and i>0:
-            ep_eval_reward = 0
-            eval_obs = eval_env.reset()
-            eval_goal = env_wrapper.sample_eval_goal()
 
-            for k in range(int(args['eval_steps'])):
+            eval_rewards = []
 
-                eval_state0 = env_wrapper.process_observation(eval_obs, eval_goal)
+            for eval_ep in range(EVAL_EPISODES):
+                ep_eval_reward = 0
+                eval_obs = eval_env.reset()
+                eval_goal = env_wrapper.sample_eval_goal()
 
-                eval_action = actor.predict(np.reshape(eval_state0, (1, actor.s_dim)))
+                for k in range(int(args['eval_steps'])):
 
-                new_eval_obs, r_eval_env, done_eval_env, info_eval = eval_env.step(eval_action[0])
-                eval_buffer_item = env_wrapper.process_step(eval_state0, eval_goal, eval_action, new_eval_obs,
-                                                       r_eval_env, done_eval_env, info_eval)
+                    eval_state0 = env_wrapper.process_observation(eval_obs, eval_goal)
 
-                ep_eval_reward += eval_buffer_item['reward']
+                    eval_action = actor.predict_target(np.reshape(eval_state0, (1, actor.s_dim)))
 
-                if eval_buffer_item['terminal1']:
-                    break
-                else:
-                    eval_obs = new_eval_obs
-            combined_stats['Eval_reward'] = ep_eval_reward
+                    new_eval_obs, r_eval_env, done_eval_env, info_eval = eval_env.step(eval_action[0])
+                    eval_buffer_item = env_wrapper.process_step(eval_state0, eval_goal, eval_action, new_eval_obs,
+                                                           r_eval_env, done_eval_env, info_eval)
+
+                    ep_eval_reward += eval_buffer_item['reward']
+
+                    if eval_buffer_item['terminal1']:
+                        break
+                    else:
+                        eval_obs = new_eval_obs
+
+                eval_rewards.append(ep_eval_reward)
+
+            combined_stats['Eval_reward'] = np.mean(eval_rewards)
 
         log(combined_stats)
