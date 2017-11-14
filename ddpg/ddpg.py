@@ -103,15 +103,15 @@ def main(args):
         # Ensure action bound is symmetric
         assert (env.action_space.high == -env.action_space.low)
 
-        actor = ActorNetwork(sess, state_dim, action_dim, action_bound,
+        actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
+
+        actor = ActorNetwork(sess, state_dim, action_dim, action_bound, actor_noise,
                              float(args['actor_lr']), float(args['tau']))
 
         critic = CriticNetwork(sess, state_dim, action_dim,
                                float(args['critic_lr']), float(args['tau']),
                                float(args['gamma']), float(args['delta']),
                                actor.get_num_trainable_vars())
-        
-        actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
 
         # Initialize replay memory
         if args['with_hindsight']:
@@ -125,7 +125,7 @@ def main(args):
                 eval_env = wrap_gym(eval_env, args['render_eval_env'], args['monitor_dir'])
 
 
-        train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wrapper)
+        train(sess, env, eval_env, args, actor, critic, memory, env_wrapper)
 
         if args['use_gym_monitor']:
             env.close()
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     parser.set_defaults(render_eval_env=False)
     parser.set_defaults(use_gym_monitor=False)
     parser.set_defaults(with_goal=True)
-    parser.set_defaults(with_hindsight=True)
+    parser.set_defaults(with_hindsight=False)
     parser.set_defaults(eval=True)
     
     args = vars(parser.parse_args())

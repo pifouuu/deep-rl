@@ -1,6 +1,7 @@
 import tensorflow as tf
 import tflearn
 from util import reduce_std
+import numpy as np
 
 
 class ActorNetwork(object):
@@ -12,7 +13,7 @@ class ActorNetwork(object):
     between -action_bound and action_bound
     """
 
-    def __init__(self, sess, state_dim, action_dim, action_bound, learning_rate, tau):
+    def __init__(self, sess, state_dim, action_dim, action_bound, actor_noise, learning_rate, tau):
         self.sess = sess
         self.s_dim = state_dim
         self.a_dim = action_dim
@@ -21,6 +22,7 @@ class ActorNetwork(object):
         self.tau = tau
         self.stats_ops = []
         self.stats_names = []
+        self.actor_noise = actor_noise
 
         # Actor Network
         self.inputs, self.out, self.scaled_out = self.create_actor_network()
@@ -82,10 +84,13 @@ class ActorNetwork(object):
             self.action_gradient: a_gradient
         })
 
-    def predict(self, inputs):
-        return self.sess.run(self.scaled_out, feed_dict={
+    def predict(self, inputs, with_noise=False):
+        scaled_out = self.sess.run(self.scaled_out, feed_dict={
             self.inputs: inputs
         })
+        if with_noise:
+            scaled_out += self.actor_noise()
+        return np.clip(scaled_out, -self.action_bound, self.action_bound)
 
     def predict_target(self, inputs):
         return self.sess.run(self.target_scaled_out, feed_dict={

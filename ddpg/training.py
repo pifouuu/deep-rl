@@ -12,7 +12,7 @@ def log(stats):
     logger.dump_tabular()
 
 
-def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wrapper):
+def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
 
     # Set up summary Ops
     # summary_ops, summary_vars = build_summaries()
@@ -28,6 +28,7 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
     stats_sample = None
 
     epoch_start_time = time.time()
+    total_steps = 0
     obs = env.reset()
 
     for i in range(int(args['max_episodes'])):
@@ -39,6 +40,8 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
         ep_reward = 0
         ep_ave_max_q = 0
         critic_losses = []
+        if args['with_hindsight']:
+            memory.flush()
 
         for j in range(int(args['max_episode_len'])):
 
@@ -49,9 +52,10 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
 
             # Added exploration noise
             #a = actor.predict(np.reshape(s, (1, 3))) + (1. / (1. + i))
-            action = actor.predict(np.reshape(state0, (1, actor.s_dim))) + actor_noise()
+            action = actor.predict(np.reshape(state0, (1, actor.s_dim)), with_noise=True)
 
             new_obs, r_env, done_env, info = env.step(action[0])
+            total_steps += 1
             buffer_item = env_wrapper.process_step(state0, goal_episode, action, new_obs, r_env, done_env, info)
             memory.append(buffer_item)
 
@@ -94,7 +98,8 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
                 critic.update_target_network()
 
             obs = new_obs
-            ep_reward += buffer_item['reward']
+            r = buffer_item['reward']
+            ep_reward += r
 
             if buffer_item['terminal1']:
                 obs = env.reset()
@@ -103,15 +108,18 @@ def train(sess, env, eval_env, args, actor, critic, actor_noise, memory, env_wra
 
 
         combined_stats = {}
-        actor_stats = actor.get_stats(stats_sample)
-        for key in sorted(actor_stats.keys()):
-            combined_stats[key] = (actor_stats[key])
-        critic_stats = critic.get_stats(stats_sample)
-        for key in sorted(critic_stats.keys()):
-            combined_stats[key] = (critic_stats[key])
+        if stats_sample is not None:
+            actor_stats = actor.get_stats(stats_sample)
+            for key in sorted(actor_stats.keys()):
+                combined_stats[key] = (actor_stats[key])
+            critic_stats = critic.get_stats(stats_sample)
+            for key in sorted(critic_stats.keys()):
+                combined_stats[key] = (critic_stats[key])
         combined_stats['Reward'] = ep_reward
         combined_stats['Qmax_value'] = ep_ave_max_q / float(j)
         combined_stats['Critic_loss'] = np.mean(critic_losses)
+        combined_stats['episode'] = i
+        combined_stats['steps'] = total_steps
 
         print('| Reward: {:d} | Episode: {:d} | Init_state: {:.2f} | Goal: {:.2f} | Qmax: {:.4f} | Duration: {:.4f}'.format(int(ep_reward), \
                                                                                         i, init_state[0], goal_episode[0],
