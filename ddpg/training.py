@@ -11,6 +11,10 @@ def log(stats):
         logger.record_tabular(key, stats[key])
     logger.dump_tabular()
 
+TRAIN_FREQ = 10
+TRAIN_STEPS = 10
+
+EVAL_FREQ = 10
 
 def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
 
@@ -28,8 +32,10 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
     stats_sample = None
 
     epoch_start_time = time.time()
-    total_steps = 0
+    total_env_steps = 0
+    total_train_steps = 0
     obs = env.reset()
+
 
     for i in range(int(args['max_episodes'])):
 
@@ -39,9 +45,8 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
 
         ep_reward = 0
         ep_ave_max_q = 0
-        critic_losses = []
-        if args['with_hindsight']:
-            memory.flush()
+
+        combined_stats = {}
 
         for j in range(int(args['max_episode_len'])):
 
@@ -55,18 +60,45 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
             action = actor.predict(np.reshape(state0, (1, actor.s_dim)), with_noise=True)
 
             new_obs, r_env, done_env, info = env.step(action[0])
-            total_steps += 1
+            total_env_steps += 1
             buffer_item = env_wrapper.process_step(state0, goal_episode, action, new_obs, r_env, done_env, info)
             memory.append(buffer_item)
 
-            # Keep adding experience to the memory until
-            # there are at least minibatch size samples
-            if memory.nb_entries > int(args['minibatch_size']):
+            obs = new_obs
+            r = buffer_item['reward']
+            ep_reward += r
 
-                if stats_sample is None:
-                    # Get a sample and keep that fixed for all further computations.
-                    # This allows us to estimate the change in value for the same set of inputs.
-                    stats_sample = memory.sample(int(args['minibatch_size']))
+            if buffer_item['terminal1']:
+                obs = env.reset()
+                break
+
+        if args['with_hindsight']:
+            memory.flush()
+
+        if stats_sample is not None:
+            actor_stats = actor.get_stats(stats_sample)
+            for key in sorted(actor_stats.keys()):
+                combined_stats[key] = (actor_stats[key])
+            critic_stats = critic.get_stats(stats_sample)
+            for key in sorted(critic_stats.keys()):
+                combined_stats[key] = (critic_stats[key])
+        combined_stats['Reward'] = ep_reward
+        combined_stats['Qmax_value'] = ep_ave_max_q / float(j)
+        combined_stats['episode'] = i
+        combined_stats['Env steps'] = total_env_steps
+
+        # Keep adding experience to the memory until
+        # there are at least minibatch size samples
+        if i % TRAIN_FREQ == 0 and memory.nb_entries > int(args['minibatch_size']):
+
+            critic_losses = []
+
+            if stats_sample is None:
+                # Get a sample and keep that fixed for all further computations.
+                # This allows us to estimate the change in value for the same set of inputs.
+                stats_sample = memory.sample(int(args['minibatch_size']))
+
+            for train_step in range(TRAIN_STEPS):
 
                 sample = memory.sample(int(args['minibatch_size']))
 
@@ -93,40 +125,22 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
                 grads = critic.action_gradients(sample['state0'], a_outs)
                 actor.train(sample['state0'], grads[0])
 
-                # Update target networks
-                actor.update_target_network()
-                critic.update_target_network()
+            # Update target networks
+            actor.update_target_network()
+            critic.update_target_network()
 
-            obs = new_obs
-            r = buffer_item['reward']
-            ep_reward += r
+            total_train_steps += TRAIN_STEPS
 
-            if buffer_item['terminal1']:
-                obs = env.reset()
-                break
+            combined_stats['Critic_loss'] = np.mean(critic_losses)
 
-
-
-        combined_stats = {}
-        if stats_sample is not None:
-            actor_stats = actor.get_stats(stats_sample)
-            for key in sorted(actor_stats.keys()):
-                combined_stats[key] = (actor_stats[key])
-            critic_stats = critic.get_stats(stats_sample)
-            for key in sorted(critic_stats.keys()):
-                combined_stats[key] = (critic_stats[key])
-        combined_stats['Reward'] = ep_reward
-        combined_stats['Qmax_value'] = ep_ave_max_q / float(j)
-        combined_stats['Critic_loss'] = np.mean(critic_losses)
-        combined_stats['episode'] = i
-        combined_stats['steps'] = total_steps
+        combined_stats['Train steps'] = total_train_steps
 
         print('| Reward: {:d} | Episode: {:d} | Init_state: {:.2f} | Goal: {:.2f} | Qmax: {:.4f} | Duration: {:.4f}'.format(int(ep_reward), \
                                                                                         i, init_state[0], goal_episode[0],
                                                                                         (ep_ave_max_q / float(j)),
                                                                                         time.time() - epoch_start_time))
 
-        if args['eval'] and i % int(args['eval_freq']) == 0 and i>0:
+        if args['eval'] and i % EVAL_FREQ == 0 and i>0:
             ep_eval_reward = 0
             eval_obs = eval_env.reset()
             eval_goal = env_wrapper.sample_eval_goal()
