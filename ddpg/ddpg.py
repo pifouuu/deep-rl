@@ -68,69 +68,70 @@ class OrnsteinUhlenbeckActionNoise:
 
 
 def main(args):
-    dirname = '_tau_'+str(args['tau'])+'_batchsize_'+str(args['minibatch_size'])+'_goal_'+str(args['with_goal'])+\
-              '_hindsight_'+str(args['with_hindsight'])+'_eval_'+str(args['eval'])
-    dir = args['summary_dir']+dirname
-    dir = dir+'_'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    logger.configure(dir=dir,format_strs=['stdout', 'json', 'tensorboard'])
-    #logger.configure(dir=args['summary_dir'],format_strs=['stdout'])
+    for i in range(args['number_runs']):
+        dirname = '_tau_'+str(args['tau'])+'_batchsize_'+str(args['minibatch_size'])+'_goal_'+str(args['with_goal'])+\
+                  '_hindsight_'+str(args['with_hindsight'])+'_eval_'+str(args['eval'])
+        dir = args['summary_dir']+dirname
+        dir = dir+'_'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        logger.configure(dir=dir,format_strs=['stdout', 'json', 'tensorboard'])
+        #logger.configure(dir=args['summary_dir'],format_strs=['stdout'])
 
 
-    with tf.Session() as sess:
+        with tf.Session() as sess:
 
-        env = gym.make(args['env'])
-        eval_env = None
-        if args['eval']:
-            eval_env = gym.make(args['env'])
-
-        if args['reproducible']:
-            np.random.seed(int(args['random_seed']))
-            tf.set_random_seed(int(args['random_seed']))
-            env.seed(int(args['random_seed']))
+            env = gym.make(args['env'])
+            eval_env = None
             if args['eval']:
-                eval_env.seed(int(args['random_seed']))
+                eval_env = gym.make(args['env'])
+
+            if args['reproducible']:
+                np.random.seed(int(args['random_seed']))
+                tf.set_random_seed(int(args['random_seed']))
+                env.seed(int(args['random_seed']))
+                if args['eval']:
+                    eval_env.seed(int(args['random_seed']))
 
 
-        if args['with_goal']:
-            env_wrapper = GoalContinuousMCWrapper()
-        else:
-            env_wrapper = ContinuousMCWrapper()
+            if args['with_goal']:
+                env_wrapper = GoalContinuousMCWrapper()
+            else:
+                env_wrapper = ContinuousMCWrapper()
 
-        # state_dim = env.observation_space.shape[0]
-        # action_dim = env.action_space.shape[0]
-        state_dim = env_wrapper.state_shape[0]
-        action_dim = env_wrapper.action_shape[0]
+            # state_dim = env.observation_space.shape[0]
+            # action_dim = env.action_space.shape[0]
+            state_dim = env_wrapper.state_shape[0]
+            action_dim = env_wrapper.action_shape[0]
 
-        action_bound = env.action_space.high
-        # Ensure action bound is symmetric
-        assert (env.action_space.high == -env.action_space.low)
+            action_bound = env.action_space.high
+            # Ensure action bound is symmetric
+            assert (env.action_space.high == -env.action_space.low)
 
-        actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
+            actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
 
-        actor = ActorNetwork(sess, state_dim, action_dim, action_bound, actor_noise,
-                             float(args['actor_lr']), float(args['tau']))
+            actor = ActorNetwork(sess, state_dim, action_dim, action_bound, actor_noise,
+                                 float(args['actor_lr']), float(args['tau']))
 
-        critic = CriticNetwork(sess, state_dim, action_dim,
-                               float(args['critic_lr']), float(args['tau']),
-                               float(args['gamma']), float(args['delta']),
-                               actor.get_num_trainable_vars())
+            critic = CriticNetwork(sess, state_dim, action_dim,
+                                   float(args['critic_lr']), float(args['tau']),
+                                   float(args['gamma']), float(args['delta']),
+                                   actor.get_num_trainable_vars())
 
-        # Initialize replay memory
-        if args['with_hindsight']:
-            memory = HerMemory(env_wrapper, with_reward=True, limit=int(1e6), strategy='last')
-        else:
-            memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
+            # Initialize replay memory
+            if args['with_hindsight']:
+                memory = HerMemory(env_wrapper, with_reward=True, limit=int(1e6), strategy='last')
+            else:
+                memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
 
-        if args['use_gym_monitor']:
-            env = wrap_gym(env, args['render_env'], args['monitor_dir'])
-            if eval:
-                eval_env = wrap_gym(eval_env, args['render_eval_env'], args['monitor_dir'])
+            if args['use_gym_monitor']:
+                env = wrap_gym(env, args['render_env'], args['monitor_dir'])
+                if eval:
+                    eval_env = wrap_gym(eval_env, args['render_eval_env'], args['monitor_dir'])
 
 
-        train(sess, env, eval_env, args, actor, critic, memory, env_wrapper)
+            train(sess, env, eval_env, args, actor, critic, memory, env_wrapper)
 
-        if args['use_gym_monitor']:
-            env.close()
+            if args['use_gym_monitor']:
+                env.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='provide arguments for DDPG agent')
@@ -161,7 +162,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
     parser.add_argument('--reproducible', help='whether to seed everything for reproductibility or not', action='store_true')
     parser.add_argument('--episode-reset', help='whether to reset the env when max steps reached', action='store_true')
-
+    parser.add_argument('--number-runs', help='number of consecutive runs to launch', default=1)
 
     parser.set_defaults(render_env=False)
     parser.set_defaults(render_eval_env=False)
