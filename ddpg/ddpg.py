@@ -68,7 +68,7 @@ class OrnsteinUhlenbeckActionNoise:
 
 
 def main(args):
-    for i in range(args['number_runs']):
+    for i in range(int(args['number_runs'])):
         dirname = '_tau_'+str(args['tau'])+'_batchsize_'+str(args['minibatch_size'])+'_goal_'+str(args['with_goal'])+\
                   '_hindsight_'+str(args['with_hindsight'])+'_eval_'+str(args['eval'])
         dir = args['summary_dir']+dirname
@@ -133,6 +133,8 @@ def main(args):
             if args['use_gym_monitor']:
                 env.close()
 
+        logger.reset()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='provide arguments for DDPG agent')
 
@@ -150,7 +152,7 @@ if __name__ == '__main__':
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=0)
-    parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=20)
+    parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=15)
     parser.add_argument('--max-episode-len', help='max length of 1 episode', default=1000)
     parser.add_argument('--render-env', help='render the gym env', action='store_true')
     parser.add_argument('--render-eval-env', help='render the gym env', action='store_true')
@@ -162,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
     parser.add_argument('--reproducible', help='whether to seed everything for reproductibility or not', action='store_true')
     parser.add_argument('--episode-reset', help='whether to reset the env when max steps reached', action='store_true')
-    parser.add_argument('--number-runs', help='number of consecutive runs to launch', default=1)
+    parser.add_argument('--number-runs', help='number of consecutive runs to launch', default=3)
 
     parser.set_defaults(render_env=False)
     parser.set_defaults(render_eval_env=False)
