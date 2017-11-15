@@ -166,7 +166,7 @@ if __name__ == '__main__':
     parser.set_defaults(render_env=False)
     parser.set_defaults(render_eval_env=False)
     parser.set_defaults(use_gym_monitor=False)
-    parser.set_defaults(with_goal=True)
+    parser.set_defaults(with_goal=False)
     parser.set_defaults(with_hindsight=False)
     parser.set_defaults(eval=True)
     parser.set_defaults(reproducible=False)

@@ -8,5 +8,5 @@
 #PBS -l ncpus=8
 for i in {1..3}
 do
-    /usr/bin/python3.4 /home/fournier/deep-rl/ddpg/ddpg.py --summary-dir /home/fournier/deep-rl/ddpg/results/ --max-episodes 20 --with-goal --episode-reset
+    /usr/bin/python3.4 /home/fournier/deep-rl/ddpg/ddpg.py --summary-dir /home/fournier/deep-rl/ddpg/results/ --max-episodes 20 --episode-reset
 done
