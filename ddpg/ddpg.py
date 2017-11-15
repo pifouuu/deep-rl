@@ -69,7 +69,7 @@ class OrnsteinUhlenbeckActionNoise:
 
 def main(args):
     for i in range(int(args['number_runs'])):
-        dirname = '_tau_'+str(args['tau'])+'_batchsize_'+str(args['minibatch_size'])+'_goal_'+str(args['with_goal'])+\
+        dirname = '_delta_'+str(args['delta'])+'_tau_'+str(args['tau'])+'_batchsize_'+str(args['minibatch_size'])+'_goal_'+str(args['with_goal'])+\
                   '_hindsight_'+str(args['with_hindsight'])+'_eval_'+str(args['eval'])
         dir = args['summary_dir']+dirname
         dir = dir+'_'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
@@ -84,7 +84,7 @@ def main(args):
             if args['eval']:
                 eval_env = gym.make(args['env'])
 
-            if args['reproducible']:
+            if args['random_seed'] is not None:
                 np.random.seed(int(args['random_seed']))
                 tf.set_random_seed(int(args['random_seed']))
                 env.seed(int(args['random_seed']))
@@ -113,7 +113,7 @@ def main(args):
 
             critic = CriticNetwork(sess, state_dim, action_dim,
                                    float(args['critic_lr']), float(args['tau']),
-                                   float(args['gamma']), float(args['delta']),
+                                   float(args['gamma']), args['delta'],
                                    actor.get_num_trainable_vars())
 
             # Initialize replay memory
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     parser.add_argument('--actor-lr', help='actor network learning rate', default=0.0001)
     parser.add_argument('--critic-lr', help='critic network learning rate', default=0.001)
     parser.add_argument('--gamma', help='discount factor for critic updates', default=0.99)
-    parser.add_argument('--delta', help='delta in huber loss', default=1.)
+    parser.add_argument('--delta', help='delta in huber loss', default=None)
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
@@ -151,7 +151,7 @@ if __name__ == '__main__':
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
-    parser.add_argument('--random-seed', help='random seed for repeatability', default=0)
+    parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=15)
     parser.add_argument('--max-episode-len', help='max length of 1 episode', default=1000)
     parser.add_argument('--render-env', help='render the gym env', action='store_true')
@@ -162,7 +162,6 @@ if __name__ == '__main__':
     parser.add_argument('--eval', help='perform regular evaluation on the main task', action='store_true')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
-    parser.add_argument('--reproducible', help='whether to seed everything for reproductibility or not', action='store_true')
     parser.add_argument('--episode-reset', help='whether to reset the env when max steps reached', action='store_true')
     parser.add_argument('--number-runs', help='number of consecutive runs to launch', default=3)
 
@@ -172,7 +171,6 @@ if __name__ == '__main__':
     parser.set_defaults(with_goal=False)
     parser.set_defaults(with_hindsight=False)
     parser.set_defaults(eval=True)
-    parser.set_defaults(reproducible=False)
     parser.set_defaults(episode_reset=False)
     
     args = vars(parser.parse_args())
