@@ -60,6 +60,8 @@ class CriticNetwork(object):
         self.stats_names += ['reference_Q_mean']
         self.stats_ops += [reduce_std(self.out)]
         self.stats_names += ['reference_Q_std']
+        self.stats_ops += [tf.reduce_mean(self.action_grads)]
+        self.stats_names += ['reference_action_grads']
 
 
     def create_critic_network(self):

@@ -1,2 +1,7 @@
 #!/bin/bash
-/usr/bin/python3.5 /home/pierre/PycharmProjects/deep-rl/ddpg/ddpg.py --number-runs 20 --summary-dir /home/pierre/PycharmProjects/deep-rl/ddpg/results/ --max-episodes 500 
+MAIN=/home/pierre/PycharmProjects/deep-rl/ddpg/ddpg.py
+LOGDIR=/home/pierre/PycharmProjects/deep-rl/ddpg/results/
+for i in {1..20}
+do
+    /usr/bin/python3.5 $MAIN --summary-dir $LOGDIR --delta 1 --max-episodes 500 --episode-reset
+done

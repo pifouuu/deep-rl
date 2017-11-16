@@ -38,6 +38,7 @@ def train(sess, env, eval_env, args, actor, critic, memory, env_wrapper):
 
         # Selects a goal for the current episode
         goal_episode = env_wrapper.sample_goal(obs)
+        #goal_episode = goalSampler.sample(obs)
         if args['episode_reset']:
             obs = env.reset()
         init_state = obs
