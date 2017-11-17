@@ -4,7 +4,7 @@
 
 NUMBERS=$(seq 1 20) # Create an array of seed values from 1 to NSEEDS
 DDPG=/home/fournier/deep-rl/ddpg/ddpg.py
-LOGDIR=/home/fournier/deep-rl/ddpg/results/
+LOGDIR=/home/fournier/deep-rl/ddpg/results
 
 
 # Loop through the different seed values and submit a run for each
@@ -21,7 +21,7 @@ do
 	PBS="#!/bin/bash\n\
 	#PBS -N ${NAME}\n\
 	#PBS -l nodes=1:ppn=1\n\
-	#PBS -l walltime=2:00:00\n\
+	#PBS -l walltime=12:00:00\n\
 	#PBS -o output/${NAME}.out\n\
 	#PBS -e error/${NAME}.err\n\
 	cd \$PBS_O_WORKDIR\n\
@@ -33,7 +33,7 @@ do
 	# A small delay is included to avoid overloading the submission process
 
 	echo -e ${PBS} | qsub
-	sleep 0.5
+	sleep 2
 	echo "done."
 
 done
