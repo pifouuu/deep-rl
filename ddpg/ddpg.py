@@ -68,13 +68,13 @@ class OrnsteinUhlenbeckActionNoise:
 
 
 def main(args):
-    dirname = '_delta_'+str(args['delta'])+\
+    params = '_delta_'+str(args['delta'])+\
               '_goal_'+str(args['with_goal'])+\
               '_hindsight_'+str(args['with_hindsight'])+\
               '_reset_'+str(args['episode_reset'])
-    dir = args['summary_dir']+dirname
-    dir = dir+'_'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    logger.configure(dir=dir,format_strs=['stdout', 'json', 'tensorboard'])
+    logdir = args['summary_dir']
+    finaldir = logdir+'/'+params+'/'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    logger.configure(dir=finaldir,format_strs=['stdout', 'json', 'tensorboard'])
     #logger.configure(dir=args['summary_dir'],format_strs=['stdout'])
 
 
