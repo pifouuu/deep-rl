@@ -22,8 +22,8 @@ do
 	#PBS -N ${NAME}\n\
 	#PBS -l nodes=1:ppn=1\n\
 	#PBS -l walltime=12:00:00\n\
-	#PBS -o output/${NAME}.out\n\
-	#PBS -e error/${NAME}.err\n\
+	#PBS -o out/${NAME}.out\n\
+	#PBS -e err/${NAME}.err\n\
 	cd \$PBS_O_WORKDIR\n\
 	/usr/bin/python3.4 $DDPG --summary-dir $LOGDIR --max-episodes 500 --episode-reset --with-goal"
 
