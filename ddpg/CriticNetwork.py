@@ -10,7 +10,7 @@ class CriticNetwork(object):
 
     """
 
-    def __init__(self, sess, state_dim, action_dim, learning_rate, tau, gamma, delta, num_actor_vars):
+    def __init__(self, sess, state_dim, action_dim, learning_rate, tau, gamma, num_actor_vars):
         self.sess = sess
         self.s_dim = state_dim
         self.a_dim = action_dim
@@ -41,11 +41,11 @@ class CriticNetwork(object):
         self.predicted_q_value = tf.placeholder(tf.float32, [None, 1])
 
         # Define loss and optimization Op
-        if delta is not None:
-            #TODO : add MEAN !
-            self.loss = tf.losses.huber_loss(self.predicted_q_value, self.out, delta=float(delta))
-        else:
-            self.loss = tflearn.mean_square(self.predicted_q_value, self.out)
+        # if delta is not None:
+        #     #TODO : add MEAN !
+        #     self.loss = tf.losses.huber_loss(self.predicted_q_value, self.out, delta=float(delta))
+        # else:
+        self.loss = tflearn.mean_square(self.predicted_q_value, self.out)
         self.optimize = tf.train.AdamOptimizer(
             self.learning_rate).minimize(self.loss)
 

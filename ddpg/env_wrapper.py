@@ -48,7 +48,7 @@ class GoalContinuousMCWrapper(object):
             goal_found = np.abs(obs[self.obs_to_goal]-goal) > self.eps
         return goal
 
-    def sample_eval_goal(self):
+    def sample_test_goal(self):
         return [0.45]
 
 class HandmadeCurriculum(object):
@@ -124,7 +124,7 @@ class ContinuousMCWrapper(object):
     def sample_goal(self, obs):
         return [0.45]
 
-    def sample_eval_goal(self):
+    def sample_test_goal(self):
         return [0.45]
 
     def process_step(self, state0, goal, action, new_obs, r_env, done_env, info):

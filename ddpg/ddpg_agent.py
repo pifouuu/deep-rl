@@ -14,9 +14,9 @@ EVAL_FREQ = 10
 EVAL_EPISODES = 20
 
 class DDPG_agent():
-    def __init__(self, 
-                 sess, 
-                 actor, 
+    def __init__(self,
+                 sess,
+                 actor,
                  critic, 
                  train_env,
                  test_env,
@@ -25,9 +25,8 @@ class DDPG_agent():
                  logger_step, 
                  logger_episode, 
                  args):
-        
-        self.sess = sess
 
+        self.sess = sess
         self.batch_size = int(args['minibatch_size'])
         self.eval_episodes = int(args['eval_episodes'])
         self.max_episode_steps = int(args['max_episode_steps'])
@@ -37,6 +36,8 @@ class DDPG_agent():
 
         self.logger_step = logger_step
         self.logger_episode = logger_episode
+        self.step_stats = {}
+        self.episode_stats = {}
 
         self.actor = actor
         self.critic = critic
@@ -46,9 +47,9 @@ class DDPG_agent():
         self.memory = memory
         self.train_step = 0
         self.episode = 0
-        self.episode_st = 0
+        self.episode_step = 0
         self.train_goal = None
-        self.eval_goal = None
+        self.test_goal = None
         self.episode_reward = 0
         self.total_reward = 0
         self.goal_reached = 0
@@ -69,6 +70,7 @@ class DDPG_agent():
         # Update the critic given the targets
         predicted_q_value, critic_loss, _ = self.critic.train(
             samples['state0'], samples['action'], np.reshape(y_i, (self.batch_size, 1)))
+        self.step_stats['Critic loss'] = critic_loss
 
     def train_actor(self, samples):
 
@@ -80,12 +82,14 @@ class DDPG_agent():
         self.actor.update_target_network()
         self.critic.update_target_network()
 
+
     def step(self, observation, goal, with_noise, test):
         state0 = self.env_wrapper.process_observation(observation, goal)
-        action = self.actor.predict(np.reshape(state0, (1, self.actor.s_dim)), with_noise=with_noise)
         if test:
+            action = self.actor.predict_target(np.reshape(state0, (1, self.actor.s_dim)))
             obs1, reward_env, done_env, info = self.test_env.step(action[0])
         else:
+            action = self.actor.predict(np.reshape(state0, (1, self.actor.s_dim)), with_noise=with_noise)
             obs1, reward_env, done_env, info = self.train_env.step(action[0])
         sample = self.env_wrapper.process_step(state0, goal, action, obs1, reward_env, done_env, info)
         return obs1, sample
@@ -96,27 +100,36 @@ class DDPG_agent():
         self.train_actor(samples_train)
         self.update_targets()
 
+        actor_stats = self.actor.get_stats(samples_train)
+        for key in sorted(actor_stats.keys()):
+            self.step_stats[key] = (actor_stats[key])
+        critic_stats = self.critic.get_stats(samples_train)
+        for key in sorted(critic_stats.keys()):
+            self.step_stats[key] = (critic_stats[key])
+
     def test(self):
-        eval_rewards = []
+        test_rewards = []
 
         for episode in range(self.eval_episodes):
 
-            ep_eval_reward = 0
-            eval_obs = self.eval_env.reset()
-            self.eval_goal = self.env_wrapper.sample_eval_goal()
+            ep_test_reward = 0
+            test_obs = self.test_env.reset()
+            self.test_goal = self.env_wrapper.sample_test_goal()
 
             for k in range(self.max_episode_steps):
 
-                eval_obs1, eval_sample = self.step(eval_obs, self.eval_goal, with_noise=False, test=True)
+                test_obs1, test_sample = self.step(test_obs, self.test_goal, with_noise=False, test=True)
 
-                ep_eval_reward += eval_sample['reward']
+                ep_test_reward += test_sample['reward']
 
-                if eval_sample['terminal1']:
+                if test_sample['terminal1']:
                     break
                 else:
-                    eval_obs = eval_obs1
+                    test_obs = test_obs1
 
-            eval_rewards.append(ep_eval_reward)
+            test_rewards.append(ep_test_reward)
+
+        self.step_stats['Test reward'] = np.mean(test_rewards)
 
 
     def run(self):
@@ -128,14 +141,16 @@ class DDPG_agent():
         self.actor.update_target_network()
         self.critic.update_target_network()
 
-        obs0 = self.env.reset()
+        obs0 = self.train_env.reset()
         self.train_goal = self.env_wrapper.sample_goal(obs0)
 
         while self.train_step < self.max_steps:
 
-            print(self.episode, self.train_step)
-
             obs1, sample = self.step(obs0, self.train_goal, with_noise=True, test=False)
+            # state0 = self.env_wrapper.process_observation(obs0, self.train_goal)
+            # action = self.actor.predict(np.reshape(state0, (1, self.actor.s_dim)), with_noise=True)
+            # obs1, reward_env, done_env, info = self.train_env.step(action[0])
+            # sample = self.env_wrapper.process_step(state0, self.train_goal, action, obs1, reward_env, done_env, info)
 
             self.memory.append(sample)
 
@@ -147,14 +162,21 @@ class DDPG_agent():
 
                 self.train()
 
-            if self.episode_step > self.max_episode_steps or sample['terminal1']:
+            if self.episode_step >= self.max_episode_steps or sample['terminal1']:
 
-                self.env.reset()
+                self.episode_stats['Train reward'] = self.episode_reward
+                self.episode_stats['Episode steps'] = self.episode_step
+
+                self.train_env.reset()
                 self.train_goal = self.env_wrapper.sample_goal(obs0)
 
                 #TODO :integrate flusing in memory
                 if self.with_hindsight:
                     self.memory.flush()
+
+                for key in sorted(self.episode_stats.keys()):
+                    self.logger_episode.logkv(key, self.episode_stats[key])
+                self.logger_episode.dumpkvs()
 
                 self.episode_step = 0
                 self.episode_reward = 0
@@ -164,6 +186,10 @@ class DDPG_agent():
             if self.train_step % self.eval_freq == 0:
 
                 self.test()
+
+            for key in sorted(self.step_stats.keys()):
+                self.logger_step.logkv(key, self.step_stats[key])
+            self.logger_step.dumpkvs()
 
             self.train_step += 1
             self.episode_step += 1

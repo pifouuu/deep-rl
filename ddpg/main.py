@@ -83,14 +83,9 @@ def main(args):
     if args['delta'] is not None: delta=float(args['delta'])
     else: delta=float("inf")
 
-    env = gym.make(args['env'])
-    eval_env = gym.make(args['env'])
+    train_env = gym.make(args['env'])
+    test_env = gym.make(args['env'])
 
-    if args['random_seed'] is not None:
-        np.random.seed(int(args['random_seed']))
-        tf.set_random_seed(int(args['random_seed']))
-        env.seed(int(args['random_seed']))
-        eval_env.seed(int(args['random_seed']))
 
     if args['with_goal']:
         env_wrapper = GoalContinuousMCWrapper()
@@ -99,9 +94,9 @@ def main(args):
 
     state_dim = env_wrapper.state_shape[0]
     action_dim = env_wrapper.action_shape[0]
-    action_bound = env.action_space.high
+    action_bound = train_env.action_space.high
     # Ensure action bound is symmetric
-    assert (env.action_space.high == -env.action_space.low)
+    assert (train_env.action_space.high == -train_env.action_space.low)
 
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
 
@@ -113,6 +108,12 @@ def main(args):
 
 
     with tf.Session() as sess:
+
+        if args['random_seed'] is not None:
+            np.random.seed(int(args['random_seed']))
+            tf.set_random_seed(int(args['random_seed']))
+            train_env.seed(int(args['random_seed']))
+            test_env.seed(int(args['random_seed']))
 
         actor = ActorNetwork(sess,
                              state_dim,
@@ -128,14 +129,13 @@ def main(args):
                                critic_lr,
                                tau,
                                gamma,
-                               delta,
                                actor.get_num_trainable_vars())
 
         agent = DDPG_agent(sess,
                            actor,
                            critic,
-                           env,
-                           eval_env,
+                           train_env,
+                           test_env,
                            env_wrapper,
                            memory,
                            logger_step,
@@ -161,12 +161,12 @@ if __name__ == '__main__':
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
-    parser.add_argument('--max-steps', help='max num of episodes to do while training', default=100000)
+    parser.add_argument('--max-steps', help='max num of episodes to do while training', default=500000)
     parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
     parser.add_argument('--render-env', help='render the gym env', action='store_true')
     parser.add_argument('--render-eval-env', help='render the gym env', action='store_true')
     parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
-    parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/tf_ddpg')
+    parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/v2')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=20)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
