@@ -42,6 +42,7 @@ class CriticNetwork(object):
 
         # Define loss and optimization Op
         if delta is not None:
+            #TODO : add MEAN !
             self.loss = tf.losses.huber_loss(self.predicted_q_value, self.out, delta=float(delta))
         else:
             self.loss = tflearn.mean_square(self.predicted_q_value, self.out)

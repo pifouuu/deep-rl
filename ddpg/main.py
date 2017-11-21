@@ -12,20 +12,17 @@ Author: Patrick Emami
 import tensorflow as tf
 import numpy as np
 import gym
-import tflearn
 import argparse
 import pprint as pp
-import logger
+from logger import Logger
 from env_wrapper import GoalContinuousMCWrapper, ContinuousMCWrapper
 from memory import Memory, HerMemory
-import os
 import pickle
 import time
 import datetime
 from ActorNetwork import ActorNetwork
 from CriticNetwork import CriticNetwork
-from training import train
-from util import wrap_gym
+from ddpg_agent import DDPG_agent
 
 
 # Taken from https://github.com/openai/baselines/blob/master/baselines/ddpg/noise.py, which is
@@ -73,66 +70,79 @@ def main(args):
               '_hindsight_'+str(args['with_hindsight'])+\
               '_reset_'+str(args['episode_reset'])
     logdir = args['summary_dir']
-    finaldir = logdir+'/'+params+'/'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    logger.configure(dir=finaldir,format_strs=['stdout', 'json', 'tensorboard'])
-    #logger.configure(dir=args['summary_dir'],format_strs=['stdout'])
+    final_dir = logdir+'/'+params+'/'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+
+    logger_step = Logger(dir=final_dir,format_strs=['json', 'tensorboard'])
+    logger_episode = Logger(dir=final_dir, format_strs=['stdout', 'json', 'tensorboard'])
+
+
+    actor_lr = float(args['actor_lr'])
+    tau = float(args['tau'])
+    critic_lr = float(args['critic_lr'])
+    gamma = float(args['gamma'])
+    if args['delta'] is not None: delta=float(args['delta'])
+    else: delta=float("inf")
+
+    env = gym.make(args['env'])
+    eval_env = gym.make(args['env'])
+
+    if args['random_seed'] is not None:
+        np.random.seed(int(args['random_seed']))
+        tf.set_random_seed(int(args['random_seed']))
+        env.seed(int(args['random_seed']))
+        eval_env.seed(int(args['random_seed']))
+
+    if args['with_goal']:
+        env_wrapper = GoalContinuousMCWrapper()
+    else:
+        env_wrapper = ContinuousMCWrapper()
+
+    state_dim = env_wrapper.state_shape[0]
+    action_dim = env_wrapper.action_shape[0]
+    action_bound = env.action_space.high
+    # Ensure action bound is symmetric
+    assert (env.action_space.high == -env.action_space.low)
+
+    actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
+
+    # Initialize replay memory
+    if args['with_hindsight']:
+        memory = HerMemory(env_wrapper, with_reward=True, limit=int(1e6), strategy='last')
+    else:
+        memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
 
 
     with tf.Session() as sess:
 
-        env = gym.make(args['env'])
-        eval_env = None
-        if args['eval']:
-            eval_env = gym.make(args['env'])
+        actor = ActorNetwork(sess,
+                             state_dim,
+                             action_dim,
+                             action_bound,
+                             actor_noise,
+                             actor_lr,
+                             tau)
 
-        if args['random_seed'] is not None:
-            np.random.seed(int(args['random_seed']))
-            tf.set_random_seed(int(args['random_seed']))
-            env.seed(int(args['random_seed']))
-            if args['eval']:
-                eval_env.seed(int(args['random_seed']))
-
-
-        if args['with_goal']:
-            env_wrapper = GoalContinuousMCWrapper()
-        else:
-            env_wrapper = ContinuousMCWrapper()
-
-        # state_dim = env.observation_space.shape[0]
-        # action_dim = env.action_space.shape[0]
-        state_dim = env_wrapper.state_shape[0]
-        action_dim = env_wrapper.action_shape[0]
-
-        action_bound = env.action_space.high
-        # Ensure action bound is symmetric
-        assert (env.action_space.high == -env.action_space.low)
-
-        actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
-
-        actor = ActorNetwork(sess, state_dim, action_dim, action_bound, actor_noise,
-                             float(args['actor_lr']), float(args['tau']))
-
-        critic = CriticNetwork(sess, state_dim, action_dim,
-                               float(args['critic_lr']), float(args['tau']),
-                               float(args['gamma']), args['delta'],
+        critic = CriticNetwork(sess,
+                               state_dim,
+                               action_dim,
+                               critic_lr,
+                               tau,
+                               gamma,
+                               delta,
                                actor.get_num_trainable_vars())
 
-        # Initialize replay memory
-        if args['with_hindsight']:
-            memory = HerMemory(env_wrapper, with_reward=True, limit=int(1e6), strategy='last')
-        else:
-            memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
+        agent = DDPG_agent(sess,
+                           actor,
+                           critic,
+                           env,
+                           eval_env,
+                           env_wrapper,
+                           memory,
+                           logger_step,
+                           logger_episode,
+                           args)
 
-        if args['use_gym_monitor']:
-            env = wrap_gym(env, args['render_env'], args['monitor_dir'])
-            if eval:
-                eval_env = wrap_gym(eval_env, args['render_eval_env'], args['monitor_dir'])
-
-
-        train(sess, env, eval_env, args, actor, critic, memory, env_wrapper)
-
-        if args['use_gym_monitor']:
-            env.close()
+        agent.run()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='provide arguments for DDPG agent')
@@ -151,24 +161,21 @@ if __name__ == '__main__':
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
-    parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=15)
-    parser.add_argument('--max-episode-len', help='max length of 1 episode', default=1000)
+    parser.add_argument('--max-steps', help='max num of episodes to do while training', default=100000)
+    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
     parser.add_argument('--render-env', help='render the gym env', action='store_true')
     parser.add_argument('--render-eval-env', help='render the gym env', action='store_true')
-    parser.add_argument('--use-gym-monitor', help='record gym results', action='store_true')
     parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/tf_ddpg')
-    parser.add_argument('--eval', help='perform regular evaluation on the main task', action='store_true')
-    parser.add_argument('--eval-freq', help='evaluation frequency', default=10)
+    parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
+    parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=20)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
     parser.add_argument('--episode-reset', help='whether to reset the env when max steps reached', action='store_true')
 
     parser.set_defaults(render_env=False)
     parser.set_defaults(render_eval_env=False)
-    parser.set_defaults(use_gym_monitor=False)
     parser.set_defaults(with_goal=False)
     parser.set_defaults(with_hindsight=False)
-    parser.set_defaults(eval=True)
     parser.set_defaults(episode_reset=False)
     
     args = vars(parser.parse_args())

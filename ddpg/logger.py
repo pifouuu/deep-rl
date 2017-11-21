@@ -143,71 +143,71 @@ def make_output_format(format, ev_dir):
 # API
 # ================================================================
 
-def logkv(key, val):
-    """
-    Log a value of some diagnostic
-    Call this once for each diagnostic quantity, each iteration
-    """
-    Logger.CURRENT.logkv(key, val)
-
-def logkvs(d):
-    """
-    Log a dictionary of key-value pairs
-    """
-    for (k, v) in d.items():
-        logkv(k, v)
-
-def dumpkvs():
-    """
-    Write all of the diagnostics from the current iteration
-
-    level: int. (see logger.py docs) If the global logger level is higher than
-                the level argument here, don't print to stdout.
-    """
-    Logger.CURRENT.dumpkvs()
-
-def getkvs():
-    return Logger.CURRENT.name2val    
-
-
-def log(*args, level=INFO):
-    """
-    Write the sequence of args, with no separators, to the console and output files (if you've configured an output file).
-    """
-    Logger.CURRENT.log(*args, level=level)
-
-
-def debug(*args):
-    log(*args, level=DEBUG)
-
-
-def info(*args):
-    log(*args, level=INFO)
-
-
-def warn(*args):
-    log(*args, level=WARN)
-
-
-def error(*args):
-    log(*args, level=ERROR)
-
-
-def set_level(level):
-    """
-    Set logging threshold on current logger.
-    """
-    Logger.CURRENT.set_level(level)
-
-def get_dir():
-    """
-    Get directory that log files are being written to.
-    will be None if there is no output directory (i.e., if you didn't call start)
-    """
-    return Logger.CURRENT.get_dir()
-
-record_tabular = logkv
-dump_tabular = dumpkvs
+# def logkv(key, val):
+#     """
+#     Log a value of some diagnostic
+#     Call this once for each diagnostic quantity, each iteration
+#     """
+#     Logger.CURRENT.logkv(key, val)
+#
+# def logkvs(d):
+#     """
+#     Log a dictionary of key-value pairs
+#     """
+#     for (k, v) in d.items():
+#         logkv(k, v)
+#
+# def dumpkvs():
+#     """
+#     Write all of the diagnostics from the current iteration
+#
+#     level: int. (see logger.py docs) If the global logger level is higher than
+#                 the level argument here, don't print to stdout.
+#     """
+#     Logger.CURRENT.dumpkvs()
+#
+# def getkvs():
+#     return Logger.CURRENT.name2val
+#
+#
+# def log(*args, level=INFO):
+#     """
+#     Write the sequence of args, with no separators, to the console and output files (if you've configured an output file).
+#     """
+#     Logger.CURRENT.log(*args, level=level)
+#
+#
+# def debug(*args):
+#     log(*args, level=DEBUG)
+#
+#
+# def info(*args):
+#     log(*args, level=INFO)
+#
+#
+# def warn(*args):
+#     log(*args, level=WARN)
+#
+#
+# def error(*args):
+#     log(*args, level=ERROR)
+#
+#
+# def set_level(level):
+#     """
+#     Set logging threshold on current logger.
+#     """
+#     Logger.CURRENT.set_level(level)
+#
+# def get_dir():
+#     """
+#     Get directory that log files are being written to.
+#     will be None if there is no output directory (i.e., if you didn't call start)
+#     """
+#     return Logger.CURRENT.get_dir()
+#
+# record_tabular = logkv
+# dump_tabular = dumpkvs
 
 # ================================================================
 # Backend
@@ -218,11 +218,14 @@ class Logger(object):
                     # So that you can still log to the terminal without setting up any output files
     CURRENT = None  # Current logger being used by the free functions above
 
-    def __init__(self, dir, output_formats):
+    def __init__(self, dir=None, format_strs=None):
         self.name2val = {}  # values this iteration
         self.level = INFO
+        assert dir is not None
         self.dir = dir
-        self.output_formats = output_formats
+        if format_strs is None:
+            format_strs = LOG_OUTPUT_FORMATS
+        self.output_formats = [make_output_format(f, dir) for f in format_strs]
 
     # Logging API, forwarded
     # ----------------------------------------
@@ -257,57 +260,57 @@ class Logger(object):
         for fmt in self.output_formats:
             fmt.writeseq(args)
 
-Logger.DEFAULT = Logger.CURRENT = Logger(dir=None, output_formats=[HumanOutputFormat(sys.stdout)])
+# Logger.DEFAULT = Logger.CURRENT = Logger(dir=None, output_formats=[HumanOutputFormat(sys.stdout)])
 
-def configure(dir=None, format_strs=None):
-    assert Logger.CURRENT is Logger.DEFAULT,\
-        "Only call logger.configure() when it's in the default state. Try calling logger.reset() first."
-    prevlogger = Logger.CURRENT
-    if dir is None:
-        dir = os.getenv('OPENAI_LOGDIR')
-    if dir is None:
-        dir = osp.join(tempfile.gettempdir(), 
-            datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f"))
-    if format_strs is None:
-        format_strs = LOG_OUTPUT_FORMATS
-    output_formats = [make_output_format(f, dir) for f in format_strs]
-    Logger.CURRENT = Logger(dir=dir, output_formats=output_formats)
-    log('Logging to %s'%dir)
+# def configure(dir=None, format_strs=None):
+#     assert Logger.CURRENT is Logger.DEFAULT,\
+#         "Only call logger.configure() when it's in the default state. Try calling logger.reset() first."
+#     prevlogger = Logger.CURRENT
+#     if dir is None:
+#         dir = os.getenv('OPENAI_LOGDIR')
+#     if dir is None:
+#         dir = osp.join(tempfile.gettempdir(),
+#             datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f"))
+#     if format_strs is None:
+#         format_strs = LOG_OUTPUT_FORMATS
+#     output_formats = [make_output_format(f, dir) for f in format_strs]
+#     Logger.CURRENT = Logger(dir=dir, output_formats=output_formats)
+#     log('Logging to %s'%dir)
+#
+# if os.getenv('OPENAI_LOGDIR'):
+#     # if OPENAI_LOGDIR is set, configure the logger on import
+#     # this kind of nasty (unexpected to user), but I don't know how else to inject the logger
+#     # to a script that's getting run in a subprocess
+#     configure(dir=os.getenv('OPENAI_LOGDIR'))
 
-if os.getenv('OPENAI_LOGDIR'): 
-    # if OPENAI_LOGDIR is set, configure the logger on import
-    # this kind of nasty (unexpected to user), but I don't know how else to inject the logger
-    # to a script that's getting run in a subprocess
-    configure(dir=os.getenv('OPENAI_LOGDIR'))
-
-def reset():
-    Logger.CURRENT = Logger.DEFAULT
-    log('Reset logger')
+# def reset():
+#     Logger.CURRENT = Logger.DEFAULT
+#     log('Reset logger')
 
 # ================================================================
 
-def _demo():
-    info("hi")
-    debug("shouldn't appear")
-    set_level(DEBUG)
-    debug("should appear")
-    dir = "/tmp/testlogging"
-    if os.path.exists(dir):
-        shutil.rmtree(dir)
-    with session(dir=dir):
-        logkv("a", 3)
-        logkv("b", 2.5)
-        dumpkvs()
-        logkv("b", -2.5)
-        logkv("a", 5.5)
-        dumpkvs()
-        info("^^^ should see a = 5.5")
-
-    logkv("b", -2.5)
-    dumpkvs()
-
-    logkv("a", "longasslongasslongasslongasslongasslongassvalue")
-    dumpkvs()
+# def _demo():
+#     info("hi")
+#     debug("shouldn't appear")
+#     set_level(DEBUG)
+#     debug("should appear")
+#     dir = "/tmp/testlogging"
+#     if os.path.exists(dir):
+#         shutil.rmtree(dir)
+#     with session(dir=dir):
+#         logkv("a", 3)
+#         logkv("b", 2.5)
+#         dumpkvs()
+#         logkv("b", -2.5)
+#         logkv("a", 5.5)
+#         dumpkvs()
+#         info("^^^ should see a = 5.5")
+#
+#     logkv("b", -2.5)
+#     dumpkvs()
+#
+#     logkv("a", "longasslongasslongasslongasslongasslongassvalue")
+#     dumpkvs()
 
 
 if __name__ == "__main__":
