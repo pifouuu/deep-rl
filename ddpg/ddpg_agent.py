@@ -17,6 +17,7 @@ class DDPG_agent():
     def __init__(self,
                  sess,
                  actor,
+                 actor_noise,
                  critic, 
                  train_env,
                  test_env,
@@ -40,6 +41,7 @@ class DDPG_agent():
         self.episode_stats = {}
 
         self.actor = actor
+        self.actor_noise = actor_noise
         self.critic = critic
         self.train_env = train_env
         self.test_env = test_env
@@ -57,8 +59,8 @@ class DDPG_agent():
     def train_critic(self, samples):
 
         # Calculate targets
-        target_q = self.critic.predict_target(
-            samples['state1'], self.actor.predict_target(samples['state1']))
+        target_q = self.critic.target_model.predict(
+            [samples['state1'], self.actor.target_model.predict(samples['state1'])])
 
         y_i = []
         for k in range(self.batch_size):
@@ -68,28 +70,46 @@ class DDPG_agent():
                 y_i.append(samples['reward'][k] + self.critic.gamma * target_q[k])
 
         # Update the critic given the targets
-        predicted_q_value, critic_loss, _ = self.critic.train(
-            samples['state0'], samples['action'], np.reshape(y_i, (self.batch_size, 1)))
+        critic_loss = self.critic.model.train_on_batch(
+            [samples['state0'], samples['action']], np.reshape(y_i, (self.batch_size, 1)))
         self.step_stats['Critic loss'] = critic_loss
 
     def train_actor(self, samples):
 
-        a_outs = self.actor.predict(samples['state0'])
-        grads = self.critic.action_gradients(samples['state0'], a_outs)
-        self.actor.train(samples['state0'], grads[0])
+        a_outs = self.actor.model.predict(samples['state0'])
+        grads = self.critic.gradients(samples['state0'], a_outs)
+        self.actor.train(samples['state0'], grads)
 
     def update_targets(self):
-        self.actor.update_target_network()
-        self.critic.update_target_network()
+        self.actor.target_train()
+        self.critic.target_train()
+
+    def save_weights(self, filepath, overwrite=False):
+        print("Saving weights")
+        filename, extension = os.path.splitext(filepath)
+        actor_filepath = filename + '_actor' + extension
+        critic_filepath = filename + '_critic' + extension
+        self.actor.model.save_weights(actor_filepath, overwrite=overwrite)
+        self.critic.model.save_weights(critic_filepath, overwrite=overwrite)
+
+    def load_weights(self, filepath):
+        filename, extension = os.path.splitext(filepath)
+        actor_filepath = filename + '_actor' + extension
+        critic_filepath = filename + '_critic' + extension
+        self.actor.model.load_weights(actor_filepath)
+        self.critic.model.load_weights(critic_filepath)
+        # self.hard_update_target_models()
 
 
     def step(self, observation, goal, with_noise, test):
         state0 = self.env_wrapper.process_observation(observation, goal)
         if test:
-            action = self.actor.predict_target(np.reshape(state0, (1, self.actor.s_dim)))
+            action = self.actor.target_model.predict(np.reshape(state0, (1, self.actor.s_dim)))
             obs1, reward_env, done_env, info = self.test_env.step(action[0])
         else:
-            action = self.actor.predict(np.reshape(state0, (1, self.actor.s_dim)), with_noise=with_noise)
+            action = self.actor.model.predict(np.reshape(state0, (1, self.actor.s_dim)))
+            action += self.actor_noise()
+            action = np.clip(action, -self.actor.action_bound, self.actor.action_bound)
             obs1, reward_env, done_env, info = self.train_env.step(action[0])
         sample = self.env_wrapper.process_step(state0, goal, action, obs1, reward_env, done_env, info)
         return obs1, sample
@@ -100,12 +120,12 @@ class DDPG_agent():
         self.train_actor(samples_train)
         self.update_targets()
 
-        actor_stats = self.actor.get_stats(samples_train)
-        for key in sorted(actor_stats.keys()):
-            self.step_stats[key] = (actor_stats[key])
-        critic_stats = self.critic.get_stats(samples_train)
-        for key in sorted(critic_stats.keys()):
-            self.step_stats[key] = (critic_stats[key])
+        # actor_stats = self.actor.get_stats(samples_train)
+        # for key in sorted(actor_stats.keys()):
+        #     self.step_stats[key] = (actor_stats[key])
+        # critic_stats = self.critic.get_stats(samples_train)
+        # for key in sorted(critic_stats.keys()):
+        #     self.step_stats[key] = (critic_stats[key])
 
     def test(self):
         test_rewards = []
@@ -138,8 +158,8 @@ class DDPG_agent():
 
         # Initialize target network weights
         #TODO : soft vs hard update
-        self.actor.update_target_network()
-        self.critic.update_target_network()
+        self.actor.target_train()
+        self.critic.target_train()
 
         obs0 = self.train_env.reset()
         self.train_goal = self.env_wrapper.sample_goal(obs0)
@@ -186,6 +206,8 @@ class DDPG_agent():
             if self.train_step % self.eval_freq == 0:
 
                 self.test()
+                print('saving weights')
+                self.save_weights(self.logger_step.get_dir()+'_weights.h5', overwrite=True)
 
             for key in sorted(self.step_stats.keys()):
                 self.logger_step.logkv(key, self.step_stats[key])

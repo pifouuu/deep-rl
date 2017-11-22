@@ -20,8 +20,8 @@ from memory import Memory, HerMemory
 import pickle
 import time
 import datetime
-from ActorNetwork import ActorNetwork
-from CriticNetwork import CriticNetwork
+from ActorNetwork_keras import ActorNetwork
+from CriticNetwork_keras import CriticNetwork
 from ddpg_agent import DDPG_agent
 
 
@@ -119,20 +119,19 @@ def main(args):
                              state_dim,
                              action_dim,
                              action_bound,
-                             actor_noise,
-                             actor_lr,
-                             tau)
+                             tau,
+                             actor_lr)
 
         critic = CriticNetwork(sess,
                                state_dim,
                                action_dim,
-                               critic_lr,
-                               tau,
                                gamma,
-                               actor.get_num_trainable_vars())
+                               tau,
+                               critic_lr)
 
         agent = DDPG_agent(sess,
                            actor,
+                           actor_noise,
                            critic,
                            train_env,
                            test_env,
@@ -167,7 +166,7 @@ if __name__ == '__main__':
     parser.add_argument('--render-eval-env', help='render the gym env', action='store_true')
     parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/v2')
-    parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
+    parser.add_argument('--eval-freq', help='evaluation frequency', default=10)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=20)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
     parser.add_argument('--episode-reset', help='whether to reset the env when max steps reached', action='store_true')
