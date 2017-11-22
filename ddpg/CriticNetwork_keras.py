@@ -24,12 +24,23 @@ class CriticNetwork(object):
         self.learning_rate = learning_rate
         self.action_size = action_size
 
+        self.stat_ops = []
+        self.stat_names = []
+
         K.set_session(sess)
 
         # Now create the model
         self.model, self.action, self.state = self.create_critic_network(state_size, action_size)
         self.target_model, self.target_action, self.target_state = self.create_critic_network(state_size, action_size)
-        self.action_grads = tf.gradients(self.model.output, self.action)  # GRADIENTS for policy update
+        self.out = self.model.output
+        self.action_grads = tf.gradients(self.out, self.action)  # GRADIENTS for policy update
+
+        # Setting up stats
+        self.stat_ops += [tf.reduce_mean(self.out)]
+        self.stat_names += ['Mean Q values']
+        self.stat_ops += [tf.reduce_mean(self.action_grads)]
+        self.stat_names += ['reference_action_grads']
+
         self.sess.run(tf.global_variables_initializer())
 
     def gradients(self, states, actions):
@@ -57,3 +68,23 @@ class CriticNetwork(object):
         adam = Adam(lr=self.learning_rate)
         model.compile(loss='mse', optimizer=adam)
         return model, A, S
+
+    def get_stats(self, stats_sample):
+        critic_values = self.sess.run(self.stat_ops, feed_dict={
+            self.state: stats_sample['state0'],
+            self.action: stats_sample['action'],
+        })
+
+        names = self.stat_names[:]
+        assert len(names) == len(critic_values)
+        stats = dict(zip(names, critic_values))
+
+        # critic_with_actor_values = self.sess.run(self.stats_ops, feed_dict={
+        #     self.inputs: stats_sample[0],
+        #     self.action: stats_sample['action'],
+        # })
+        #
+        # for name, val in zip(names, critic_with_actor_values):
+        #     stats[name+'_actor'] = val
+
+        return stats

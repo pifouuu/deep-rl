@@ -16,6 +16,8 @@ class ActorNetwork(object):
         self.a_dim = action_size
         self.learning_rate = learning_rate
         self.action_bound = action_bound
+        self.stat_ops = []
+        self.stat_names = []
 
         K.set_session(sess)
 
@@ -23,9 +25,14 @@ class ActorNetwork(object):
         self.model , self.weights, self.state = self.create_actor_network(state_size, action_size)
         self.target_model, self.target_weights, self.target_state = self.create_actor_network(state_size, action_size)
         self.action_gradient = tf.placeholder(tf.float32,[None, action_size])
-        self.params_grad = tf.gradients(self.model.output, self.weights, -self.action_gradient)
+        self.out = self.model.output
+        self.params_grad = tf.gradients(self.out, self.weights, -self.action_gradient)
         grads = zip(self.params_grad, self.weights)
         self.optimize = tf.train.AdamOptimizer(learning_rate).apply_gradients(grads)
+
+        self.stat_ops += [tf.reduce_mean(self.out)]
+        self.stat_names += ["Mean action"]
+
         self.sess.run(tf.global_variables_initializer())
 
     def train(self, states, action_grads):
@@ -49,3 +56,14 @@ class ActorNetwork(object):
                   kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h1)
         model = Model(inputs=S,outputs=V)
         return model, model.trainable_weights, S
+
+    def get_stats(self, stats_sample):
+        actor_values = self.sess.run(self.stat_ops, feed_dict={
+            self.state: stats_sample['state0'],
+        })
+
+        names = self.stat_names[:]
+        assert len(names) == len(actor_values)
+        stats = dict(zip(names, actor_values))
+
+        return stats

@@ -120,12 +120,12 @@ class DDPG_agent():
         self.train_actor(samples_train)
         self.update_targets()
 
-        # actor_stats = self.actor.get_stats(samples_train)
-        # for key in sorted(actor_stats.keys()):
-        #     self.step_stats[key] = (actor_stats[key])
-        # critic_stats = self.critic.get_stats(samples_train)
-        # for key in sorted(critic_stats.keys()):
-        #     self.step_stats[key] = (critic_stats[key])
+        actor_stats = self.actor.get_stats(samples_train)
+        for key in sorted(actor_stats.keys()):
+            self.step_stats[key] = (actor_stats[key])
+        critic_stats = self.critic.get_stats(samples_train)
+        for key in sorted(critic_stats.keys()):
+            self.step_stats[key] = (critic_stats[key])
 
     def test(self):
         test_rewards = []
@@ -206,8 +206,8 @@ class DDPG_agent():
             if self.train_step % self.eval_freq == 0:
 
                 self.test()
-                print('saving weights')
-                self.save_weights(self.logger_step.get_dir()+'_weights.h5', overwrite=True)
+                # print('saving weights')
+                # self.save_weights(self.logger_step.get_dir()+'_weights.h5', overwrite=True)
 
             for key in sorted(self.step_stats.keys()):
                 self.logger_step.logkv(key, self.step_stats[key])
