@@ -41,6 +41,12 @@ class ActorNetwork(object):
             self.action_gradient: action_grads
         })
 
+    def predict_target(self, states):
+        return self.target_model.predict_on_batch(states)
+
+    def predict(self, states):
+        return self.model.predict_on_batch(states)
+
     def target_train(self):
         actor_weights = self.model.get_weights()
         actor_target_weights = self.target_model.get_weights()

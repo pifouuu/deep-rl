@@ -49,6 +49,12 @@ class CriticNetwork(object):
             self.action: actions
         })[0]
 
+    def predict_target(self, states, actions):
+        return self.target_model.predict_on_batch([states, actions])
+
+    def train(self, states, actions, targets):
+        return self.model.train_on_batch([states, actions], targets)
+
     def target_train(self):
         critic_weights = self.model.get_weights()
         critic_target_weights = self.target_model.get_weights()

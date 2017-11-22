@@ -1,5 +1,5 @@
 import numpy as np
-from segment_tree import SumSegmentTree, MinSegmentTree
+from segmentTree import SumSegmentTree, MinSegmentTree
 
 # added by Olivier Sigaud --------------------------------
 import pickle

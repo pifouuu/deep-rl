@@ -59,8 +59,8 @@ class DDPG_agent():
     def train_critic(self, samples):
 
         # Calculate targets
-        target_q = self.critic.target_model.predict(
-            [samples['state1'], self.actor.target_model.predict(samples['state1'])])
+        target_q = self.critic.predict_target(
+            samples['state1'], self.actor.predict_target(samples['state1']))
 
         y_i = []
         for k in range(self.batch_size):
@@ -70,13 +70,13 @@ class DDPG_agent():
                 y_i.append(samples['reward'][k] + self.critic.gamma * target_q[k])
 
         # Update the critic given the targets
-        critic_loss = self.critic.model.train_on_batch(
-            [samples['state0'], samples['action']], np.reshape(y_i, (self.batch_size, 1)))
+        critic_loss = self.critic.train(
+            samples['state0'], samples['action'], np.reshape(y_i, (self.batch_size, 1)))
         self.step_stats['Critic loss'] = critic_loss
 
     def train_actor(self, samples):
 
-        a_outs = self.actor.model.predict(samples['state0'])
+        a_outs = self.actor.predict(samples['state0'])
         grads = self.critic.gradients(samples['state0'], a_outs)
         self.actor.train(samples['state0'], grads)
 
