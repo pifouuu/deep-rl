@@ -4,7 +4,7 @@ import gym
 import argparse
 import pprint as pp
 from logger import Logger
-from envWrapper import GoalContinuousMCWrapper, ContinuousMCWrapper
+from envWrapper import RandomGoal, NoGoal, HandmadeCurriculum
 from memory import Memory, HerMemory
 import pickle
 import time
@@ -14,22 +14,7 @@ from critic import CriticNetwork
 from ddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise
 
-
-
-# ===========================
-#   Tensorflow Summary Ops
-# ===========================
-
-# def build_summaries():
-#     episode_reward = tf.Variable(0.)
-#     tf.summary.scalar("Reward", episode_reward)
-#     episode_ave_max_q = tf.Variable(0.)
-#     tf.summary.scalar("Qmax Value", episode_ave_max_q)
-#
-#     summary_vars = [episode_reward, episode_ave_max_q]
-#     summary_ops = tf.summary.merge_all()
-#
-#     return summary_ops, summary_vars
+#TODO : Update doc on github on this code
 
 
 def main(args):
@@ -54,11 +39,13 @@ def main(args):
     train_env = gym.make(args['env'])
     test_env = gym.make(args['env'])
 
+    #
+    # if args['with_goal']:
+    #     env_wrapper = GoalContinuousMCWrapper()
+    # else:
+    #     env_wrapper = ContinuousMCWrapper()
 
-    if args['with_goal']:
-        env_wrapper = GoalContinuousMCWrapper()
-    else:
-        env_wrapper = ContinuousMCWrapper()
+    env_wrapper = HandmadeCurriculum()
 
     state_dim = env_wrapper.state_shape[0]
     action_dim = env_wrapper.action_shape[0]

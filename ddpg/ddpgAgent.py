@@ -111,7 +111,10 @@ class DDPG_agent():
             action = self.actor.model.predict(np.reshape(state0, (1, self.actor.s_dim)))
             action += self.actor_noise()
             action = np.clip(action, -self.actor.action_bound, self.actor.action_bound)
+            action = np.reshape(np.array([0.999]), (1, 1))
+            print(action)
             obs1, reward_env, done_env, info = self.train_env.step(action[0])
+            print(obs1)
         sample = self.env_wrapper.process_step(state0, goal, action, obs1, reward_env, done_env, info)
         return obs1, sample
 
@@ -135,14 +138,11 @@ class DDPG_agent():
 
             ep_test_reward = 0
             test_obs = self.test_env.reset()
-            self.test_goal = self.env_wrapper.sample_test_goal()
+            self.test_goal = self.env_wrapper.sample_initial_goal()
 
             for k in range(self.max_episode_steps):
-
                 test_obs1, test_sample = self.step(test_obs, self.test_goal, test=True)
-
                 ep_test_reward += test_sample['reward']
-
                 if test_sample['terminal1']:
                     break
                 else:
@@ -150,7 +150,25 @@ class DDPG_agent():
 
             test_rewards.append(ep_test_reward)
 
-        self.step_stats['Test reward'] = np.mean(test_rewards)
+        self.step_stats['Test reward on initial goal'] = np.mean(test_rewards)
+
+        for episode in range(self.eval_episodes):
+
+            ep_test_reward = 0
+            test_obs = self.test_env.reset()
+            self.test_goal = self.env_wrapper.sample_goal()
+
+            for k in range(self.max_episode_steps):
+                test_obs1, test_sample = self.step(test_obs, self.test_goal, test=True)
+                ep_test_reward += test_sample['reward']
+                if test_sample['terminal1']:
+                    break
+                else:
+                    test_obs = test_obs1
+
+            test_rewards.append(ep_test_reward)
+
+        self.step_stats['Test reward on initial goal'] = np.mean(test_rewards)
 
 
     def run(self):
@@ -162,8 +180,12 @@ class DDPG_agent():
         self.actor.target_train()
         self.critic.target_train()
 
+        #TODO : load actor and critic if need be
+
         obs0 = self.train_env.reset()
-        self.train_goal = self.env_wrapper.sample_goal(obs0)
+
+        #TODO : pass on to a sample goal function in the agent, not in the wrapper
+        self.train_goal = self.env_wrapper.sample_goal(obs0, self.goal_reached)
 
         while self.train_step < self.max_steps:
 
