@@ -150,6 +150,8 @@ class DDPG_agent():
 
         self.step_stats['Test reward on initial goal'] = np.mean(test_rewards)
 
+        test_rewards = []
+
         for episode in range(self.eval_episodes):
 
             ep_test_reward = 0
@@ -166,7 +168,7 @@ class DDPG_agent():
 
             test_rewards.append(ep_test_reward)
 
-        self.step_stats['Test reward on initial goal'] = np.mean(test_rewards)
+        self.step_stats['Test reward on random goal'] = np.mean(test_rewards)
 
 
     def run(self):
