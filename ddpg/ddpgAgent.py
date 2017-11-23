@@ -186,7 +186,7 @@ class DDPG_agent():
         self.episode_init = obs0
 
         #TODO : pass on to a sample goal function in the agent, not in the wrapper
-        self.train_goal = self.env_wrapper.sample_goal(obs0, self.goal_reached)
+        difficulty, self.train_goal = self.env_wrapper.sample_goal(obs0, self.goal_reached)
 
         while self.train_step < self.max_steps:
 
@@ -209,9 +209,11 @@ class DDPG_agent():
                 self.episode_stats['Goal'] = self.train_goal[0]
                 self.episode_stats['Train reward'] = self.episode_reward
                 self.episode_stats['Episode steps'] = self.episode_step
+                self.episode_stats['Episode difficulty'] = difficulty
+                self.episode_stats['Goal reached'] = self.goal_reached
 
                 self.train_env.reset()
-                self.train_goal = self.env_wrapper.sample_goal(obs0, self.goal_reached)
+                difficulty, self.train_goal = self.env_wrapper.sample_goal(obs0, self.goal_reached)
 
                 #TODO :integrate flusing in memory
                 if self.with_hindsight:
@@ -229,9 +231,11 @@ class DDPG_agent():
             if self.train_step % self.eval_freq == 0:
 
                 self.test()
-                # print('saving weights')
+                # print('saving weights')        test_rewards = []
+
                 # self.save_weights(self.logger_step.get_dir()+'_weights.h5', overwrite=True)
 
+            self.step_stats['Training steps'] = self.train_step
             for key in sorted(self.step_stats.keys()):
                 self.logger_step.logkv(key, self.step_stats[key])
             self.logger_step.dumpkvs()

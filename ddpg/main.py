@@ -25,8 +25,8 @@ def main(args):
     logdir = args['summary_dir']
     final_dir = logdir+'/'+params+'/'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
-    logger_step = Logger(dir=final_dir,format_strs=['json', 'tensorboard'])
-    logger_episode = Logger(dir=final_dir, format_strs=['stdout', 'json', 'tensorboard'])
+    logger_step = Logger(dir=final_dir+'/log_step',format_strs=['json', 'tensorboard'])
+    logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json', 'tensorboard'])
 
 
     actor_lr = float(args['actor_lr'])
