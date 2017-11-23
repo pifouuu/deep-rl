@@ -204,7 +204,7 @@ class HandmadeCurriculum(object):
             goal_found = np.abs(obs[self.obs_to_goal]-goal) > self.eps
         return goal
 
-class HandmadeCurriculum(object):
+class Curriculum(object):
     def __init__(self):
         # Specific to continuous mountain car
         self.obs_to_goal = [0]
