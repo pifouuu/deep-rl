@@ -1,118 +1,99 @@
-from memory import Buffer
-from segment_tree import SumSegmentTree, MinSegmentTree
+from segmentTree import SumSegmentTree, MinSegmentTree
+import numpy as np
+import matplotlib.pyplot as plt
 
-class PrioritizedGoalBuffer():
-    def __init__(self, env_wrapper, limit):
-        content = {'goal': env_wrapper.goal_shape,
-                   'priority': env_wrapper.priority_shape}
-        self.buffer = Buffer(limit, content)
-        self.env_wrapper = env_wrapper
+class RingBuffer(object):
+    def __init__(self, maxlen, shape, dtype='int32'):
+        self.maxlen = maxlen
+        self.data = np.zeros((maxlen,) + shape).astype(dtype)
+        self.next_idx = 0
+
+    def append(self, v):
+        self.data[self.next_idx] = v
+        self.next_idx = (self.next_idx+1) % self.maxlen
+
+    def __getitem__(self, idx):
+        if idx < 0 or idx >= self.maxlen:
+            raise KeyError()
+        return self.data[idx]
+
+
+def array_min2d(x):
+    x = np.array(x)
+    if x.ndim >= 2:
+        return x
+    return x.reshape(-1, 1)
+
+
+class Buffer(object):
+    def __init__(self, limit, content_shape):
+        self.next_idx = 0
+        self.limit = limit
+        self.length = 0
+        self.contents = {}
+        for content, shape in content_shape.items():
+            self.contents[content] = RingBuffer(limit, shape=shape)
+
+    def append(self, buffer_item):
+        for name, value in self.contents.items():
+            value.append(buffer_item[name])
+        self.next_idx = (self.next_idx+1) % self.limit
+        if self.length < self.limit:
+            self.length += 1
+
+
+class PrioritizedGoalBuffer(Buffer):
+    def __init__(self, limit, alpha):
+        self.content = {'goal': (1,)}
+        self.alpha = alpha
+        super(PrioritizedGoalBuffer, self).__init__(limit, self.content)
 
         it_capacity = 1
-        while it_capacity < size:
+        while it_capacity < limit:
             it_capacity *= 2
 
         self._it_sum = SumSegmentTree(it_capacity)
-        self._it_min = MinSegmentTree(it_capacity)
         self._max_priority = 1.0
 
-    def add(self, obs_t, action, reward, obs_tp1, done):
-        data = (obs_t, action, reward, obs_tp1, done)
-
-        if self._next_idx >= len(self._storage):
-            self._storage.append(data)
-        else:
-            self._storage[self._next_idx] = data
-        self._next_idx = (self._next_idx + 1) % self._maxsize
-
-    def add(self, *args, **kwargs):
+    def append(self, buffer_item, priority):
         """See ReplayBuffer.store_effect"""
-        idx = self._next_idx
-        super().add(*args, **kwargs)
-        self._it_sum[idx] = self._max_priority ** self._alpha
-        self._it_min[idx] = self._max_priority ** self._alpha
+        idx = self.next_idx
+        super().append(buffer_item)
+        if priority is None:
+            self._it_sum[idx] = self._max_priority ** self.alpha
+        else:
+            self._it_sum[idx] = priority
 
-    def _sample_proportional(self, batch_size):
-        res = []
-        for _ in range(batch_size):
-            # TODO(szymon): should we ensure no repeats?
-            mass = np.random.random() * self._it_sum.sum(0, len(self._storage) - 1)
-            idx = self._it_sum.find_prefixsum_idx(mass)
-            res.append(idx)
-        return res
+    def sample_proportional_idx(self):
+        mass = np.random.random() * self._it_sum.sum(0, self.length - 1)
+        idx = self._it_sum.find_prefixsum_idx(mass)
+        return idx
 
-    def sample(self, batch_size, beta):
-        """Sample a batch of experiences.
+    def sample(self):
+        # Draw such that we always have a proceeding element.
+        idx = self.sample_proportional_idx()
+        result = {}
+        for name, value in self.contents.items():
+            result[name] = array_min2d(value[idx])
+        return idx, result
 
-        compared to ReplayBuffer.sample
-        it also returns importance weights and idxes
-        of sampled experiences.
+    def update_priority(self, idx, priority):
+        self._it_sum[idx] = priority ** self.alpha
+        self._max_priority = max(self._max_priority, priority)
 
 
-        Parameters
-        ----------
-        batch_size: int
-            How many transitions to sample.
-        beta: float
-            To what degree to use importance weights
-            (0 - no corrections, 1 - full correction)
+def _demo():
+    buffer = PrioritizedGoalBuffer(200, 1)
+    samples = np.zeros((1000000), dtype=int)
+    for i in range(200):
+        buffer_item = {'goal': i}
+        buffer.append(buffer_item, i)
+    for j in range(1000000):
+        idx, sample = buffer.sample()
+        samples[j] = int(sample['goal'])
+    bins=np.bincount(samples)
+    plt.plot(range(bins.shape[0]), bins)
+    plt.show()
 
-        Returns
-        -------
-        obs_batch: np.array
-            batch of observations
-        act_batch: np.array
-            batch of actions executed given obs_batch
-        rew_batch: np.array
-            rewards received as results of executing act_batch
-        next_obs_batch: np.array
-            next set of observations seen after executing act_batch
-        done_mask: np.array
-            done_mask[i] = 1 if executing act_batch[i] resulted in
-            the end of an episode and 0 otherwise.
-        weights: np.array
-            Array of shape (batch_size,) and dtype np.float32
-            denoting importance weight of each sampled transition
-        idxes: np.array
-            Array of shape (batch_size,) and dtype np.int32
-            idexes in buffer of sampled experiences
-        """
-        assert beta > 0
-
-        idxes = self._sample_proportional(batch_size)
-
-        weights = []
-        p_min = self._it_min.min() / self._it_sum.sum()
-        max_weight = (p_min * len(self._storage)) ** (-beta)
-
-        for idx in idxes:
-            p_sample = self._it_sum[idx] / self._it_sum.sum()
-            weight = (p_sample * len(self._storage)) ** (-beta)
-            weights.append(weight / max_weight)
-        weights = np.array(weights)
-        encoded_sample = self._encode_sample(idxes)
-        return tuple(list(encoded_sample) + [weights, idxes])
-
-    def update_priorities(self, idxes, priorities):
-        """Update priorities of sampled transitions.
-
-        sets priority of transition at index idxes[i] in buffer
-        to priorities[i].
-
-        Parameters
-        ----------
-        idxes: [int]
-            List of idxes of sampled transitions
-        priorities: [float]
-            List of updated priorities corresponding to
-            transitions at the sampled idxes denoted by
-            variable `idxes`.
-        """
-        assert len(idxes) == len(priorities)
-        for idx, priority in zip(idxes, priorities):
-            assert priority > 0
-            assert 0 <= idx < len(self._storage)
-            self._it_sum[idx] = priority ** self._alpha
-            self._it_min[idx] = priority ** self._alpha
-
-            self._max_priority = max(self._max_priority, priority)
+if __name__ == "__main__":
+    _demo()
