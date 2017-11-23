@@ -154,7 +154,7 @@ class HandmadeCurriculum(object):
         self.terminal_shape = (1,)
         self.eps = 0.2
         self.disc_goal_space = np.arange(-1.2, 0.7, 0.1)
-        self.difficulties = [6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        self.difficulties = np.array([6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         self.means = np.linspace(4, 10, 100)
         self.stds = np.linspace(0.5, 2, 100)
 
@@ -189,7 +189,7 @@ class HandmadeCurriculum(object):
         mean = self.means[min(successes, 99)]
         std = self.stds[min(successes, 99)]
         difficulty = np.clip(int(np.random.normal(mean,std)), 1, 10)
-        indices = np.squeeze(np.argwhere(self.difficulties==difficulty))
+        indices = np.squeeze(np.argwhere(self.difficulties==difficulty), axis=1)
         idx = np.random.choice(indices)
         goal = np.random.uniform(self.disc_goal_space[idx], self.disc_goal_space[idx+1], (1,))
         return difficulty, goal
