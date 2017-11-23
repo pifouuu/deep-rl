@@ -19,7 +19,7 @@ from noise import OrnsteinUhlenbeckActionNoise
 
 def main(args):
     params = '_delta_'+str(args['delta'])+\
-              '_goal_'+str(args['with_goal'])+\
+              '_wrapper_'+str(args['wrapper'])+\
               '_hindsight_'+str(args['with_hindsight'])+\
               '_reset_'+str(args['episode_reset'])
     logdir = args['summary_dir']
@@ -39,13 +39,15 @@ def main(args):
     train_env = gym.make(args['env'])
     test_env = gym.make(args['env'])
 
-    #
-    # if args['with_goal']:
-    #     env_wrapper = GoalContinuousMCWrapper()
-    # else:
-    #     env_wrapper = ContinuousMCWrapper()
 
-    env_wrapper = HandmadeCurriculum()
+    if args['wrapper'] == 'NoGoal':
+        env_wrapper = NoGoal()
+    elif args['wrapper'] == 'RandomGoal':
+        env_wrapper = RandomGoal()
+    elif args['wrapper'] == 'HandCurri':
+        env_wrapper = HandmadeCurriculum()
+    else:
+        print("Nooooooooooooooooooooo")
 
     state_dim = env_wrapper.state_shape[0]
     action_dim = env_wrapper.action_shape[0]
@@ -109,7 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
-    parser.add_argument('--with-goal', help='concatenate goal and observation in states', action='store_true')
+    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='HandCurri')
     parser.add_argument('--with-hindsight', help='use hindsight experience replay', action='store_true')
 
     # run parameters
