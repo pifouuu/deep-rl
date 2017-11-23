@@ -55,7 +55,7 @@ class PrioritizedGoalBuffer(Buffer):
         self._it_sum = SumSegmentTree(it_capacity)
         self._max_priority = 1.0
 
-    def append(self, buffer_item, priority):
+    def append(self, buffer_item, priority=None):
         """See ReplayBuffer.store_effect"""
         idx = self.next_idx
         super().append(buffer_item)
