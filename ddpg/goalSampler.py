@@ -65,7 +65,8 @@ class PrioritizedGoalBuffer(Buffer):
             self._it_sum[idx] = priority
 
     def sample_proportional_idx(self):
-        mass = np.random.random() * self._it_sum.sum(0, self.length - 1)
+        sum = self._it_sum.sum()
+        mass = np.random.random() * sum
         idx = self._it_sum.find_prefixsum_idx(mass)
         return idx
 
@@ -83,17 +84,25 @@ class PrioritizedGoalBuffer(Buffer):
 
 
 def _demo():
-    buffer = PrioritizedGoalBuffer(200, 1)
-    samples = np.zeros((1000000), dtype=int)
-    for i in range(200):
+    buffer = PrioritizedGoalBuffer(11, 1)
+    samples = np.zeros((100000), dtype=int)
+    for i in range(15):
         buffer_item = {'goal': i}
         buffer.append(buffer_item, i)
-    for j in range(1000000):
+    for j in range(100000):
         idx, sample = buffer.sample()
         samples[j] = int(sample['goal'])
-    bins=np.bincount(samples)
+    bins = np.bincount(samples)
     plt.plot(range(bins.shape[0]), bins)
     plt.show()
+    buffer.update_priority(6,100)
+    for j in range(100000):
+        idx, sample = buffer.sample()
+        samples[j] = int(sample['goal'])
+    bins = np.bincount(samples)
+    plt.plot(range(bins.shape[0]), bins)
+    plt.show()
+
 
 if __name__ == "__main__":
     _demo()

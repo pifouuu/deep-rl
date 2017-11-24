@@ -87,19 +87,12 @@ class DDPG_agent():
         self.critic.target_train()
 
     def save_weights(self, filepath, overwrite=False):
-        print("Saving weights")
-        filename, extension = os.path.splitext(filepath)
-        actor_filepath = filename + '_actor' + extension
-        critic_filepath = filename + '_critic' + extension
-        self.actor.model.save_weights(actor_filepath, overwrite=overwrite)
-        self.critic.model.save_weights(critic_filepath, overwrite=overwrite)
+        self.actor.save_weights(filepath, overwrite=overwrite)
+        self.critic.save_weights(filepath, overwrite=overwrite)
 
     def load_weights(self, filepath):
-        filename, extension = os.path.splitext(filepath)
-        actor_filepath = filename + '_actor' + extension
-        critic_filepath = filename + '_critic' + extension
-        self.actor.model.load_weights(actor_filepath)
-        self.critic.model.load_weights(critic_filepath)
+        self.actor.load_weights(filepath)
+        self.critic.load_weights(filepath)
         # self.hard_update_target_models()
 
 

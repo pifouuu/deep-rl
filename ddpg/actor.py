@@ -7,6 +7,7 @@ from keras.layers import Dense, Flatten, Input, merge, Lambda, Activation
 from keras.optimizers import Adam
 import tensorflow as tf
 import keras.backend as K
+import os
 
 class ActorNetwork(object):
     def __init__(self, sess, state_size, action_size, action_bound, tau, learning_rate):
@@ -73,3 +74,14 @@ class ActorNetwork(object):
         stats = dict(zip(names, actor_values))
 
         return stats
+
+    def save_weights(self, filepath, overwrite=False):
+        print("Saving weights")
+        filename, extension = os.path.splitext(filepath)
+        filepath = filename + '_actor' + extension
+        self.model.save_weights(filepath, overwrite=overwrite)
+
+    def load_weights(self, filepath):
+        filename, extension = os.path.splitext(filepath)
+        filepath = filename + '_actor' + extension
+        self.model.load_weights(filepath)

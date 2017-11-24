@@ -9,6 +9,7 @@ from keras.models import Sequential, Model
 from keras.optimizers import Adam
 import keras.backend as K
 import tensorflow as tf
+import os
 
 HIDDEN1_UNITS = 100
 HIDDEN2_UNITS = 100
@@ -96,3 +97,14 @@ class CriticNetwork(object):
         #     stats[name+'_actor'] = val
 
         return stats
+
+    def save_weights(self, filepath, overwrite=False):
+        print("Saving weights")
+        filename, extension = os.path.splitext(filepath)
+        filepath = filename + '_critic' + extension
+        self.model.save_weights(filepath, overwrite=overwrite)
+
+    def load_weights(self, filepath):
+        filename, extension = os.path.splitext(filepath)
+        filepath = filename + '_critic' + extension
+        self.model.load_weights(filepath)
