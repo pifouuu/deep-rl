@@ -4,7 +4,7 @@ import gym
 import argparse
 import pprint as pp
 from logger import Logger
-from envWrapper import RandomGoal, NoGoal, HandmadeCurriculum
+from envWrapper import RandomGoal, NoGoal, HandmadeCurriculum, IntervalCurriculum
 from memory import Memory, HerMemory
 import pickle
 import time
@@ -13,6 +13,7 @@ from actor import ActorNetwork
 from critic import CriticNetwork
 from ddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise
+from goalSampler import PrioritizedIntervalBuffer
 
 #TODO : Update doc on github on this code
 
@@ -46,6 +47,10 @@ def main(args):
         env_wrapper = RandomGoal()
     elif args['wrapper'] == 'HandCurri':
         env_wrapper = HandmadeCurriculum()
+    elif args['wrapper'] == 'IntervalCurri':
+        env_wrapper = IntervalCurriculum()
+        intervals = env_wrapper.get_discretization()
+        goal_sampler = PrioritizedIntervalBuffer(limit=int(1e3), alpha=1, interval=intervals)
     else:
         print("Nooooooooooooooooooooo")
 

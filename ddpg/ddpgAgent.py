@@ -178,8 +178,8 @@ class DDPG_agent():
         obs0 = self.train_env.reset()
         self.episode_init = obs0
 
-        #TODO : pass on to a sample goal function in the agent, not in the wrapper
-        difficulty, self.train_goal = self.env_wrapper.sample_goal(obs0, self.goal_reached)
+
+        self.train_goal = self.goal_sampler.sample(obs0, self.goal_reached)
 
         while self.train_step < self.max_steps:
 

@@ -42,11 +42,10 @@ class Buffer(object):
             self.length += 1
 
 
-class PrioritizedGoalBuffer(Buffer):
-    def __init__(self, limit, alpha):
-        self.content = {'goal': (1,)}
+class PrioritizedBuffer(Buffer):
+    def __init__(self, limit, alpha, content):
         self.alpha = alpha
-        super(PrioritizedGoalBuffer, self).__init__(limit, self.content)
+        super(PrioritizedBuffer, self).__init__(limit, content)
 
         it_capacity = 1
         while it_capacity < limit:
@@ -82,10 +81,24 @@ class PrioritizedGoalBuffer(Buffer):
         self._it_sum[idx] = priority ** self.alpha
         self._max_priority = max(self._max_priority, priority)
 
-class GoalMemory():
-    def __init__(self, limit, alpha=1):
-        self.goal_buffer = PrioritizedGoalBuffer(limit, alpha=alpha)
+class PrioritizedIntervalBuffer(PrioritizedBuffer):
+    def __init__(self, limit, alpha, intervals):
+        self.intervals = intervals
+        self.content = {'interval': (2,)}
+        super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.content)
 
+    def sample(self):
+        sample_idx, sample_dict = super().sample()
+        a,b = sample_dict['interval'][0], sample_dict['interval'][1]
+        goal = np.random.uniform([a], [b], (1,))
+        return goal
+
+    def update_priority(self, goal):
+
+class PrioritizedGoalBuffer(PrioritizedBuffer):
+    def __init__(self, limit, alpha):
+        self.content = {'goal':(1,)}
+        super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.content)
 
 
 def _demo():
