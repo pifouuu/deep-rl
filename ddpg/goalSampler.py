@@ -82,6 +82,11 @@ class PrioritizedGoalBuffer(Buffer):
         self._it_sum[idx] = priority ** self.alpha
         self._max_priority = max(self._max_priority, priority)
 
+class GoalMemory():
+    def __init__(self, limit, alpha=1):
+        self.goal_buffer = PrioritizedGoalBuffer(limit, alpha=alpha)
+
+
 
 def _demo():
     buffer = PrioritizedGoalBuffer(11, 1)
