@@ -89,6 +89,7 @@ class DDPG_agent():
         self.actor.target_train()
         self.critic.target_train()
 
+    #TODO: save 4 networks in one shot with different filenames
     def save_weights(self, filepath, overwrite=False):
         self.actor.save_weights(filepath, overwrite=overwrite)
         self.critic.save_weights(filepath, overwrite=overwrite)
