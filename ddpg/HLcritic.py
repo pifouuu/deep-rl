@@ -16,8 +16,8 @@ HIDDEN2_UNITS = 100
 
 class HuberLossCriticNetwork(CriticNetwork):
     def __init__(self, delta_clip, sess, state_size, action_size, gamma, tau, learning_rate):
-        super(HuberLossCriticNetwork,self).__init__(sess, state_size, action_size, gamma, tau, learning_rate)
         self.delta_clip = delta_clip
+        super(HuberLossCriticNetwork,self).__init__(sess, state_size, action_size, gamma, tau, learning_rate)
 
     def huber_loss(self, y_true, y_pred):
         err = y_true - y_pred
@@ -29,10 +29,6 @@ class HuberLossCriticNetwork(CriticNetwork):
         loss = tf.where(cond, L2, L1)   # Keras does not cover where function in tensorflow :-(
 
         return K.mean(loss)
-
-        
-    def train(self):
-        self.model.train()
 
     def create_critic_network(self, state_size, action_dim):
         S = Input(shape=[state_size])

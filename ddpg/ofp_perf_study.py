@@ -5,7 +5,7 @@ from memory import Memory
 from envWrapper import NoGoal
 from perf_config_mcc import PerfConfig
 from actor import ActorNetwork
-from HLcriticNetwork import HuberLossCriticNetwork
+from HLcritic import HuberLossCriticNetwork
 from ofpddpgAgent import OFPDDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise, NoNoise
 

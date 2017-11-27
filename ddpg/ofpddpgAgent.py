@@ -87,7 +87,7 @@ class OFPDDPG_agent(DDPG_agent):
         self.episode_init = obs0
 
         #TODO : pass on to a sample goal function in the agent, not in the wrapper
-        self.train_goal = self.env_wrapper.sample_goal(obs0, self.nb_goals_reached)
+        self.train_goal = self.env_wrapper.sample_goal()
 
         #print ("in run :", self.memory.size())
         while self.train_step < self.max_steps:
