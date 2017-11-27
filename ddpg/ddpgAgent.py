@@ -59,6 +59,7 @@ class DDPG_agent():
         self.total_reward = 0
         self.nb_goals_reached = 0
         self.episode_init = None
+        self.current_obs = None
 
     def train_critic(self, samples):
 
@@ -113,7 +114,8 @@ class DDPG_agent():
             action = np.clip(action, -self.actor.action_bound, self.actor.action_bound)
             obs1, reward_env, done_env, info = self.train_env.step(action[0])
         sample = self.env_wrapper.process_step(state0, goal, action, obs1, reward_env, done_env, info)
-        return obs1, sample
+        self.current_obs = obs1
+        return sample
 
     def train(self):
         samples_train = self.memory.sample(self.batch_size)
@@ -171,28 +173,6 @@ class DDPG_agent():
 
         self.step_stats['Test reward on random goal'] = np.mean(test_rewards)
 
-    def endof_episode(self, sample):
-        '''
-        self.episode_stats['Episode'] = self.episode
-        self.episode_stats['Start'] = self.episode_init[0]
-        self.episode_stats['Goal'] = self.train_goal[0]
-        self.episode_stats['Train reward'] = self.episode_reward
-        self.episode_stats['Episode steps'] = self.episode_step
-        self.episode_stats['Training steps'] = self.train_step
-        #self.episode_stats['Episode difficulty'] = difficulty
-        self.episode_stats['Goal reached'] = self.nb_goals_reached
-
-
-        for key in sorted(self.episode_stats.keys()):
-            self.logger_episode.logkv(key, self.episode_stats[key])
-        self.logger_episode.dumpkvs()
-        '''
-
-        self.train_env.reset()
-        self.episode_step = 0
-        self.episode_reward = 0
-        self.episode += 1
-        if sample['terminal1']: self.nb_goals_reached += 1
 
     def run(self):
 
@@ -205,15 +185,15 @@ class DDPG_agent():
 
         #TODO : load actor and critic if need be
 
-        obs0 = self.train_env.reset()
-        self.episode_init = obs0
+        self.current_obs = self.train_env.reset()
+        self.episode_init = self.current_obs
 
-        #TODO : pass on to a sample goal function in the agent, not in the wrapper
-        self.train_goal = self.env_wrapper.sample_goal()
+
+        self.train_goal = self.goal_sampler.sample(self.current_obs, self.goal_reached)
 
         while self.train_step < self.max_steps:
 
-            obs1, sample = self.step(obs0, self.train_goal, test=False)
+            sample = self.step(self.current_obs, self.train_goal, test=False)
 
             self.memory.append(sample)
 
@@ -231,10 +211,11 @@ class DDPG_agent():
                 self.episode_stats['Goal'] = self.train_goal[0]
                 self.episode_stats['Train reward'] = self.episode_reward
                 self.episode_stats['Episode steps'] = self.episode_step
-                self.episode_stats['Goal reached'] = self.nb_goals_reached
+                #self.episode_stats['Episode difficulty'] = difficulty
+                self.episode_stats['Goal reached'] = self.goal_reached
 
-                self.train_env.reset()
-                self.train_goal = self.env_wrapper.sample_goal()
+                self.current_obs = self.train_env.reset()
+                self.train_goal = self.env_wrapper.sample_goal(self.current_obs, self.goal_reached)
 
                 #TODO :integrate flusing in memory
                 # if self.with_hindsight:
@@ -247,10 +228,7 @@ class DDPG_agent():
                 self.episode_step = 0
                 self.episode_reward = 0
                 self.episode += 1
-                if sample['terminal1']: self.nb_goals_reached += 1
-                #self.endof_episode(sample)
-
-
+                if sample['terminal1']: self.goal_reached += 1
 
             if self.train_step % self.eval_freq == 0:
                 self.test()
@@ -263,6 +241,3 @@ class DDPG_agent():
 
             self.train_step += 1
             self.episode_step += 1
-
-            obs0 = obs1
-
