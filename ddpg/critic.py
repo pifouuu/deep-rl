@@ -42,6 +42,7 @@ class CriticNetwork(object):
         self.stat_ops += [tf.reduce_mean(self.action_grads)]
         self.stat_names += ['reference_action_grads']
 
+        #TODO: fix by using a local initalizer
         self.sess.run(tf.global_variables_initializer())
 
     def gradients(self, states, actions):
