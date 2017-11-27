@@ -9,6 +9,8 @@ class NoGoal(object):
         self.reward_shape = (1,)
         self.terminal_shape = (1,)
         self.obs_to_goal = [0]
+        self.eps = 0.1
+
 
     def process_observation(self, observation, goal):
         return observation
@@ -25,11 +27,18 @@ class NoGoal(object):
     def evaluate_goal(self, state):
         return True
 
-    def sample_goal(self, obs, successes):
-        return [0.45]
-
     def sample_initial_goal(self):
         return [0.45]
+
+    def sample_goal(self):
+        return self.sample_initial_goal()
+
+    def sample_random_goal(self, obs):
+        goal_found = False
+        while not goal_found:
+            goal = np.random.uniform([-1.2], [0.6], (1,))
+            goal_found = np.abs(obs[self.obs_to_goal]-goal) > self.eps
+        return goal
 
     def process_step(self, state0, goal, action, new_obs, r_env, done_env, info):
         # Compute next complete state

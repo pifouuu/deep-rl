@@ -20,8 +20,7 @@ from noise import OrnsteinUhlenbeckActionNoise
 def main(args):
     params = '_delta_'+str(args['delta'])+\
               '_wrapper_'+str(args['wrapper'])+\
-              '_hindsight_'+str(args['with_hindsight'])+\
-              '_reset_'+str(args['episode_reset'])
+              '_hindsight_'+str(args['with_hindsight'])
     logdir = args['summary_dir']
     final_dir = logdir+'/'+params+'/'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
@@ -33,8 +32,11 @@ def main(args):
     tau = float(args['tau'])
     critic_lr = float(args['critic_lr'])
     gamma = float(args['gamma'])
-    if args['delta'] is not None: delta=float(args['delta'])
-    else: delta=float("inf")
+    batch_size = int(args['minibatch_size'])
+    eval_episodes = int(args['eval_episodes'])
+    max_episode_steps = int(args['max_episode_steps'])
+    max_steps = int(args['max_steps'])
+    eval_freq = int(args['eval_freq'])
 
     train_env = gym.make(args['env'])
     test_env = gym.make(args['env'])
@@ -96,8 +98,11 @@ def main(args):
                            memory,
                            logger_step,
                            logger_episode,
-                           args)
-
+                           batch_size,
+                           eval_episodes,
+                           max_episode_steps,
+                           max_steps,
+                           eval_freq)
         agent.run()
 
 if __name__ == '__main__':
@@ -111,29 +116,22 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
-    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='HandCurri')
+    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='NoGoal')
     parser.add_argument('--with-hindsight', help='use hindsight experience replay', action='store_true')
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=500000)
-    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
-    parser.add_argument('--render-env', help='render the gym env', action='store_true')
-    parser.add_argument('--render-eval-env', help='render the gym env', action='store_true')
+    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=100)
     parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/v2')
-    parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
+    parser.add_argument('--eval-freq', help='evaluation frequency', default=100)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=20)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
-    parser.add_argument('--episode-reset', help='whether to reset the env when max steps reached', action='store_true')
 
-    parser.set_defaults(render_env=False)
-    parser.set_defaults(render_eval_env=False)
-    parser.set_defaults(with_goal=False)
     parser.set_defaults(with_hindsight=False)
-    parser.set_defaults(episode_reset=False)
-    
+
     args = vars(parser.parse_args())
     
     pp.pprint(args)

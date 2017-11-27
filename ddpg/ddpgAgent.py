@@ -208,7 +208,7 @@ class DDPG_agent():
         self.episode_init = obs0
 
         #TODO : pass on to a sample goal function in the agent, not in the wrapper
-        self.train_goal = self.env_wrapper.sample_goal(obs0, self.nb_goals_reached)
+        self.train_goal = self.env_wrapper.sample_goal()
 
         while self.train_step < self.max_steps:
 
@@ -230,14 +230,14 @@ class DDPG_agent():
                 self.episode_stats['Goal'] = self.train_goal[0]
                 self.episode_stats['Train reward'] = self.episode_reward
                 self.episode_stats['Episode steps'] = self.episode_step
-                self.episode_stats['Goal reached'] = self.goal_reached
+                self.episode_stats['Goal reached'] = self.nb_goals_reached
 
                 self.train_env.reset()
-                self.train_goal = self.env_wrapper.sample_goal(obs0, self.goal_reached)
+                self.train_goal = self.env_wrapper.sample_goal()
 
                 #TODO :integrate flusing in memory
-                if self.with_hindsight:
-                    self.memory.flush()
+                # if self.with_hindsight:
+                #     self.memory.flush()
 
                 for key in sorted(self.episode_stats.keys()):
                     self.logger_episode.logkv(key, self.episode_stats[key])
@@ -246,7 +246,7 @@ class DDPG_agent():
                 self.episode_step = 0
                 self.episode_reward = 0
                 self.episode += 1
-                if sample['terminal1']: self.goal_reached += 1
+                if sample['terminal1']: self.nb_goals_reached += 1
                 #self.endof_episode(sample)
 
 
