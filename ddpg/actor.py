@@ -75,13 +75,25 @@ class ActorNetwork(object):
 
         return stats
 
+    def hard_target_update(self):
+        self.target_model.set_weights(self.model.get_weights())
+
     def save_weights(self, filepath, overwrite=False):
         print("Saving weights")
-        filename, extension = os.path.splitext(filepath)
-        filepath = filename + '_actor' + extension
         self.model.save_weights(filepath, overwrite=overwrite)
 
     def load_weights(self, filepath):
-        filename, extension = os.path.splitext(filepath)
-        filepath = filename + '_actor' + extension
         self.model.load_weights(filepath)
+
+    def save_target_weights(self, filepath, overwrite=False):
+        print("Saving weights")
+        self.target_model.save_weights(filepath, overwrite=overwrite)
+
+    def load_target_weights(self, filepath):
+        self.target_model.load_weights(filepath)
+
+    def print_target_weights(self):
+        print (self.target_model.get_weights())
+
+    def print_weights(self):
+        print (self.model.get_weights())

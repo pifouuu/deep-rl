@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-#import seaborn as sb
-from .stats import network_values
+import seaborn as sb
+from stats import network_values
 
 # TODO: Use an unified sample set for portrait_actor, portrait_critic and plot_distribution
 # e.g. a meshgrid
@@ -9,8 +9,8 @@ from .stats import network_values
 
 def portrait_actor(actor, env, figure=None, definition=50, plot=True, save_figure=False, figure_file="actor.png"):
     """Portrait the actor"""
-    if env.observation_space.dim != 2:
-        raise(ValueError("The provided environment has an observation space of dimension {}, whereas it should be 2".format(env.observation_space.dim)))
+    #if env.observation_space.dim != 2:
+       # raise(ValueError("The provided environment has an observation space of dimension {}, whereas it should be 2".format(env.observation_space.dim)))
 
     portrait = np.zeros((definition, definition))
     x_min, y_min = env.observation_space.low
@@ -39,8 +39,8 @@ def portrait_actor(actor, env, figure=None, definition=50, plot=True, save_figur
 
 
 def portrait_critic(critic, env, figure=None, definition=50, plot=True, action=[-1], save_figure=False, figure_file="critic.png"):
-    if env.observation_space.dim != 2:
-        raise(ValueError("The provided environment has an observation space of dimension {}, whereas it should be 2".format(env.observation_space.dim)))
+    #if env.observation_space.dim != 2:
+        #raise(ValueError("The provided environment has an observation space of dimension {}, whereas it should be 2".format(env.observation_space.dim)))
 
     portrait = np.zeros((definition, definition))
     x_min, y_min = env.observation_space.low
@@ -99,46 +99,43 @@ def plot_trajectory(trajectory, actor, env, figure=None, figure_file="trajectory
     plt.close()
 
 
-# def plot_distribution(actor, critic, env, actor_file="actor_distribution.png", critic_file="critic_distribution.png"):
-#     """Plot the distributions of the network values"""
-#     actor_actions, critic_values = network_values(env, actor, critic)
-#
-#     plot_action_distribution(actor_actions, actor_file)
-#     plot_value_distribution(critic_values, critic_file)
-#
-#
-# def plot_action_distribution(actions, file="action_ditribution.png"):
-#     plt.figure(figsize=(10, 10))
-#     sb.distplot(actions, kde=False)
-#     plt.ylabel("probability")
-#     plt.xlabel("action")
-#     plt.title("Action distribution")
-#     plt.savefig(file)
-#     plt.close()
-#
-#
-# def plot_value_distribution(values, file="value_distribution.png"):
-#     plt.figure(figsize=(10, 10))
-#     sb.distplot(values)
-#     plt.xlabel("critic value")
-#     plt.title("Value distribution")
-#
-#
-# def action_distribution(actions, ax=None, file="action_ditribution.png"):
-#     plt.figure(figsize=(10, 10))
-#     sb.distplot(actions, kde=False, ax=ax)
-#     plt.ylabel("probability")
-#     plt.xlabel("action")
-#     plt.title("Action distribution")
-#     plt.savefig(file)
-#     plt.close()
-#
-#
-# def savefig(function):
-#     def decorated(file, *args, **kwargs):
-#         figure, ax = plt.subplots(figsize=(10, 10))
-#         function(ax=ax, *args, **kwargs)
-#
-#         figure.savefig(file)
-#         plt.close(figure)
-#     return(decorated)
+def plot_distribution(actor, critic, env, actor_file="actor_distribution.png", critic_file="critic_distribution.png"):
+    """Plot the distributions of the network values"""
+    actor_actions, critic_values = network_values(env, actor, critic)
+    plot_action_distribution(actor_actions, actor_file)
+    plot_value_distribution(critic_values, critic_file)
+
+
+def plot_action_distribution(actions, file="action_ditribution.png"):
+    plt.figure(figsize=(10, 10))
+    sb.distplot(actions, kde=False)
+    plt.ylabel("probability")
+    plt.xlabel("action")
+    plt.title("Action distribution")
+    plt.savefig(file)
+    plt.close()
+
+def plot_value_distribution(values, file="value_distribution.png"):
+    plt.figure(figsize=(10, 10))
+    sb.distplot(values)
+    plt.xlabel("critic value")
+    plt.title("Value distribution")
+
+
+def action_distribution(actions, ax=None, file="action_ditribution.png"):
+    plt.figure(figsize=(10, 10))
+    sb.distplot(actions, kde=False, ax=ax)
+    plt.ylabel("probability")
+    plt.xlabel("action")
+    plt.title("Action distribution")
+    plt.savefig(file)
+    plt.close()
+
+
+def savefig(function):
+    def decorated(file, *args, **kwargs):
+        figure, ax = plt.subplots(figsize=(10, 10))
+        function(ax=ax, *args, **kwargs)
+        figure.savefig(file)
+        plt.close(figure)
+    return(decorated)
