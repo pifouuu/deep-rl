@@ -11,7 +11,6 @@ class NoGoal(object):
         self.obs_to_goal = [0]
         self.eps = 0.1
 
-
     def process_observation(self, observation, goal):
         return observation
 
@@ -23,22 +22,6 @@ class NoGoal(object):
             term = True
         r -= math.pow(action[0], 2) * 0.1
         return r, term
-
-    def evaluate_goal(self, state):
-        return True
-
-    def sample_initial_goal(self):
-        return [0.45]
-
-    def sample_goal(self):
-        return self.sample_initial_goal()
-
-    def sample_random_goal(self, obs):
-        goal_found = False
-        while not goal_found:
-            goal = np.random.uniform([-1.2], [0.6], (1,))
-            goal_found = np.abs(obs[self.obs_to_goal]-goal) > self.eps
-        return goal
 
     def process_step(self, state0, goal, action, new_obs, r_env, done_env, info):
         # Compute next complete state
@@ -95,16 +78,6 @@ class RandomGoal(object):
         r -= math.pow(action[0], 2) * 0.1
         return r, term
 
-    def sample_goal(self, obs, successes):
-        goal_found = False
-        while not goal_found:
-            goal = np.random.uniform([-1.2], [0.6], (1,))
-            goal_found = np.abs(obs[self.obs_to_goal]-goal) > self.eps
-        return goal
-
-    def sample_initial_goal(self):
-        return [0.45]
-
 class InitialGoal(object):
     def __init__(self):
         # Specific to continuous mountain car
@@ -145,11 +118,6 @@ class InitialGoal(object):
         r -= math.pow(action[0], 2) * 0.1
         return r, term
 
-    def sample_goal(self, obs, successes):
-        return [0.45]
-
-    def sample_initial_goal(self):
-        return [0.45]
 
 class HandmadeCurriculum(object):
     def __init__(self):

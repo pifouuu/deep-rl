@@ -5,7 +5,7 @@ import argparse
 import pprint as pp
 from logger import Logger
 from envWrapper import RandomGoal, NoGoal, HandmadeCurriculum, IntervalCurriculum
-from memory import Memory, HerMemory
+from memory import SASMemory, EpisodicHerSASMemory
 import pickle
 import time
 import datetime
@@ -13,7 +13,7 @@ from actor import ActorNetwork
 from critic import CriticNetwork
 from ddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise
-from goalSampler import PrioritizedIntervalBuffer
+from goalSampler import PrioritizedIntervalBuffer, GoalSampler
 
 #TODO : Update doc on github on this code
 
@@ -42,7 +42,7 @@ def main(args):
     train_env = gym.make(args['env'])
     test_env = gym.make(args['env'])
 
-
+    env_wrapper = None
     if args['wrapper'] == 'NoGoal':
         env_wrapper = NoGoal()
     elif args['wrapper'] == 'RandomGoal':
@@ -51,8 +51,6 @@ def main(args):
         env_wrapper = HandmadeCurriculum()
     elif args['wrapper'] == 'IntervalCurri':
         env_wrapper = IntervalCurriculum()
-        intervals = env_wrapper.get_discretization()
-        goal_sampler = PrioritizedIntervalBuffer(limit=int(1e3), alpha=1, interval=intervals)
     else:
         print("Nooooooooooooooooooooo")
 
@@ -66,9 +64,14 @@ def main(args):
 
     # Initialize replay memory
     if args['with_hindsight']:
-        memory = HerMemory(env_wrapper, with_reward=True, limit=int(1e6), strategy='last')
+        memory = EpisodicHerSASMemory(env_wrapper, limit=int(1e6), strategy=args['strategy'])
     else:
-        memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
+        memory = SASMemory(env_wrapper, limit=int(1e6))
+
+    if args['with_curriculum']:
+        goal_sampler = PrioritizedIntervalBuffer(env_wrapper, limit=int(1e3), alpha=1)
+    else:
+        goal_sampler = GoalSampler()
 
 
     with tf.Session() as sess:
@@ -101,6 +104,7 @@ def main(args):
                            test_env,
                            env_wrapper,
                            memory,
+                           goal_sampler,
                            logger_step,
                            logger_episode,
                            batch_size,
@@ -121,8 +125,11 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
+
     parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='NoGoal')
     parser.add_argument('--with-hindsight', help='use hindsight experience replay', action='store_true')
+    parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
+    parser.add_argument('--with-curriculum', help='use curriculum sampling for goal definition', action='store_true')
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
@@ -136,6 +143,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
 
     parser.set_defaults(with_hindsight=False)
+    parser.set_defaults(with_curriculum=False)
 
     args = vars(parser.parse_args())
     

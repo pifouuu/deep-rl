@@ -18,7 +18,8 @@ class DDPG_agent():
                  train_env,
                  test_env,
                  env_wrapper, 
-                 memory, 
+                 memory,
+                 goal_sampler,
                  logger_step, 
                  logger_episode,
                  batch_size,
@@ -45,6 +46,7 @@ class DDPG_agent():
         self.critic = critic
         self.train_env = train_env
         self.test_env = test_env
+        self.goal_sampler = goal_sampler
 
         #portrait_actor(self.actor.target_model, self.test_env, save_figure=True, figure_file="saved_actor_const2.png")
         self.env_wrapper = env_wrapper
@@ -119,6 +121,11 @@ class DDPG_agent():
 
     def train(self):
         samples_train = self.memory.sample(self.batch_size)
+        samples_train['rewards'], samples_train['terminals1'] = \
+            self.env_wrapper.evaluate_transition(samples_train['state0'],
+                                                 samples_train['action'],
+                                                 samples_train['state1'])
+
         self.train_critic(samples_train)
         self.train_actor(samples_train)
         self.update_targets()
@@ -188,12 +195,15 @@ class DDPG_agent():
         self.current_obs = self.train_env.reset()
         self.episode_init = self.current_obs
 
-
-        self.train_goal = self.goal_sampler.sample(self.current_obs, self.goal_reached)
+        self.train_goal = self.goal_sampler.sample()
 
         while self.train_step < self.max_steps:
-
-            sample = self.step(self.current_obs, self.train_goal, test=False)
+            state = self.env_wrapper.process_observation(self.current_obs, self.train_goal)
+            action = self.actor.model.predict(np.reshape(state, (1, self.actor.s_dim)))
+            action += self.actor_noise()
+            action = np.clip(action, -self.actor.action_bound, self.actor.action_bound)
+            next_obs, reward_env, done_env, info = self.train_env.step(action[0])
+            sample = self.env_wrapper.process_step(state, self.train_goal, action, next_obs, reward_env, done_env, info)
 
             self.memory.append(sample)
 
@@ -218,8 +228,7 @@ class DDPG_agent():
                 self.train_goal = self.env_wrapper.sample_goal(self.current_obs, self.goal_reached)
 
                 #TODO :integrate flusing in memory
-                # if self.with_hindsight:
-                #     self.memory.flush()
+                self.memory.end_episode()
 
                 for key in sorted(self.episode_stats.keys()):
                     self.logger_episode.logkv(key, self.episode_stats[key])

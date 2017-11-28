@@ -2,6 +2,37 @@ from segmentTree import SumSegmentTree, MinSegmentTree
 import numpy as np
 import matplotlib.pyplot as plt
 
+class GoalSampler():
+    def __init__(self, env_wrapper):
+        self.eps = 0.1
+        self.obs_to_goal = env_wrapper.obs_to_goal
+        self.initial_goal = env_wrapper.initial_goal
+
+    def get_initial_goal(self):
+        return self.initial_goal
+
+    def get_random_goal(self, obs):
+        goal_found = False
+        goal = None
+        while not goal_found:
+            goal = np.random.uniform([-1.2], [0.6], (1,))
+            goal_found = np.abs(obs[self.obs_to_goal] - goal) > self.eps
+        return goal
+
+class RandomGoalSampler(GoalSampler):
+    def __init__(self, env_wrapper):
+        super(RandomGoalSampler, self).__init__(env_wrapper)
+
+    def sample_goal(self, obs):
+        return self.get_random_goal(obs)
+
+class InitialGoalSampler(GoalSampler):
+    def __init__(self, env_wrapper):
+        super(InitialGoalSampler, self).__init__(env_wrapper)
+
+    def sample_goal(self):
+        return self.get_initial_goal()
+
 class RingBuffer(object):
     def __init__(self, maxlen, shape, dtype='int32'):
         self.maxlen = maxlen
@@ -40,7 +71,6 @@ class Buffer(object):
         self.next_idx = (self.next_idx+1) % self.limit
         if self.length < self.limit:
             self.length += 1
-
 
 class PrioritizedBuffer(Buffer):
     def __init__(self, limit, alpha, content):
@@ -81,11 +111,16 @@ class PrioritizedBuffer(Buffer):
         self._it_sum[idx] = priority ** self.alpha
         self._max_priority = max(self._max_priority, priority)
 
+
 class PrioritizedIntervalBuffer(PrioritizedBuffer):
-    def __init__(self, limit, alpha, intervals):
-        self.intervals = intervals
+    def __init__(self, limit, alpha, env_wrapper):
+        self.intervals = env_wrapper.get_discretization()
+        self.priorities = env_wrapper.get_difficulties()
         self.content = {'interval': (2,)}
         super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.content)
+        for interval, priority in zip(self.intervals, self.priorities):
+            buffer_item = {'interval': interval}
+            self.append(buffer_item, priority)
 
     def sample(self):
         sample_idx, sample_dict = super().sample()
