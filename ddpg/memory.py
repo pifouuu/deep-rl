@@ -80,6 +80,9 @@ class SASMemory():
     def size(self):
         return self.buffer.length
 
+    def end_episode(self):
+        pass
+
     def sample(self, batch_size):
         # Draw such that we always have a proceeding element.
         batch_idxs = np.random.random_integers(self.nb_entries - 2, size=batch_size)
@@ -208,6 +211,8 @@ class EpisodicHerSASMemory(SASMemory):
             print('error her strategy')
             return
         self.data = []
+
+
 
 
 

@@ -2,35 +2,41 @@ from segmentTree import SumSegmentTree, MinSegmentTree
 import numpy as np
 import matplotlib.pyplot as plt
 
-class GoalSampler():
-    def __init__(self, env_wrapper):
-        self.eps = 0.1
-        self.obs_to_goal = env_wrapper.obs_to_goal
-        self.initial_goal = env_wrapper.initial_goal
+class NoGoalSampler():
+    def process_observation(self, observation, goal):
+        return observation
 
     def get_initial_goal(self):
-        return self.initial_goal
+        return [0.45]
 
-    def get_random_goal(self, obs):
-        goal_found = False
-        goal = None
-        while not goal_found:
-            goal = np.random.uniform([-1.2], [0.6], (1,))
-            goal_found = np.abs(obs[self.obs_to_goal] - goal) > self.eps
-        return goal
+    def sample(self):
+        return [0.45]
+
+class GoalSampler():
+    def __init__(self, env_wrapper):
+        self.env_wrapper = env_wrapper
+
+    def get_initial_goal(self):
+        return self.env_wrapper.get_initial_goal()
+
+    def get_random_goal(self):
+        return self.env_wrapper.get_random_goal()
+
+    def process_observation(self, observation, goal):
+        return np.concatenate([observation,goal])
 
 class RandomGoalSampler(GoalSampler):
     def __init__(self, env_wrapper):
         super(RandomGoalSampler, self).__init__(env_wrapper)
 
-    def sample_goal(self, obs):
-        return self.get_random_goal(obs)
+    def sample(self):
+        return self.get_random_goal()
 
 class InitialGoalSampler(GoalSampler):
     def __init__(self, env_wrapper):
         super(InitialGoalSampler, self).__init__(env_wrapper)
 
-    def sample_goal(self):
+    def sample(self):
         return self.get_initial_goal()
 
 class RingBuffer(object):
@@ -114,8 +120,8 @@ class PrioritizedBuffer(Buffer):
 
 class PrioritizedIntervalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env_wrapper):
-        self.intervals = env_wrapper.get_discretization()
-        self.priorities = env_wrapper.get_difficulties()
+        self.intervals = env_wrapper.get_intervals()
+        self.priorities = env_wrapper.get_priorities()
         self.content = {'interval': (2,)}
         super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.content)
         for interval, priority in zip(self.intervals, self.priorities):
@@ -128,13 +134,20 @@ class PrioritizedIntervalBuffer(PrioritizedBuffer):
         goal = np.random.uniform([a], [b], (1,))
         return goal
 
-    def update_priority(self, goal):
-
 class PrioritizedGoalBuffer(PrioritizedBuffer):
-    def __init__(self, limit, alpha):
+    def __init__(self, limit, alpha, env_wrapper):
         self.content = {'goal':(1,)}
+        self.goals = env_wrapper.get_goals()
+        self.priorities = env_wrapper.get_priorities()
         super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.content)
+        for goal, priority in zip(self.goals, self.priorities):
+            buffer_item = {'goal': goal}
+            self.append(buffer_item, priority)
 
+    def sample(self):
+        sample_idx, sample_dict = super().sample()
+        goal = sample_dict['goal']
+        return goal
 
 def _demo():
     buffer = PrioritizedGoalBuffer(11, 1)

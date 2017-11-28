@@ -4,7 +4,7 @@ import gym
 import argparse
 import pprint as pp
 from logger import Logger
-from envWrapper import RandomGoal, NoGoal, HandmadeCurriculum, IntervalCurriculum
+from envWrapper import WithGoal, NoGoalWrapper, GoalCurriculum, IntervalCurriculum
 from memory import SASMemory, EpisodicHerSASMemory
 import pickle
 import time
@@ -13,15 +13,13 @@ from actor import ActorNetwork
 from critic import CriticNetwork
 from ddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise
-from goalSampler import PrioritizedIntervalBuffer, GoalSampler
+from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSampler, InitialGoalSampler, PrioritizedGoalBuffer
 
 #TODO : Update doc on github on this code
 
 
 def main(args):
-    params = '_delta_'+str(args['delta'])+\
-              '_wrapper_'+str(args['wrapper'])+\
-              '_hindsight_'+str(args['with_hindsight'])
+    params = 'memory_'+args['memory']+'_goal_'+args['goal_sampler'] +'_wrapper_'+str(args['wrapper'])
     logdir = args['summary_dir']
     final_dir = logdir+'/'+params+'/'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
@@ -44,15 +42,38 @@ def main(args):
 
     env_wrapper = None
     if args['wrapper'] == 'NoGoal':
-        env_wrapper = NoGoal()
-    elif args['wrapper'] == 'RandomGoal':
-        env_wrapper = RandomGoal()
-    elif args['wrapper'] == 'HandCurri':
-        env_wrapper = HandmadeCurriculum()
+        env_wrapper = NoGoalWrapper()
+    elif args['wrapper'] == 'WithGoal':
+        env_wrapper = WithGoal()
     elif args['wrapper'] == 'IntervalCurri':
         env_wrapper = IntervalCurriculum()
+    elif args['wrapper'] == 'GoalCurri':
+        env_wrapper = GoalCurriculum()
     else:
         print("Nooooooooooooooooooooo")
+
+    goal_sampler = None
+    if args['goal_sampler'] == 'NoGoal':
+        goal_sampler = NoGoalSampler()
+    elif args['goal_sampler'] == 'Random':
+        goal_sampler = RandomGoalSampler(env_wrapper)
+    elif args['goal_sampler'] == 'Initial':
+        goal_sampler = InitialGoalSampler(env_wrapper)
+    elif args['goal_sampler'] == 'IntervalCurri':
+        goal_sampler = PrioritizedIntervalBuffer(env_wrapper)
+    elif args['goal_sampler'] == 'GoalCurri':
+        goal_sampler = PrioritizedGoalBuffer(env_wrapper)
+    else:
+        print("Nooooooo")
+
+    memory = None
+    if args['memory'] == 'SAS':
+        memory = SASMemory(env_wrapper, limit=int(1e6))
+    elif args['memory'] == 'hindsight_ep:':
+        memory = EpisodicHerSASMemory(env_wrapper, limit=int(1e6), strategy=args['strategy'])
+    else:
+        print("Nooooooo")
+
 
     state_dim = env_wrapper.state_shape[0]
     action_dim = env_wrapper.action_shape[0]
@@ -61,18 +82,6 @@ def main(args):
     assert (train_env.action_space.high == -train_env.action_space.low)
 
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
-
-    # Initialize replay memory
-    if args['with_hindsight']:
-        memory = EpisodicHerSASMemory(env_wrapper, limit=int(1e6), strategy=args['strategy'])
-    else:
-        memory = SASMemory(env_wrapper, limit=int(1e6))
-
-    if args['with_curriculum']:
-        goal_sampler = PrioritizedIntervalBuffer(env_wrapper, limit=int(1e3), alpha=1)
-    else:
-        goal_sampler = GoalSampler()
-
 
     with tf.Session() as sess:
 
@@ -127,9 +136,9 @@ if __name__ == '__main__':
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
     parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='NoGoal')
-    parser.add_argument('--with-hindsight', help='use hindsight experience replay', action='store_true')
+    parser.add_argument('--memory', help='type of memory to use', default='SAS')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
-    parser.add_argument('--with-curriculum', help='use curriculum sampling for goal definition', action='store_true')
+    parser.add_argument('--goal-sampler', help='type of goal sampling', default='NoGoal')
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
@@ -142,8 +151,6 @@ if __name__ == '__main__':
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=20)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
 
-    parser.set_defaults(with_hindsight=False)
-    parser.set_defaults(with_curriculum=False)
 
     args = vars(parser.parse_args())
     
