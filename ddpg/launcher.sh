@@ -2,7 +2,7 @@
 
 # Example submission of PBS jobs in a loop
 
-NUMBERS=$(seq 1 50) # Create an array of seed values from 1 to NSEEDS
+NUMBERS=$(seq 1 2) # Create an array of seed values from 1 to NSEEDS
 DDPG=/home/fournier/deep-rl/ddpg/main.py
 LOGDIR=/home/fournier/deep-rl/ddpg/results
 
@@ -12,7 +12,7 @@ LOGDIR=/home/fournier/deep-rl/ddpg/results
 for NUM in ${NUMBERS}
 do
 	# set the job name
-	NAME=goal_${NUM}
+	NAME=basic_${NUM}
 	echo "Submitting: ${NAME}"
 
 	# Build a string called PBS which contains the instructions for your run

@@ -1,6 +1,5 @@
 from segmentTree import SumSegmentTree, MinSegmentTree
 import numpy as np
-import matplotlib.pyplot as plt
 
 class NoGoalSampler():
     def process_observation(self, observation, goal):
@@ -149,26 +148,26 @@ class PrioritizedGoalBuffer(PrioritizedBuffer):
         sample_idx, sample_dict = super().sample()
         goal = sample_dict['goal']
         return np.reshape(goal, (1,))
-
-def _demo():
-    buffer = PrioritizedGoalBuffer(11, 1)
-    samples = np.zeros((100000), dtype=int)
-    for i in range(15):
-        buffer_item = {'goal': i}
-        buffer.append(buffer_item, i)
-    for j in range(100000):
-        idx, sample = buffer.sample()
-        samples[j] = int(sample['goal'])
-    bins = np.bincount(samples)
-    plt.plot(range(bins.shape[0]), bins)
-    plt.show()
-    buffer.update_priority(6,100)
-    for j in range(100000):
-        idx, sample = buffer.sample()
-        samples[j] = int(sample['goal'])
-    bins = np.bincount(samples)
-    plt.plot(range(bins.shape[0]), bins)
-    plt.show()
+#
+# def _demo():
+#     buffer = PrioritizedGoalBuffer(11, 1)
+#     samples = np.zeros((100000), dtype=int)
+#     for i in range(15):
+#         buffer_item = {'goal': i}
+#         buffer.append(buffer_item, i)
+#     for j in range(100000):
+#         idx, sample = buffer.sample()
+#         samples[j] = int(sample['goal'])
+#     bins = np.bincount(samples)
+#     plt.plot(range(bins.shape[0]), bins)
+#     plt.show()
+#     buffer.update_priority(6,100)
+#     for j in range(100000):
+#         idx, sample = buffer.sample()
+#         samples[j] = int(sample['goal'])
+#     bins = np.bincount(samples)
+#     plt.plot(range(bins.shape[0]), bins)
+#     plt.show()
 
 
 if __name__ == "__main__":

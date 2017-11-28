@@ -6,9 +6,6 @@ import sys
 import pickle
 import time
 
-from printer import print_status
-from plot import portrait_actor
-
 class DDPG_agent():
     def __init__(self,
                  sess,

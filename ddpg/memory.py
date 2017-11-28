@@ -2,8 +2,8 @@ import numpy as np
 from segmentTree import SumSegmentTree, MinSegmentTree
 
 # added by Olivier Sigaud --------------------------------
-import pickle
-import matplotlib.pyplot as plt
+# import pickle
+# import matplotlib.pyplot as plt
 
 
 # end of added by Olivier Sigaud --------------------------------
@@ -100,64 +100,64 @@ class SASMemory():
 
     # added by Olivier Sigaud --------------------------------
 
-    def rewards(self):
-        vec = self.buffer.contents
-        return vec['reward'].data
-
-    # maybe add the other accessors
-
-    # specific to Continuous Mountain Car, could be generalized
-    def plot2D(self):
-        plt.figure(1, figsize=(13, 20))
-        plt.xlabel("position")
-        plt.ylabel("velocity")
-        plt.title("Content of the replay buffer")
-
-        vec = self.buffer.contents
-
-        states = vec['state0'].data
-        rewards = vec['reward'].data
-
-        states = np.array(states)
-        plt.set_cmap('jet')
-        plt.scatter(states[:, 0], states[:, 1], s=1, c=rewards)
-        plt.colorbar(label="rewards")
-        plt.show()
-
-    # warning: only saves the content, does not save the parameters such as size_limit, etc.
-    def save(self, file):
-        """Dump the memory into a pickle file"""
-        print("Saving memory")
-        with open(file, "wb") as fd:
-            pickle.dump(self.dump(), fd)
-
-    def dump(self):
-        """Get the memory content as a dictionary"""
-        return (self.buffer)
-
-    # warning: only loads the content, does not set the parameters such as size_limit, etc.
-    def load_from_file(self, file):
-        with open(file, "rb") as fd:
-            self.buffer = pickle.load(fd)
-
-    # deals with the shift in position (substracts 0.5 to position)
-    def load_from_ManceronBuffer(self, file):
-        """
-        used to load a replay buffer saved under Pierre Manceron's format into a replay buffer of Pierre Fournier's format
-        """
-        with open(file, "rb") as fd:
-            manceron_memory = pickle.load(fd)
-
-        for idx in range(len(manceron_memory)):
-            sample = manceron_memory[idx]
-            state0 = sample[0]
-            state1 = sample[3]
-            buffer_item = {'state0': [state0[0] - 0.5, state0[1]],
-                           'action': sample[1],
-                           'reward': sample[2],
-                           'state1': [state1[0] - 0.5, state1[1]],
-                           'terminal1': sample[4]}
-            self.append(buffer_item)
+    # def rewards(self):
+    #     vec = self.buffer.contents
+    #     return vec['reward'].data
+    #
+    # # maybe add the other accessors
+    #
+    # # specific to Continuous Mountain Car, could be generalized
+    # def plot2D(self):
+    #     plt.figure(1, figsize=(13, 20))
+    #     plt.xlabel("position")
+    #     plt.ylabel("velocity")
+    #     plt.title("Content of the replay buffer")
+    #
+    #     vec = self.buffer.contents
+    #
+    #     states = vec['state0'].data
+    #     rewards = vec['reward'].data
+    #
+    #     states = np.array(states)
+    #     plt.set_cmap('jet')
+    #     plt.scatter(states[:, 0], states[:, 1], s=1, c=rewards)
+    #     plt.colorbar(label="rewards")
+    #     plt.show()
+    #
+    # # warning: only saves the content, does not save the parameters such as size_limit, etc.
+    # def save(self, file):
+    #     """Dump the memory into a pickle file"""
+    #     print("Saving memory")
+    #     with open(file, "wb") as fd:
+    #         pickle.dump(self.dump(), fd)
+    #
+    # def dump(self):
+    #     """Get the memory content as a dictionary"""
+    #     return (self.buffer)
+    #
+    # # warning: only loads the content, does not set the parameters such as size_limit, etc.
+    # def load_from_file(self, file):
+    #     with open(file, "rb") as fd:
+    #         self.buffer = pickle.load(fd)
+    #
+    # # deals with the shift in position (substracts 0.5 to position)
+    # def load_from_ManceronBuffer(self, file):
+    #     """
+    #     used to load a replay buffer saved under Pierre Manceron's format into a replay buffer of Pierre Fournier's format
+    #     """
+    #     with open(file, "rb") as fd:
+    #         manceron_memory = pickle.load(fd)
+    #
+    #     for idx in range(len(manceron_memory)):
+    #         sample = manceron_memory[idx]
+    #         state0 = sample[0]
+    #         state1 = sample[3]
+    #         buffer_item = {'state0': [state0[0] - 0.5, state0[1]],
+    #                        'action': sample[1],
+    #                        'reward': sample[2],
+    #                        'state1': [state1[0] - 0.5, state1[1]],
+    #                        'terminal1': sample[4]}
+    #         self.append(buffer_item)
             # end of added by Olivier Sigaud --------------------------------
 
 
