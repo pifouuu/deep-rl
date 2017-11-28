@@ -40,7 +40,7 @@ class InitialGoalSampler(GoalSampler):
         return self.get_initial_goal()
 
 class RingBuffer(object):
-    def __init__(self, maxlen, shape, dtype='int32'):
+    def __init__(self, maxlen, shape, dtype='float32'):
         self.maxlen = maxlen
         self.data = np.zeros((maxlen,) + shape).astype(dtype)
         self.next_idx = 0
@@ -62,8 +62,9 @@ def array_min2d(x):
     return x.reshape(-1, 1)
 
 
-class Buffer(object):
-    def __init__(self, limit, content_shape):
+class Buffer(GoalSampler):
+    def __init__(self, limit, content_shape, env_wrapper):
+        super(Buffer, self).__init__(env_wrapper)
         self.next_idx = 0
         self.limit = limit
         self.length = 0
@@ -79,9 +80,9 @@ class Buffer(object):
             self.length += 1
 
 class PrioritizedBuffer(Buffer):
-    def __init__(self, limit, alpha, content):
+    def __init__(self, limit, alpha, content, env_wrapper):
+        super(PrioritizedBuffer, self).__init__(limit, content, env_wrapper)
         self.alpha = alpha
-        super(PrioritizedBuffer, self).__init__(limit, content)
 
         it_capacity = 1
         while it_capacity < limit:
@@ -120,10 +121,10 @@ class PrioritizedBuffer(Buffer):
 
 class PrioritizedIntervalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env_wrapper):
+        self.content = {'interval': (2,)}
+        super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.content, env_wrapper)
         self.intervals = env_wrapper.get_intervals()
         self.priorities = env_wrapper.get_priorities()
-        self.content = {'interval': (2,)}
-        super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.content)
         for interval, priority in zip(self.intervals, self.priorities):
             buffer_item = {'interval': interval}
             self.append(buffer_item, priority)
@@ -131,15 +132,15 @@ class PrioritizedIntervalBuffer(PrioritizedBuffer):
     def sample(self):
         sample_idx, sample_dict = super().sample()
         a,b = sample_dict['interval'][0], sample_dict['interval'][1]
-        goal = np.random.uniform([a], [b], (1,))
+        goal = np.random.uniform(a, b, (1,))
         return goal
 
 class PrioritizedGoalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env_wrapper):
         self.content = {'goal':(1,)}
+        super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.content, env_wrapper)
         self.goals = env_wrapper.get_goals()
         self.priorities = env_wrapper.get_priorities()
-        super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.content)
         for goal, priority in zip(self.goals, self.priorities):
             buffer_item = {'goal': goal}
             self.append(buffer_item, priority)
@@ -147,7 +148,7 @@ class PrioritizedGoalBuffer(PrioritizedBuffer):
     def sample(self):
         sample_idx, sample_dict = super().sample()
         goal = sample_dict['goal']
-        return goal
+        return np.reshape(goal, (1,))
 
 def _demo():
     buffer = PrioritizedGoalBuffer(11, 1)

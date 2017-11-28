@@ -60,16 +60,16 @@ def main(args):
     elif args['goal_sampler'] == 'Initial':
         goal_sampler = InitialGoalSampler(env_wrapper)
     elif args['goal_sampler'] == 'IntervalCurri':
-        goal_sampler = PrioritizedIntervalBuffer(env_wrapper)
+        goal_sampler = PrioritizedIntervalBuffer(int(1e3), 0.5, env_wrapper)
     elif args['goal_sampler'] == 'GoalCurri':
-        goal_sampler = PrioritizedGoalBuffer(env_wrapper)
+        goal_sampler = PrioritizedGoalBuffer(int(1e3), 0.5, env_wrapper)
     else:
         print("Nooooooo")
 
     memory = None
     if args['memory'] == 'SAS':
         memory = SASMemory(env_wrapper, limit=int(1e6))
-    elif args['memory'] == 'hindsight_ep:':
+    elif args['memory'] == 'hindsight_ep':
         memory = EpisodicHerSASMemory(env_wrapper, limit=int(1e6), strategy=args['strategy'])
     else:
         print("Nooooooo")
@@ -135,10 +135,10 @@ if __name__ == '__main__':
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
-    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='NoGoal')
-    parser.add_argument('--memory', help='type of memory to use', default='SAS')
+    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='GoalCurri')
+    parser.add_argument('--memory', help='type of memory to use', default='hindsight_ep')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
-    parser.add_argument('--goal-sampler', help='type of goal sampling', default='NoGoal')
+    parser.add_argument('--goal-sampler', help='type of goal sampling', default='GoalCurri')
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
