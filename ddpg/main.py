@@ -19,7 +19,7 @@ from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSamp
 
 
 def main(args):
-    params = 'memory_'+args['memory']+'_goal_'+args['goal_sampler'] +'_wrapper_'+str(args['wrapper'])
+    params = 'memory_'+args['memory']+'_goal_'+args['sampler'] +'_wrapper_'+str(args['wrapper'])
     logdir = args['summary_dir']
     final_dir = logdir+'/'+params+'/'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
@@ -53,15 +53,15 @@ def main(args):
         print("Nooooooooooooooooooooo")
 
     goal_sampler = None
-    if args['goal_sampler'] == 'NoGoal':
+    if args['sampler'] == 'NoGoal':
         goal_sampler = NoGoalSampler()
-    elif args['goal_sampler'] == 'Random':
+    elif args['sampler'] == 'Random':
         goal_sampler = RandomGoalSampler(env_wrapper)
-    elif args['goal_sampler'] == 'Initial':
+    elif args['sampler'] == 'Initial':
         goal_sampler = InitialGoalSampler(env_wrapper)
-    elif args['goal_sampler'] == 'IntervalCurri':
+    elif args['sampler'] == 'IntervalCurri':
         goal_sampler = PrioritizedIntervalBuffer(int(1e3), 0.5, env_wrapper)
-    elif args['goal_sampler'] == 'GoalCurri':
+    elif args['sampler'] == 'GoalCurri':
         goal_sampler = PrioritizedGoalBuffer(int(1e3), 0.5, env_wrapper)
     else:
         print("Nooooooo")
@@ -138,18 +138,18 @@ if __name__ == '__main__':
     parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='GoalCurri')
     parser.add_argument('--memory', help='type of memory to use', default='hindsight_ep')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
-    parser.add_argument('--goal-sampler', help='type of goal sampling', default='GoalCurri')
+    parser.add_argument('--sampler', help='type of goal sampling', default='GoalCurri')
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
-    parser.add_argument('--max-steps', help='max num of episodes to do while training', default=500000)
-    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=100)
+    parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
+    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=200)
     parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
-    parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/v2')
+    parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=100)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=20)
-    parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=1000)
+    parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)
 
 
     args = vars(parser.parse_args())

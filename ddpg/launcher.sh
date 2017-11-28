@@ -2,8 +2,8 @@
 
 # Example submission of PBS jobs in a loop
 
-NUMBERS=$(seq 1 20) # Create an array of seed values from 1 to NSEEDS
-DDPG=/home/fournier/deep-rl/ddpg/ddpg.py
+NUMBERS=$(seq 1 50) # Create an array of seed values from 1 to NSEEDS
+DDPG=/home/fournier/deep-rl/ddpg/main.py
 LOGDIR=/home/fournier/deep-rl/ddpg/results
 
 
@@ -25,7 +25,7 @@ do
 	#PBS -o out/${NAME}.out\n\
 	#PBS -e err/${NAME}.err\n\
 	cd \$PBS_O_WORKDIR\n\
-	/usr/bin/python3.4 $DDPG --summary-dir $LOGDIR --max-episodes 500 --episode-reset --with-goal"
+	/usr/bin/python3.4 $DDPG --summary-dir $LOGDIR --wrapper NoGoal --memory SAS --sampler NoGoal"
 
 	# Note that $PBS_O_WORKDIR is escaped ("\"). We don't want bash to evaluate this variable right now. Instead it will be evaluated when the command runs on the node.
 
