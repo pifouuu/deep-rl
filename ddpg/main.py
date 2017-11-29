@@ -5,7 +5,7 @@ import argparse
 import pprint as pp
 from logger import Logger
 from envWrapper import WithGoal, NoGoalWrapper, GoalCurriculum, IntervalCurriculum
-from memory import SASMemory, EpisodicHerSASMemory
+from memory import SASMemory, EpisodicHerSASMemory, SARSTMemory
 import pickle
 import time
 import datetime
@@ -69,6 +69,8 @@ def main(args):
     memory = None
     if args['memory'] == 'SAS':
         memory = SASMemory(env_wrapper, limit=int(1e6))
+    elif args['memory'] == 'SARST':
+        memory = SARSTMemory(env_wrapper, limit=int(1e6))
     elif args['memory'] == 'hindsight_ep':
         memory = EpisodicHerSASMemory(env_wrapper, limit=int(1e6), strategy=args['strategy'])
     else:
@@ -135,10 +137,10 @@ if __name__ == '__main__':
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
-    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='GoalCurri')
-    parser.add_argument('--memory', help='type of memory to use', default='hindsight_ep')
+    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='NoGoal')
+    parser.add_argument('--memory', help='type of memory to use', default='SARST')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
-    parser.add_argument('--sampler', help='type of goal sampling', default='GoalCurri')
+    parser.add_argument('--sampler', help='type of goal sampling', default='NoGoal')
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')

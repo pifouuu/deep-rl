@@ -52,12 +52,8 @@ class DDPG_agent():
         self.train_step = 0
         self.episode = 0
         self.episode_step = 0
-        self.train_goal = None
-        self.test_goal = None
         self.episode_reward = 0
         self.nb_goals_reached = 0
-        self.episode_init = None
-        self.current_obs = None
 
     def train_critic(self, experiences):
 
@@ -67,13 +63,18 @@ class DDPG_agent():
 
         y_i = []
         for k in range(self.batch_size):
-            reward, terminal = self.env_wrapper.eval_exp(experiences['state0'][k],
-                                                         experiences['action'][k],
-                                                         experiences['state1'][k])
-            if terminal:
-                y_i.append(reward)
+            # reward, terminal = self.env_wrapper.eval_exp(experiences['state0'][k],
+            #                                              experiences['action'][k],
+            #                                              experiences['state1'][k])
+            # if terminal:
+            #     y_i.append(reward)
+            # else:
+            #     y_i.append(reward + self.critic.gamma * target_q[k])
+
+            if experiences['terminal'][k]:
+                y_i.append(experiences['reward'][k])
             else:
-                y_i.append(reward + self.critic.gamma * target_q[k])
+                y_i.append(experiences['reward'][k] + self.critic.gamma * target_q[k])
 
         # Update the critic given the targets
         critic_loss = self.critic.train(
@@ -161,26 +162,29 @@ class DDPG_agent():
 
         #TODO : load actor and critic if need be
 
-        self.current_obs = self.train_env.reset()
-        self.episode_init = self.current_obs
-        self.train_goal = self.goal_sampler.sample()
+        current_obs = self.train_env.reset()
+        episode_init = current_obs
+        train_goal = self.goal_sampler.sample()
+        start_time = time.time()
 
         while self.train_step < self.max_steps:
-            state = self.goal_sampler.process_observation(self.current_obs, self.train_goal)
+            state = self.goal_sampler.process_observation(current_obs, train_goal)
             action = self.actor.model.predict(np.reshape(state, (1, self.actor.s_dim)))
             action += self.actor_noise()
             action = np.clip(action, -self.actor.action_bound, self.actor.action_bound)
             next_obs, reward_env, done_env, info = self.train_env.step(action[0])
-            next_state = self.goal_sampler.process_observation(next_obs, self.train_goal)
+            next_state = self.goal_sampler.process_observation(next_obs, train_goal)
+            reward, reached = self.env_wrapper.eval_exp(state, action, next_state)
 
             experience = {'state0': state,
                            'action': action,
-                           'state1': next_state}
+                           'state1': next_state,
+                          'reward': reward,
+                          'terminal': reached}
 
             self.memory.append(experience)
-            reward, reached = self.env_wrapper.eval_exp(state, action, next_state)
             self.episode_reward += reward
-            self.current_obs = next_obs
+            current_obs = next_obs
             self.train_step += 1
             self.episode_step += 1
 
@@ -192,14 +196,15 @@ class DDPG_agent():
                 self.episode += 1
                 if reached: self.nb_goals_reached += 1
                 self.episode_stats['Episode'] = self.episode
-                self.episode_stats['Start'] = self.episode_init[0]
-                self.episode_stats['Goal'] = self.train_goal[0]
+                self.episode_stats['Start'] = episode_init[0]
+                self.episode_stats['Goal'] = train_goal[0]
                 self.episode_stats['Train reward'] = self.episode_reward
                 self.episode_stats['Episode steps'] = self.episode_step
                 self.episode_stats['Goal reached'] = self.nb_goals_reached
+                self.episode_stats['Duration'] = time.time() - start_time
 
-                self.current_obs = self.train_env.reset()
-                self.train_goal = self.goal_sampler.sample()
+                current_obs = self.train_env.reset()
+                train_goal = self.goal_sampler.sample()
                 self.memory.end_episode()
 
                 for key in sorted(self.episode_stats.keys()):

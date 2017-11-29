@@ -64,14 +64,9 @@ class ReplayBuffer(object):
         """Get all of the data in a single array"""
         return (self.contents[:self.length])
 
-
-class SASMemory():
-    def __init__(self, env_wrapper, limit):
-
-        self.contents = {'state0': env_wrapper.state_shape,
-                    'action': env_wrapper.action_shape,
-                    'state1': env_wrapper.state_shape}
-
+class Memory():
+    def __init__(self, contents, limit):
+        self.contents = contents
         self.buffer = ReplayBuffer(limit, self.contents)
 
     def size(self):
@@ -94,6 +89,25 @@ class SASMemory():
     @property
     def nb_entries(self):
         return len(self.buffer.contents['state0'])
+
+
+class SARSTMemory(Memory):
+    def __init__(self, env_wrapper, limit):
+        self.contents = {'state0': env_wrapper.state_shape,
+                        'action': env_wrapper.action_shape,
+                        'state1': env_wrapper.state_shape,
+                        'reward': env_wrapper.reward_shape,
+                         'terminal': env_wrapper.terminal_shape}
+
+        super(SARSTMemory, self).__init__(self.contents, limit)
+
+
+class SASMemory(Memory):
+    def __init__(self, env_wrapper, limit):
+        self.contents = {'state0': env_wrapper.state_shape,
+                    'action': env_wrapper.action_shape,
+                    'state1': env_wrapper.state_shape}
+        super(SASMemory, self).__init__(self.contents, limit)
 
     # added by Olivier Sigaud --------------------------------
 
