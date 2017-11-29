@@ -124,9 +124,6 @@ class DDPG_agent():
             action = self.actor.target_model.predict(np.reshape(state, (1, self.actor.s_dim)))
             next_obs, reward_env, done_env, info = self.test_env.step(action[0])
             next_state = self.goal_sampler.process_observation(next_obs, test_goal)
-            experience = {'state0': state,
-                          'action': action,
-                          'state1': next_state}
             reward, reached = self.env_wrapper.eval_exp(state, action, next_state)
             ep_test_reward += reward
             if reached:
@@ -176,11 +173,7 @@ class DDPG_agent():
             next_state = self.goal_sampler.process_observation(next_obs, train_goal)
             reward, reached = self.env_wrapper.eval_exp(state, action, next_state)
 
-            experience = {'state0': state,
-                           'action': action,
-                           'state1': next_state,
-                          'reward': reward,
-                          'terminal': reached}
+            experience = self.memory.build_exp(state, action, next_state, reward, reached)
 
             self.memory.append(experience)
             self.episode_reward += reward

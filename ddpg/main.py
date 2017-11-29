@@ -149,8 +149,8 @@ if __name__ == '__main__':
     parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
     parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/')
-    parser.add_argument('--eval-freq', help='evaluation frequency', default=100)
-    parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=20)
+    parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
+    parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)
 
 

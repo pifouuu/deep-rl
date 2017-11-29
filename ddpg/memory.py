@@ -101,6 +101,14 @@ class SARSTMemory(Memory):
 
         super(SARSTMemory, self).__init__(self.contents, limit)
 
+    def build_exp(self, state, action, next_state, reward, terminal):
+        dict = {'state0': state,
+         'action': action,
+         'state1': next_state,
+         'reward': reward,
+         'terminal': terminal}
+        return dict
+
 
 class SASMemory(Memory):
     def __init__(self, env_wrapper, limit):
@@ -108,6 +116,12 @@ class SASMemory(Memory):
                     'action': env_wrapper.action_shape,
                     'state1': env_wrapper.state_shape}
         super(SASMemory, self).__init__(self.contents, limit)
+
+    def build_exp(self, state, action, next_state, reward, terminal):
+        dict = {'state0': state,
+                'action': action,
+                'state1': next_state}
+        return dict
 
     # added by Olivier Sigaud --------------------------------
 
