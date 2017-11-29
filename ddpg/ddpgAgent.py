@@ -180,12 +180,17 @@ class DDPG_agent():
             self.memory.append(experience)
             reward, reached = self.env_wrapper.eval_exp(state, action, next_state)
             self.episode_reward += reward
+            self.current_obs = next_obs
+            self.train_step += 1
+            self.episode_step += 1
 
             if self.memory.nb_entries > 3*self.batch_size:
                 self.train()
 
             if self.episode_step >= self.max_episode_steps or reached:
 
+                self.episode += 1
+                if reached: self.nb_goals_reached += 1
                 self.episode_stats['Episode'] = self.episode
                 self.episode_stats['Start'] = self.episode_init[0]
                 self.episode_stats['Goal'] = self.train_goal[0]
@@ -203,8 +208,6 @@ class DDPG_agent():
 
                 self.episode_step = 0
                 self.episode_reward = 0
-                self.episode += 1
-                if reached: self.nb_goals_reached += 1
 
             if self.train_step % self.eval_freq == 0:
                 self.test()
@@ -214,6 +217,5 @@ class DDPG_agent():
                 self.logger_step.logkv(key, self.step_stats[key])
             self.logger_step.dumpkvs()
 
-            self.train_step += 1
-            self.episode_step += 1
-            self.current_obs = next_obs
+
+

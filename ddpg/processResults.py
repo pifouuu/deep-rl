@@ -11,13 +11,10 @@ def exp_smooth(tab, alpha):
     return smooth
 
 LOGDIR = './results/'
-PARAMS = ['_delta_1_goal_False_hindsight_False_reset_True',
-          '_delta_1_goal_True_hindsight_False_reset_True',
-          '_delta_None_goal_False_hindsight_False_reset_True',
-          '_delta_None_goal_True_hindsight_False_reset_False']
+PARAMS = ['memory_SAS_goal_NoGoal_wrapper_NoGoal']
 param_eval = {}
 for param in PARAMS:
-    res_files = glob.glob(LOGDIR+param+'/*/'+'progress.json')
+    res_files = glob.glob(LOGDIR+param+'/*/'+'log_step/progress.json')
     sum_eval_rewards  = [0]*50
     episodes = range(10,500,10)
     for filename in res_files:
