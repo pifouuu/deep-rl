@@ -70,7 +70,7 @@ class DDPG_agent():
             #     y_i.append(reward)
             # else:
             #     y_i.append(reward + self.critic.gamma * target_q[k])
-
+            #TODO fix to work with SAS
             if experiences['terminal'][k]:
                 y_i.append(experiences['reward'][k])
             else:
@@ -210,6 +210,7 @@ class DDPG_agent():
             if self.train_step % self.eval_freq == 0:
                 self.test()
 
+            #TODO less train stats
             self.step_stats['Training steps'] = self.train_step
             for key in sorted(self.step_stats.keys()):
                 self.logger_step.logkv(key, self.step_stats[key])
