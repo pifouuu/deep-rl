@@ -3,6 +3,7 @@ import numpy as np
 import glob
 import matplotlib.pyplot as plt
 import brewer2mpl
+import math
 
 def exp_smooth(tab, alpha):
     smooth = [tab[0]]
@@ -14,12 +15,12 @@ LOGDIR = './results/'
 PARAM = 'memory_SARST_goal_NoGoal_wrapper_NoGoal'
 res_files = glob.glob(LOGDIR + PARAM + '/*/' + 'log_step/progress.json')
 
-eval_rewards = [[0]*1990 for i in range(len(res_files))]
+eval_rewards = [[0]*200 for i in range(len(res_files))]
 
 for j, filename in enumerate(res_files):
     with open(filename, 'r') as json_data:
         lines = json_data.readlines()
-        for k, line in enumerate([lines[i] for i in range(1000,200000,100)]) :
+        for k, line in enumerate([lines[i] for i in range(999,200000,1000)]) :
             episode_data = json.loads(line)
             if 'Test reward on initial goal' in episode_data:
                 eval_rewards[j][k] = episode_data['Test reward on initial goal']
@@ -43,7 +44,7 @@ for spine in ax1.spines.values():
 ax1.tick_params(axis='x', direction='out')
 ax1.get_xaxis().tick_bottom()
 ax1.set_xlim(0, 200000)
-ax1.set_xticks(np.arange(0, 200000, 20000))
+ax1.set_xticks(np.arange(0, 200001, 20000))
 ax1.set_xlabel("Episode")
 
 ax1.get_yaxis().tick_left()
@@ -52,7 +53,7 @@ ax1.set_ylim(-100, 100)
 ax1.set_yticks(np.arange(-100, 100, 20))
 ax1.set_ylabel("Reward per episode")
 
-x = range(1000, 200000, 100)
+x = range(1000, 200001, 1000)
 l = 'solid'
 marker = 'o'
 label = ''
@@ -61,7 +62,9 @@ converge = 0
 localmin = 0
 diverge = 0
 for res in eval_rewards:
-    final_mean = np.mean(res[-20:])
+    final_mean = np.mean(res[140:150])
+    final_var = np.var(res[140:150])
+    print(final_mean, math.sqrt(final_var))
     if final_mean>90:
         c = colors[1]
         converge+=1
