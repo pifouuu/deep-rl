@@ -1,7 +1,6 @@
 from critic import CriticNetwork
 
 import tensorflow as tf
-#import random, numpy, math, gym, sys
 from keras import backend as K
 from keras.optimizers import Adam
 from keras.layers import Dense, Flatten, Input, Lambda, Activation
