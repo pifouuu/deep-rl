@@ -197,6 +197,7 @@ class DDPG_agent():
                 self.episode_stats['Duration'] = time.time() - start_time
 
                 current_obs = self.train_env.reset()
+                episode_init = current_obs
                 train_goal = self.goal_sampler.sample()
                 self.memory.end_episode()
 
