@@ -159,7 +159,7 @@ class DDPG_agent():
         self.episode_stats['New Training steps'] = self.train_step
         self.episode_stats['New Test reward'] = mean_reward
         print ('Test reward', mean_reward)
-        if mean_reward>94:
+        if mean_reward>97.5:
             self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward),overwrite=True)
             #portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
             #self.actor.print_target_weights()

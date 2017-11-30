@@ -87,7 +87,7 @@ class Evaluator:
                                            config.eval_freq)
                         portrait_actor(actor.target_model, env, save_figure=True, figure_file="./img/"+filename+".png")
                         mean = []
-                        for i in range(2):
+                        for i in range(10):
                             mean_reward = agent.test()
                             # print("mean reward:", mean_reward)
                             mean.append(mean_reward)
