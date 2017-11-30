@@ -175,8 +175,6 @@ class DDPG_agent():
         self.actor.target_train()
         self.critic.target_train()
 
-        #TODO : load actor and critic if need be
-
         current_obs = self.train_env.reset()
         episode_init = current_obs
         train_goal = self.goal_sampler.sample()

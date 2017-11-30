@@ -152,7 +152,7 @@ if __name__ == '__main__':
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
-    parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
+    parser.add_argument('--max-steps', help='max num of episodes to do while training', default=2000)
     parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=200)
     parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info',
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
                         default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=1000)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)
 
