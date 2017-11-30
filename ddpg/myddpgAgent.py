@@ -195,7 +195,7 @@ class DDPG_agent():
 
     def run(self):
 
-        self.sess.run(tf.global_variables_initializer())
+        #self.sess.run(tf.global_variables_initializer())
 
         # Initialize target network weights
         #TODO : soft vs hard update

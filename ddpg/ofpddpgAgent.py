@@ -80,7 +80,7 @@ class OFPDDPG_agent(DDPG_agent):
 
     def run(self):
 
-        self.sess.run(tf.global_variables_initializer())
+        #self.sess.run(tf.global_variables_initializer())
 
         # Initialize target network weights
         #TODO : soft vs hard update
@@ -119,7 +119,7 @@ class OFPDDPG_agent(DDPG_agent):
             for key in sorted(self.step_stats.keys()):
                 self.logger_step.logkv(key, self.step_stats[key])
             self.logger_step.dumpkvs()
-            
+
             self.train_step += 1
             self.episode_step += 1
             #print_status("{}/{}".format(self.train_step, self.max_steps))
