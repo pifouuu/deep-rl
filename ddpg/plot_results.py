@@ -1,6 +1,5 @@
 import json
 import numpy as np
-from notebooks.perfcollector_common import PerfCollectorCommon
 from notebooks.perfcollector import PerfCollector
 import os
 
@@ -21,24 +20,7 @@ def get_perf_values(filename):
                 eval_rewards.append(tmp)
     return eval_rewards
 
-
-def plot_common():
-    cpt = 0
-    collector = PerfCollectorCommon("./img/")
-    collector.init()
-    for delta in os.listdir(directory):
-        perf_values = {}
-        experiment_path = directory + delta + "/"
-        for file in os.listdir(experiment_path):
-            filename = experiment_path + file + "/log_episodes/progress.json"
-            perf_values = get_perf_values(filename)
-            cpt += 1
-            collector.add(perf_values)
-    collector.plot()
-    print(cpt, " files found")
-    collector.stats()
-
-def plot_by_delta():
+def plot_all():
     cpt = 0
     collector = PerfCollector("./img/")
     for delta in os.listdir(directory):
@@ -51,8 +33,9 @@ def plot_by_delta():
             cpt += 1
             collector.add(delta, perf_values)
         collector.plot(delta)
+    collector.plot_all()
     print(cpt, " files found")
     collector.stats()
+    collector.stats_all()
 
-plot_common()
-plot_by_delta()
+plot_all()
