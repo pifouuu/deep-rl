@@ -1,8 +1,10 @@
 import json
 import numpy as np
-from notebooks.perfcollector_common import PerfCollector
+from notebooks.perfcollector_common import PerfCollectorCommon
+from notebooks.perfcollector import PerfCollector
 import os
 
+directory = "./perf_ofp/"  # "./experiments/"
 
 def get_perf_values(filename):
     with open(filename, 'r') as json_data:
@@ -20,19 +22,34 @@ def get_perf_values(filename):
     return eval_rewards
 
 
-experiment_root = "../perf_ofp/"  # "../experiments/"
-cpt = 0
-collec = PerfCollector()
-collec.init()
-for delta in os.listdir(experiment_root):
-    perf_values = {}
-    experiment_path = experiment_root + delta + "/"
-    for file in os.listdir(experiment_path):
-        filename = experiment_path + file + "/progress.json"  # log_episodes/
-        perf_values = get_perf_values(filename)
-        cpt += 1
-        collec.add(perf_values)
-collec.plot()
+def plot_common():
+    cpt = 0
+    collec = PerfCollectorCommon()
+    collec.init()
+    for delta in os.listdir(directory):
+        perf_values = {}
+        experiment_path = directory + delta + "/"
+        for file in os.listdir(experiment_path):
+            filename = experiment_path + file + "/log_episodes/progress.json"
+            perf_values = get_perf_values(filename)
+            cpt += 1
+            collec.add(perf_values)
+    collec.plot()
+    print(cpt, " files found")
+    collec.stats()
 
-print(cpt, " files found")
-collec.stats()
+def plot_by_delta():
+    cpt = 0
+    collec = PerfCollector()
+    for delta in os.listdir(directory):
+        collec.init(delta)
+        perf_values = {}
+        experiment_path = directory + delta + "/"
+        for file in os.listdir(experiment_path):
+            filename = experiment_path + file + "/log_episodes/progress.json"
+            perf_values = get_perf_values(filename)
+            cpt += 1
+            collec.add(delta, perf_values)
+        collec.plot(delta)
+    print(cpt, " files found")
+    collec.stats()

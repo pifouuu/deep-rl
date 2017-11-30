@@ -23,7 +23,6 @@ def perf_study(delta_clip, num):
     logger_step = Logger(dir=results_path+'/log_steps', format_strs=['json'])
     logger_episode = Logger(dir=results_path+'/log_episodes', format_strs=['json'])
 
-    # 
     env_wrapper = NoGoal()
 
     state_dim = env_wrapper.state_shape[0]
