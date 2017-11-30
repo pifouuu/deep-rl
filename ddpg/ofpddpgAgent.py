@@ -52,7 +52,7 @@ class OFPDDPG_agent(DDPG_agent):
             self.test_goal = self.env_wrapper.sample_initial_goal()
             # fig_name = "saved_actor_ante.png"
             # portrait_actor(self.actor.target_model, self.test_env, save_figure=True, figure_file=fig_name)
-            max_eval_steps = self.max_episode_steps / 5
+            max_eval_steps = int(self.max_episode_steps / 5)
 
             for k in range(max_eval_steps):
                 test_obs1, test_sample = self.step(test_obs, self.test_goal, k, test=True)

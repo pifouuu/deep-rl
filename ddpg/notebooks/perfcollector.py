@@ -22,9 +22,10 @@ def isNoConv(values):
     val = valpair[1]
     return (val > -19.0 and val <80.0)
 
-class PerfCollector():
+class PerfCollector(image_folder):
     def __init__(self,**kwargs):
         self.collec = {}
+        self.image_folder = image_folder
 
     def init(self, delta):
         sort_dict = {}
@@ -89,4 +90,5 @@ class PerfCollector():
                     y.append(values[i][1])
                 plt.plot(x,y, label="conv", c='b')
         #plt.legend()
-        plt.show()  
+        plt.show()
+        plt.savefig(self.imageFolder + 'perf_' + delta + '.svg', bbox_inches='tight')

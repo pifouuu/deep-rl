@@ -24,8 +24,8 @@ def get_perf_values(filename):
 
 def plot_common():
     cpt = 0
-    collec = PerfCollectorCommon()
-    collec.init()
+    collector = PerfCollectorCommon("./img/")
+    collector.init()
     for delta in os.listdir(directory):
         perf_values = {}
         experiment_path = directory + delta + "/"
@@ -33,23 +33,23 @@ def plot_common():
             filename = experiment_path + file + "/log_episodes/progress.json"
             perf_values = get_perf_values(filename)
             cpt += 1
-            collec.add(perf_values)
-    collec.plot()
+            collector.add(perf_values)
+    collector.plot()
     print(cpt, " files found")
-    collec.stats()
+    collector.stats()
 
 def plot_by_delta():
     cpt = 0
-    collec = PerfCollector()
+    collector = PerfCollector("./img/")
     for delta in os.listdir(directory):
-        collec.init(delta)
+        collector.init(delta)
         perf_values = {}
         experiment_path = directory + delta + "/"
         for file in os.listdir(experiment_path):
             filename = experiment_path + file + "/log_episodes/progress.json"
             perf_values = get_perf_values(filename)
             cpt += 1
-            collec.add(delta, perf_values)
-        collec.plot(delta)
+            collector.add(delta, perf_values)
+        collector.plot(delta)
     print(cpt, " files found")
-    collec.stats()
+    collector.stats()
