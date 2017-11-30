@@ -82,6 +82,7 @@ def perf_study(delta_clip, num):
                               config.eval_episodes,
                               config.max_episode_steps,
                               config.max_steps,
-                              config.eval_freq)
+                              config.eval_freq,
+                              config.save_step_stats)
 
         agent.run()

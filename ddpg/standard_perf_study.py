@@ -72,20 +72,21 @@ def perf_study(delta_clip, num):
                                         config.critic_lr)
 
         agent = DDPG_agent(sess,
-                           actor,
-                           actor_noise,
-                           critic,
-                           env,
-                           env,
-                           env_wrapper,
-                           memory,
-                           logger_step,
-                           logger_episode,
-                           config.batch_size,
-                           config.eval_episodes,
-                           config.max_episode_steps,
-                           config.max_steps,
-                           config.eval_freq)
+                            actor,
+                            actor_noise,
+                            critic,
+                            env,
+                            env,
+                            env_wrapper,
+                            memory,
+                            logger_step,
+                            logger_episode,
+                            config.batch_size,
+                            config.eval_episodes,
+                            config.max_episode_steps,
+                            config.max_steps,
+                            config.eval_freq,
+                            config.save_step_stats)
 
         agent.run()
     

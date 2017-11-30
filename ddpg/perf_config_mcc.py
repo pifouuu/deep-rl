@@ -13,3 +13,4 @@ class PerfConfig(CommonConfig):
         self.max_episode_steps = 1000
         self.max_steps = 1000000
         self.eval_freq = 1000 #evaluation frequency', default=1000
+        self.save_step_stats = False
