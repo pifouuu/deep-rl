@@ -12,6 +12,7 @@ from actor import ActorNetwork
 from critic import CriticNetwork
 from myddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise, NoNoise
+from plot import portrait_actor
 
 from rl.utils.printer import print_info
 import os
@@ -48,6 +49,13 @@ class Evaluator:
                                 tf.set_random_seed(config.seed)
                                 env.seed(config.seed)
 
+                        critic = CriticNetwork(sess,
+                                               state_dim,
+                                               action_dim,
+                                               config.gamma,
+                                               config.tau,
+                                               config.critic_lr)
+
                         actor = ActorNetwork(sess,
                                              state_dim,
                                              action_dim,
@@ -61,12 +69,6 @@ class Evaluator:
                         #actor.print_target_weights()
                         actor.load_weights(filename)
 
-                        critic = CriticNetwork(sess,
-                                               state_dim,
-                                               action_dim,
-                                               config.gamma,
-                                               config.tau,
-                                               config.critic_lr)
 
                         agent = DDPG_agent(sess,
                                            actor,
@@ -83,8 +85,9 @@ class Evaluator:
                                            config.max_episode_steps,
                                            config.max_steps,
                                            config.eval_freq)
+                        portrait_actor(actor.target_model, env, save_figure=True, figure_file="./img/"+filename+".png")
                         mean = []
-                        for i in range(10):
+                        for i in range(2):
                             mean_reward = agent.test()
                             # print("mean reward:", mean_reward)
                             mean.append(mean_reward)
@@ -92,7 +95,7 @@ class Evaluator:
                         print("global mean reward:", mean_value)
 
 
-path = "./actors/"
+path = "actors/"
 collec = Evaluator()
 for actor in os.listdir(path):
     collec.eval(path+actor)
