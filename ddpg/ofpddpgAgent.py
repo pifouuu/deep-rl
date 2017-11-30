@@ -53,7 +53,7 @@ class OFPDDPG_agent(DDPG_agent):
             # fig_name = "saved_actor_ante.png"
             # portrait_actor(self.actor.target_model, self.test_env, save_figure=True, figure_file=fig_name)
 
-            for k in range(self.max_episode_steps):
+            for k in range(self.max_episode_steps/5):
                 test_obs1, test_sample = self.step(test_obs, self.test_goal, k, test=True)
                 ep_test_reward += test_sample['reward']
                 if test_sample['terminal1']:
@@ -67,7 +67,7 @@ class OFPDDPG_agent(DDPG_agent):
         self.episode_stats['New Training steps'] = self.train_step
         self.episode_stats['New Test reward'] = mean_reward
         self.step_stats['Test reward'] = mean_reward
-        print ('Test reward', mean_reward)
+        #print ('Test reward', mean_reward)
         if mean_reward > 97.5:
             self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward), overwrite=True)
                 # portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
