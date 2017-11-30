@@ -14,6 +14,6 @@ do
     export FORCE
     export PERF_STUDY="xperf_$DELTA"
     rm -f $LOGS/${PERF_STUDY}.e* $LOGS/${PERF_STUDY}.o* ${PERF_STUDY}.e* ${PERF_STUDY}.o*
-    qsub -N ${PERF_STUDY} perf-submit.sh
+    qsub -N ${PERF_STUDY} -o "$LOGS/${PERF_STUDY}.out" -b "$LOGS/${PERF_STUDY}.err" perf-submit.sh
   )
 done
