@@ -83,8 +83,13 @@ class Evaluator:
                                            config.max_episode_steps,
                                            config.max_steps,
                                            config.eval_freq)
-                        for i in range(5):
-                                agent.test()
+                        mean = []
+                        for i in range(10):
+                            mean_reward = agent.test()
+                            # print("mean reward:", mean_reward)
+                            mean.append(mean_reward)
+                        mean_value = np.mean(mean)
+                        print("global mean reward:", mean_value)
 
 
 path = "./actors/"

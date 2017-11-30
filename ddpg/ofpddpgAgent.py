@@ -106,10 +106,12 @@ class OFPDDPG_agent(DDPG_agent):
 
             if self.episode_step >= self.max_episode_steps or sample['terminal1']:
                 self.endof_episode(sample)
+            else:
+                obs0 = obs1
 
             self.train_step += 1
             self.episode_step += 1
             #print_status("{}/{}".format(self.train_step, self.max_steps))
 
-            obs0 = obs1
+
 

@@ -248,7 +248,8 @@ class DDPG_agent():
                 self.episode += 1
                 if sample['terminal1']: self.nb_goals_reached += 1
                 #self.endof_episode(sample)
-
+            else:
+                obs0 = obs1
 
 
             if self.train_step % self.eval_freq == 0:
@@ -263,5 +264,5 @@ class DDPG_agent():
             self.train_step += 1
             self.episode_step += 1
 
-            obs0 = obs1
+
 

@@ -9,7 +9,7 @@ import pickle
 from envWrapper import NoGoal
 from perf_config_mcc import PerfConfig
 from actor import ActorNetwork
-from HLcriticNetwork import HuberLossCriticNetwork
+from HLcritic import HuberLossCriticNetwork
 from myddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise, NoNoise
 
@@ -30,8 +30,8 @@ def perf_study(delta_clip, num):
     results_path = './experiments/{}/{}/'.format(delta_clip, num)
     #logger_step = Logger(dir=results_path,format_strs=['log','json', 'tensorboard'])
     #logger_episode = Logger(dir=results_path, format_strs=['log','stdout', 'json', 'tensorboard'])
-    logger_step = Logger(dir=results_path,format_strs=['json'])
-    logger_episode = Logger(dir=results_path, format_strs=['json'])
+    logger_step = Logger(dir=results_path+'/log_steps',format_strs=['json'])
+    logger_episode = Logger(dir=results_path+'/log_episodes', format_strs=['json'])
         
     # 
     env_wrapper = NoGoal()
@@ -43,7 +43,7 @@ def perf_study(delta_clip, num):
     assert (env.action_space.high == -env.action_space.low)
 
     memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
-    memory.load_from_ManceronBuffer(file=config.memory_file)
+    #memory.load_from_ManceronBuffer(file=config.memory_file)
 
     # Noise
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
