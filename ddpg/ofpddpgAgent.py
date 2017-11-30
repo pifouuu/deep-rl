@@ -14,10 +14,10 @@ EVAL_EPISODES = 20
 
 class OFPDDPG_agent(DDPG_agent):
     def __init__(self, update_actor, sess, actor, actor_noise, critic, env, env_wrapper, memory, logger_step,
-                 logger_episode, batch_size, eval_episodes, max_episode_steps, max_steps, eval_freq):
+                 logger_episode, batch_size, eval_episodes, max_episode_steps, max_steps, eval_freq, save_step_stats):
         super(OFPDDPG_agent, self).__init__(sess, actor, actor_noise, critic, env, env, env_wrapper, memory,
                                             logger_step, logger_episode, batch_size, eval_episodes, max_episode_steps,
-                                            max_steps, eval_freq)
+                                            max_steps, eval_freq, save_step_stats)
         self.update_actor = update_actor
 
     def train_critic(self, samples):
@@ -116,10 +116,11 @@ class OFPDDPG_agent(DDPG_agent):
             else:
                 obs0 = obs1
 
-            self.step_stats['Training steps'] = self.train_step
-            for key in sorted(self.step_stats.keys()):
-                self.logger_step.logkv(key, self.step_stats[key])
-            self.logger_step.dumpkvs()
+            if self.save_step_stats:
+                self.step_stats['Training steps'] = self.train_step
+                for key in sorted(self.step_stats.keys()):
+                    self.logger_step.logkv(key, self.step_stats[key])
+                self.logger_step.dumpkvs()
 
             self.train_step += 1
             self.episode_step += 1

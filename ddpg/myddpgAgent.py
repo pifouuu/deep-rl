@@ -33,7 +33,8 @@ class DDPG_agent():
                  eval_episodes,
                  max_episode_steps,
                  max_steps,
-                 eval_freq):
+                 eval_freq,
+                 save_step_stats):
 
         #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
@@ -53,6 +54,7 @@ class DDPG_agent():
         self.critic = critic
         self.train_env = train_env
         self.test_env = test_env
+        self.save_step_stats = save_step_stats
 
         #portrait_actor(self.actor.target_model, self.test_env, save_figure=True, figure_file="saved_actor_const2.png")
         self.env_wrapper = env_wrapper
@@ -231,10 +233,11 @@ class DDPG_agent():
             else:
                 obs0 = obs1
 
-            self.step_stats['Training steps'] = self.train_step
-            for key in sorted(self.step_stats.keys()):
-                self.logger_step.logkv(key, self.step_stats[key])
-            self.logger_step.dumpkvs()
+            if self.save_step_stats:
+                self.step_stats['Training steps'] = self.train_step
+                for key in sorted(self.step_stats.keys()):
+                    self.logger_step.logkv(key, self.step_stats[key])
+                self.logger_step.dumpkvs()
 
 
             self.train_step += 1

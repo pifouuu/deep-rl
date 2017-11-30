@@ -53,3 +53,6 @@ def plot_by_delta():
         collector.plot(delta)
     print(cpt, " files found")
     collector.stats()
+
+plot_common()
+plot_by_delta()
