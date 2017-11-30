@@ -23,7 +23,9 @@ class DDPG_agent():
                  eval_episodes,
                  max_episode_steps,
                  max_steps,
-                 eval_freq):
+                 eval_freq,
+                 save_dir,
+                 save_freq):
 
         #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
@@ -37,6 +39,9 @@ class DDPG_agent():
         self.logger_episode = logger_episode
         self.step_stats = {}
         self.episode_stats = {}
+
+        self.save_freq = save_freq
+        self.save_dir = save_dir
 
         self.actor = actor
         self.actor_noise = actor_noise
@@ -92,10 +97,6 @@ class DDPG_agent():
         self.actor.target_train()
         self.critic.target_train()
 
-    #TODO: save 4 networks in one shot with different filenames
-    def save_weights(self, filepath, overwrite=False):
-        self.actor.save_weights(filepath, overwrite=overwrite)
-        self.critic.save_weights(filepath, overwrite=overwrite)
 
     def load_weights(self, filepath):
         self.actor.load_weights(filepath)
@@ -148,9 +149,25 @@ class DDPG_agent():
                 test_rewards.append(reward)
             self.step_stats['Test reward on random goal'] = np.mean(test_rewards)
 
+    def save(self):
+        dir = self.save_dir+'/iter_'+str(self.train_step)+'/'
+        dir = self.save_dir+'/iter_'+'test'+'/'
+
+        self.actor.save_weights(dir+'actor_weights.h5', overwrite=True)
+        self.actor.save_target_weights(dir + 'target_actor_weights.h5', overwrite=True)
+        self.critic.save_weights(dir + 'critic_weights.h5', overwrite=True)
+        self.critic.save_target_weights(dir + 'target_critic_weights.h5', overwrite=True)
+
     def run(self):
 
-        self.sess.run(tf.global_variables_initializer())
+        variables = tf.global_variables()
+        uninitialized_variables = []
+        for v in variables:
+            if not hasattr(v,
+                           '_keras_initialized') or not v._keras_initialized:
+                uninitialized_variables.append(v)
+                v._keras_initialized = True
+        self.sess.run(tf.variables_initializer(uninitialized_variables))
 
         # Initialize target network weights
         #TODO : soft vs hard update
@@ -210,6 +227,9 @@ class DDPG_agent():
 
             if self.train_step % self.eval_freq == 0:
                 self.test()
+
+            if self.train_step % self.save_freq == 0:
+                self.save()
 
             #TODO less train stats
             self.step_stats['Training steps'] = self.train_step

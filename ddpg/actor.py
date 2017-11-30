@@ -34,8 +34,6 @@ class ActorNetwork(object):
         self.stat_ops += [tf.reduce_mean(self.out)]
         self.stat_names += ["Mean action"]
 
-        self.sess.run(tf.global_variables_initializer())
-
     def train(self, states, action_grads):
         self.sess.run(self.optimize, feed_dict={
             self.state: states,
@@ -79,14 +77,12 @@ class ActorNetwork(object):
         self.target_model.set_weights(self.model.get_weights())
 
     def save_weights(self, filepath, overwrite=False):
-        print("Saving weights")
         self.model.save_weights(filepath, overwrite=overwrite)
 
     def load_weights(self, filepath):
         self.model.load_weights(filepath)
 
     def save_target_weights(self, filepath, overwrite=False):
-        print("Saving weights")
         self.target_model.save_weights(filepath, overwrite=overwrite)
 
     def load_target_weights(self, filepath):

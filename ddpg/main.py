@@ -19,9 +19,13 @@ from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSamp
 
 
 def main(args):
-    params = 'memory_'+args['memory']+'_goal_'+args['sampler'] +'_wrapper_'+str(args['wrapper'])
+    params = 'memory_'+args['memory']+'_goal_'+args['sampler'] +'_wrapper_'+args['wrapper']
     logdir = args['summary_dir']
-    final_dir = logdir+'/'+params+'/'+datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    final_dir = logdir+params+'/'+now
+    save_dir = args['save_dir']+params+'/'+now
+    save_dir = args['save_dir']+params
+
 
     logger_step = Logger(dir=final_dir+'/log_step',format_strs=['json', 'tensorboard'])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json', 'tensorboard'])
@@ -36,6 +40,7 @@ def main(args):
     max_episode_steps = int(args['max_episode_steps'])
     max_steps = int(args['max_steps'])
     eval_freq = int(args['eval_freq'])
+    save_freq = int(args['save_freq'])
 
     train_env = gym.make(args['env'])
     test_env = gym.make(args['env'])
@@ -122,7 +127,9 @@ def main(args):
                            eval_episodes,
                            max_episode_steps,
                            max_steps,
-                           eval_freq)
+                           eval_freq,
+                           save_dir,
+                           save_freq)
         agent.run()
 
 if __name__ == '__main__':
@@ -146,10 +153,14 @@ if __name__ == '__main__':
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
-    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
+    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=200)
     parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
-    parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/')
+    parser.add_argument('--summary-dir', help='directory for storing tensorboard info',
+                        default='/home/pierre/PycharmProjects/deep-rl/ddpg/results/')
+    parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
+                        default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=100)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)
 
