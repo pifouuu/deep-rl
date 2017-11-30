@@ -36,6 +36,11 @@ class OFPDDPG_agent(DDPG_agent):
         critic_loss = self.critic.train(samples['state0'], samples['action'], np.reshape(y_i, (self.batch_size, 1)))
         self.step_stats['Critic loss'] = critic_loss
 
+
+        critic_stats = self.critic.get_stats(samples)
+        for key in sorted(critic_stats.keys()):
+            self.step_stats[key] = (critic_stats[key])
+
     def test(self):
         test_rewards = []
         #print ("in test :", self.memory.size())
@@ -61,7 +66,8 @@ class OFPDDPG_agent(DDPG_agent):
         mean_reward = np.mean(test_rewards)
         self.episode_stats['New Training steps'] = self.train_step
         self.episode_stats['New Test reward'] = mean_reward
-        #print ('Test reward', mean_reward)
+        self.step_stats['Test reward'] = mean_reward
+        print ('Test reward', mean_reward)
         if mean_reward > 97.5:
             self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward), overwrite=True)
                 # portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
@@ -109,6 +115,11 @@ class OFPDDPG_agent(DDPG_agent):
             else:
                 obs0 = obs1
 
+            self.step_stats['Training steps'] = self.train_step
+            for key in sorted(self.step_stats.keys()):
+                self.logger_step.logkv(key, self.step_stats[key])
+            self.logger_step.dumpkvs()
+            
             self.train_step += 1
             self.episode_step += 1
             #print_status("{}/{}".format(self.train_step, self.max_steps))
