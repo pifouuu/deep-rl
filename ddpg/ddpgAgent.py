@@ -5,6 +5,7 @@ import os
 import sys
 import pickle
 import time
+from pathlib import Path
 
 class DDPG_agent():
     def __init__(self,
@@ -150,13 +151,13 @@ class DDPG_agent():
             self.step_stats['Test reward on random goal'] = np.mean(test_rewards)
 
     def save(self):
-        dir = self.save_dir+'/iter_'+str(self.train_step)+'/'
-        dir = self.save_dir+'/iter_'+'test'+'/'
-
-        self.actor.save_weights(dir+'actor_weights.h5', overwrite=True)
-        self.actor.save_target_weights(dir + 'target_actor_weights.h5', overwrite=True)
-        self.critic.save_weights(dir + 'critic_weights.h5', overwrite=True)
-        self.critic.save_target_weights(dir + 'target_critic_weights.h5', overwrite=True)
+        dir = self.save_dir+'/'
+        path = Path(dir)
+        path.mkdir(parents=True, exist_ok=True)
+        self.actor.save_weights(dir+'actor_weights_{}.h5'.format(self.train_step), overwrite=True)
+        self.actor.save_target_weights(dir + 'target_actor_weights_{}.h5'.format(self.train_step), overwrite=True)
+        self.critic.save_weights(dir + 'critic_weights_{}.h5'.format(self.train_step), overwrite=True)
+        self.critic.save_target_weights(dir + 'target_critic_weights_{}.h5'.format(self.train_step), overwrite=True)
 
     def run(self):
 

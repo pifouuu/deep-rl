@@ -24,8 +24,6 @@ def main(args):
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = logdir+params+'/'+now
     save_dir = args['save_dir']+params+'/'+now
-    save_dir = args['save_dir']+params
-
 
     logger_step = Logger(dir=final_dir+'/log_step',format_strs=['json', 'tensorboard'])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json', 'tensorboard'])
@@ -105,6 +103,8 @@ def main(args):
                              tau,
                              actor_lr)
 
+        actor.load_weights(args['save_dir']+params+'/2017_11_30_16_56_43/actor_weights_300.h5')
+
         critic = CriticNetwork(sess,
                                state_dim,
                                action_dim,
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
                         default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=100)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)
 
