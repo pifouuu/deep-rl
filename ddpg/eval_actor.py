@@ -84,7 +84,8 @@ class Evaluator:
                                            config.eval_episodes,
                                            config.max_episode_steps,
                                            config.max_steps,
-                                           config.eval_freq)
+                                           config.eval_freq,
+                                           config.save_step_stats)
                         portrait_actor(actor.target_model, env, save_figure=True, figure_file="./img/"+filename+".png")
                         mean = []
                         for i in range(10):

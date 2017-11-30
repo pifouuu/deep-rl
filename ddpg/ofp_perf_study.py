@@ -8,6 +8,7 @@ from actor import ActorNetwork
 from HLcritic import HuberLossCriticNetwork
 from ofpddpgAgent import OFPDDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise, NoNoise
+from plot import portrait_actor
 
 # Configuration
 config = PerfConfig()
@@ -67,6 +68,8 @@ def perf_study(delta_clip, num):
 
         # update_actor.save_weights('good_actor.p')
         update_actor.load_weights('actors/good_actor.save')
+        update_actor.load_target_weights('actors/good_actor.save')
+        #portrait_actor(update_actor.target_model, env, save_figure=True, figure_file="./img/update_actor.png")
 
         agent = OFPDDPG_agent(update_actor,
                               sess,

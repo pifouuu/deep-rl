@@ -1,4 +1,5 @@
 from myddpgAgent import DDPG_agent
+from plot import portrait_actor
 
 import tensorflow as tf
 import numpy as np
@@ -82,7 +83,7 @@ class OFPDDPG_agent(DDPG_agent):
     def run(self):
 
         #self.sess.run(tf.global_variables_initializer())
-
+        #portrait_actor(self.update_actor.target_model, self.test_env, save_figure=True, figure_file="./img/update_actor2.png")
         # Initialize target network weights
         #TODO : soft vs hard update
         self.actor.target_train()
