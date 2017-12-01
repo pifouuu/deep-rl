@@ -105,7 +105,7 @@ class PerfCollector():
                 plt.plot(x,y, label="conv", c='b')
         #plt.legend()
         #plt.show()
-        plt.savefig(self.image_folder + 'perf_' + delta + '.svg', bbox_inches='tight')
+        plt.savefig(self.image_folder + 'perf_' + delta + '.png', bbox_inches='tight')
 
     def plot_all(self):
         plt.figure(1, figsize=(20,13))
@@ -142,4 +142,4 @@ class PerfCollector():
                     plt.plot(x,y, label="conv", c='b')
         #plt.legend()
         #plt.show()
-        plt.savefig(self.image_folder + 'perf.svg', bbox_inches='tight')
+        plt.savefig(self.image_folder + 'perf.png', bbox_inches='tight')

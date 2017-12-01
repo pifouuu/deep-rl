@@ -1,5 +1,5 @@
-from ofp_perf_study import perf_study
-#from standard_perf_study import perf_study
+#from ofp_perf_study import perf_study
+from standard_perf_study import perf_study
 import os
 
 # Configuration

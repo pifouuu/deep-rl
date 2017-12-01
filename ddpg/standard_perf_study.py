@@ -56,13 +56,6 @@ def perf_study(delta_clip, num):
             tf.set_random_seed(config.seed)
             env.seed(config.seed)
 
-        actor = ActorNetwork(sess,
-                             state_dim,
-                             action_dim,
-                             action_bound,
-                             config.tau,
-                             config.actor_lr)
-
         critic = HuberLossCriticNetwork(delta_clip,
                                         sess,
                                         state_dim,
@@ -70,6 +63,15 @@ def perf_study(delta_clip, num):
                                         config.gamma,
                                         config.tau,
                                         config.critic_lr)
+
+        actor = ActorNetwork(sess,
+                             state_dim,
+                             action_dim,
+                             action_bound,
+                             config.tau,
+                             config.actor_lr)
+
+
 
         agent = DDPG_agent(sess,
                             actor,
