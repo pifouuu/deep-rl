@@ -32,7 +32,7 @@ class ActorNetwork(object):
         self.optimize = tf.train.AdamOptimizer(learning_rate).apply_gradients(grads)
 
         self.stat_ops += [tf.reduce_mean(self.out)]
-        self.stat_names += ["Mean action"]
+        self.stat_names += ["Mean_action"]
 
     def train(self, states, action_grads):
         self.sess.run(self.optimize, feed_dict={

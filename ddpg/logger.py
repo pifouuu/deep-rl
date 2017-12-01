@@ -6,6 +6,7 @@ import json
 import time
 import datetime
 import tempfile
+import re
 
 LOG_OUTPUT_FORMATS = ['stdout', 'log', 'json']
 
@@ -92,10 +93,11 @@ class TensorBoardOutputFormat(OutputFormat):
     """
     Dumps key/value pairs into TensorBoard's numeric format.
     """
-    def __init__(self, dir):
+    def __init__(self, dir, freq):
         os.makedirs(dir, exist_ok=True)
+        self.freq = freq
         self.dir = dir
-        self.step = 1
+        self.step = freq
         prefix = 'events'
         path = osp.join(osp.abspath(dir), prefix)
         import tensorflow as tf
@@ -116,7 +118,7 @@ class TensorBoardOutputFormat(OutputFormat):
         event.step = self.step # is there any reason why you'd want to specify the step?
         self.writer.WriteEvent(event)
         self.writer.Flush()
-        self.step += 1
+        self.step += self.freq
 
     def close(self):
         if self.writer:
@@ -126,6 +128,7 @@ class TensorBoardOutputFormat(OutputFormat):
 
 def make_output_format(format, ev_dir):
     os.makedirs(ev_dir, exist_ok=True)
+    pattern = re.compile("^tensorboard_([0-9]+)$")
     if format == 'stdout':
         return HumanOutputFormat(sys.stdout)
     elif format == 'log':
@@ -134,8 +137,9 @@ def make_output_format(format, ev_dir):
     elif format == 'json':
         json_file = open(osp.join(ev_dir, 'progress.json'), 'wt')
         return JSONOutputFormat(json_file)
-    elif format == 'tensorboard':
-        return TensorBoardOutputFormat(osp.join(ev_dir, 'tb'))
+    elif pattern.match(format) is not None:
+        _, freq = format.split('_')
+        return TensorBoardOutputFormat(osp.join(ev_dir, 'tb'), int(freq))
     else:
         raise ValueError('Unknown format specified: %s' % (format,))
 

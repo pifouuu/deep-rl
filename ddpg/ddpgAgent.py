@@ -18,7 +18,7 @@ class DDPG_agent():
                  env_wrapper, 
                  memory,
                  goal_sampler,
-                 logger_step, 
+                 logger_step,
                  logger_episode,
                  batch_size,
                  eval_episodes,
@@ -26,7 +26,8 @@ class DDPG_agent():
                  max_steps,
                  eval_freq,
                  save_dir,
-                 save_freq):
+                 save_freq,
+                 log_freq):
 
         #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
@@ -40,6 +41,7 @@ class DDPG_agent():
         self.logger_episode = logger_episode
         self.step_stats = {}
         self.episode_stats = {}
+        self.log_freq = log_freq
 
         self.save_freq = save_freq
         self.save_dir = save_dir
@@ -77,7 +79,7 @@ class DDPG_agent():
         # Update the critic given the targets
         critic_loss = self.critic.train(
             experiences['state0'], experiences['action'], np.reshape(y_i, (self.batch_size, 1)))
-        self.step_stats['Critic loss'] = critic_loss
+        self.step_stats['list/critic_loss'].append(critic_loss)
 
     def train_actor(self, samples):
 
@@ -105,10 +107,10 @@ class DDPG_agent():
 
         actor_stats = self.actor.get_stats(experiences)
         for key in sorted(actor_stats.keys()):
-            self.step_stats[key] = (actor_stats[key])
+            self.step_stats['list/'+key].append(actor_stats[key])
         critic_stats = self.critic.get_stats(experiences)
         for key in sorted(critic_stats.keys()):
-            self.step_stats[key] = (critic_stats[key])
+            self.step_stats['list/'+key].append(critic_stats[key])
 
     def run_test_episode(self, test_goal):
         ep_test_reward = 0
@@ -162,6 +164,12 @@ class DDPG_agent():
                 v._keras_initialized = True
         self.sess.run(tf.variables_initializer(uninitialized_variables))
 
+        self.step_stats['list/critic_loss'] = []
+        for stat in self.actor.stat_names:
+            self.step_stats['list/'+stat] = []
+        for stat in self.critic.stat_names:
+            self.step_stats['list/'+stat] = []
+
         # Initialize target network weights
         #TODO : soft vs hard update
         self.actor.target_train()
@@ -203,6 +211,7 @@ class DDPG_agent():
                 self.episode_stats['Episode steps'] = self.episode_step
                 self.episode_stats['Goal reached'] = self.nb_goals_reached
                 self.episode_stats['Duration'] = time.time() - start_time
+                self.episode_stats['Train step'] = self.train_step
 
                 current_obs = self.train_env.reset()
                 episode_init = current_obs
@@ -222,11 +231,17 @@ class DDPG_agent():
             # if self.train_step % self.save_freq == 0:
             #     self.save()
 
-            #TODO less train stats
-            self.step_stats['Training steps'] = self.train_step
-            for key in sorted(self.step_stats.keys()):
-                self.logger_step.logkv(key, self.step_stats[key])
-            self.logger_step.dumpkvs()
+            if self.train_step % self.log_freq == 0:
+                for key in sorted(self.step_stats.keys()):
+                    if key.startswith('list'):
+                        log_key = key.split('/')[1]
+                        self.logger_step.logkv(log_key, np.mean(self.step_stats[key]))
+                        self.step_stats[key] = []
+                    else:
+                        self.logger_step.logkv(key, self.step_stats[key])
+                self.logger_step.dumpkvs()
+
+
 
 
 

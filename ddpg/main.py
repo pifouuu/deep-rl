@@ -24,9 +24,10 @@ def main(args):
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = logdir+params+'/'+now
     save_dir = args['save_dir']+params+'/'+now
+    log_freq = args['log_freq']
 
-    logger_step = Logger(dir=final_dir+'/log_step',format_strs=['json', 'tensorboard'])
-    logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json', 'tensorboard'])
+    logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json', 'tensorboard_'+str(log_freq)])
+    logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json', 'tensorboard_1'])
 
 
     actor_lr = float(args['actor_lr'])
@@ -131,7 +132,8 @@ def main(args):
                            max_steps,
                            eval_freq,
                            save_dir,
-                           save_freq)
+                           save_freq,
+                           log_freq)
         agent.run()
 
 if __name__ == '__main__':
@@ -146,10 +148,10 @@ if __name__ == '__main__':
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
-    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='NoGoal')
-    parser.add_argument('--memory', help='type of memory to use', default='SARST')
+    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='WithGoal')
+    parser.add_argument('--memory', help='type of memory to use', default='hindsight_SAS')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
-    parser.add_argument('--sampler', help='type of goal sampling', default='NoGoal')
+    parser.add_argument('--sampler', help='type of goal sampling', default='Random')
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
@@ -163,6 +165,7 @@ if __name__ == '__main__':
                         default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
     parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
+    parser.add_argument('--log-freq', help='saving models weights frequency', default=200)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)
 

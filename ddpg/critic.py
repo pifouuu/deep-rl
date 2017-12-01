@@ -38,7 +38,7 @@ class CriticNetwork(object):
 
         # Setting up stats
         self.stat_ops += [tf.reduce_mean(self.out)]
-        self.stat_names += ['Mean Q values']
+        self.stat_names += ['mean_Q_values']
         self.stat_ops += [tf.reduce_mean(self.action_grads)]
         self.stat_names += ['reference_action_grads']
 
