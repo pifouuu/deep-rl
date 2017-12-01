@@ -11,6 +11,6 @@ class PerfConfig(CommonConfig):
         self.tau = 1e-3
         self.eval_episodes = 10 #number of episodes to run during evaluation', default=20
         self.max_episode_steps = 1000
-        self.max_steps = 1000000
+        self.max_steps = 1e7
         self.eval_freq = 1000 #evaluation frequency', default=1000
         self.save_step_stats = False
