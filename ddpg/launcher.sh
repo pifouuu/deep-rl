@@ -25,7 +25,7 @@ do
 	#PBS -o out/${NAME}.out\n\
 	#PBS -e err/${NAME}.err\n\
 	cd \$PBS_O_WORKDIR\n\
-	/usr/bin/python3.4 $DDPG --summary-dir $LOGDIR --wrapper WithGoal --memory hindsight_ep --sampler Random"
+	/usr/bin/python3.4 $DDPG --summary-dir $LOGDIR --wrapper WithGoal --memory hindsight_SARST --sampler Random"
 
 	# Note that $PBS_O_WORKDIR is escaped ("\"). We don't want bash to evaluate this variable right now. Instead it will be evaluated when the command runs on the node.
 
