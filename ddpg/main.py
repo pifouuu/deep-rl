@@ -27,6 +27,7 @@ def main(args):
     final_dir = logdir+params+'/'+now
     save_dir = args['save_dir']+params+'/'+now
     log_freq = args['log_freq']
+    target_clip = args['target_clip']
 
     logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json', 'tensorboard_'+str(log_freq)])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json', 'tensorboard_1'])
@@ -135,7 +136,8 @@ def main(args):
                            eval_freq,
                            save_dir,
                            save_freq,
-                           log_freq)
+                           log_freq,
+                           target_clip)
         agent.run()
 
 if __name__ == '__main__':
@@ -154,6 +156,7 @@ if __name__ == '__main__':
     parser.add_argument('--memory', help='type of memory to use', default='hindsight_SARST')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
     parser.add_argument('--sampler', help='type of goal sampling', default='Random')
+    parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', action='store_false')
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')

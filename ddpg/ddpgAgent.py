@@ -27,7 +27,8 @@ class DDPG_agent():
                  eval_freq,
                  save_dir,
                  save_freq,
-                 log_freq):
+                 log_freq,
+                 target_clip):
 
         #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
@@ -36,6 +37,7 @@ class DDPG_agent():
         self.max_episode_steps = max_episode_steps
         self.max_steps = max_steps
         self.eval_freq = eval_freq
+        self.target_clip = target_clip
 
         self.logger_step = logger_step
         self.logger_episode = logger_episode
@@ -71,10 +73,17 @@ class DDPG_agent():
 
         y_i = []
         for k in range(self.batch_size):
+            if self.target_clip:
+                target_q_val = np.clip(target_q[k],
+                                   self.env_wrapper.min_reward/(1-self.critic.gamma),
+                                   self.env_wrapper.max_reward)
+            else:
+                target_q_val = target_q[k]
+
             if experiences['terminal'][k]:
                 y_i.append(experiences['reward'][k])
             else:
-                y_i.append(experiences['reward'][k] + self.critic.gamma * target_q[k])
+                y_i.append(experiences['reward'][k] + self.critic.gamma * target_q_val)
 
         # Update the critic given the targets
         critic_loss = self.critic.train(

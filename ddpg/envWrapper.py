@@ -8,6 +8,8 @@ class EnvWrapper(object):
         self.action_shape = (1,)
         self.reward_shape = (1,)
         self.terminal_shape = (1,)
+        self.min_reward = -0.1
+        self.max_reward = 100
 
     def get_initial_goal(self):
         goal = np.random.uniform([0.449], [0.451], (1,))

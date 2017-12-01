@@ -51,7 +51,6 @@ class CriticNetwork(object):
         })[0]
 
     def predict_target(self, states, actions):
-        # TODO: clipping target critic values to [-10, 100] (max possible values)
         return self.target_model.predict_on_batch([states, actions])
 
     def train(self, states, actions, targets):
