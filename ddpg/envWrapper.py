@@ -10,7 +10,8 @@ class EnvWrapper(object):
         self.terminal_shape = (1,)
 
     def get_initial_goal(self):
-        return [0.45]
+        goal = np.random.uniform([0.449], [0.451], (1,))
+        return goal
 
     def get_random_goal(self):
         goal_found = False

@@ -39,6 +39,8 @@ class CriticNetwork(object):
         # Setting up stats
         self.stat_ops += [tf.reduce_mean(self.out)]
         self.stat_names += ['mean_Q_values']
+        self.stat_ops += [tf.reduce_mean(self.target_model.output)]
+        self.stat_names += ['mean_target_Q_values']
         self.stat_ops += [tf.reduce_mean(self.action_grads)]
         self.stat_names += ['reference_action_grads']
 
@@ -80,6 +82,8 @@ class CriticNetwork(object):
         critic_values = self.sess.run(self.stat_ops, feed_dict={
             self.state: stats_sample['state0'],
             self.action: stats_sample['action'],
+            self.target_state: stats_sample['state0'],
+            self.target_action: stats_sample['action'],
         })
 
         names = self.stat_names[:]
