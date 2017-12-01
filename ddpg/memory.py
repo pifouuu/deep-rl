@@ -112,6 +112,7 @@ class SARSTMemory(Memory):
 
 class SASMemory(Memory):
     def __init__(self, env_wrapper, limit):
+        self.env_wrapper = env_wrapper
         self.contents = {'state0': env_wrapper.state_shape,
                     'action': env_wrapper.action_shape,
                     'state1': env_wrapper.state_shape}
@@ -122,6 +123,19 @@ class SASMemory(Memory):
                 'action': action,
                 'state1': next_state}
         return dict
+
+    def sample(self, batch_size):
+        dict = super(SASMemory, self).sample(batch_size)
+        dict['reward'] = np.zeros((batch_size))
+        dict['terminal'] = np.zeros((batch_size))
+        for k in range(batch_size):
+            dict['reward'][k], dict['terminal'][k] = self.env_wrapper.eval_exp(dict['state0'][k],
+                                                                               dict['action'][k],
+                                                                               dict['state1'][k])
+        dict['reward'] = array_min2d(dict['reward'])
+        dict['terminal'] = array_min2d(dict['terminal'])
+        return dict
+
 
     # added by Olivier Sigaud --------------------------------
 
@@ -186,56 +200,108 @@ class SASMemory(Memory):
             # end of added by Olivier Sigaud --------------------------------
 
 
-class EpisodicHerSASMemory(SASMemory):
+class EpisodicHerSARSTMemory(SARSTMemory):
     def __init__(self, env_wrapper, limit, strategy):
         """Replay buffer that does Hindsight Experience Replay
         obs_to_goal is a function that converts observations to goals
         goal_slice is a slice of indices of goal in observation
         """
-        super(EpisodicHerSASMemory, self).__init__(env_wrapper, limit)
+        super(EpisodicHerSARSTMemory, self).__init__(env_wrapper, limit)
 
         self.strategy = strategy
         self.data = []
         self.env_wrapper = env_wrapper
+        self.state_to_goal = env_wrapper.state_to_goal
+        self.state_to_obs = env_wrapper.state_to_obs
+        self.obs_to_goal = env_wrapper.obs_to_goal
 
     def append(self, buffer_item):
-        super(EpisodicHerSASMemory, self).append(buffer_item)
+        super(EpisodicHerSARSTMemory, self).append(buffer_item)
         self.data.append(buffer_item)
 
-    def end_episode(self):
-        state_to_goal = self.env_wrapper.state_to_goal
-        state_to_obs = self.env_wrapper.state_to_obs
-        obs_to_goal = self.env_wrapper.obs_to_goal
+    def change_goal(self, buffer_item, new_goal):
+        res = buffer_item
+        res['state0'][self.state_to_goal] = new_goal
+        res['state1'][self.state_to_goal] = new_goal
+        res['reward'], res['terminal'] = self.env_wrapper.eval_exp(res['state0'],
+                                                                   res['action'],
+                                                                   res['state1'])
+        return res
 
-        # TODO : check if repetition in sampling
+    def end_episode(self):
         if self.strategy == 'final':
             final_state = self.data[-1]['state1']
-            new_goal = final_state[state_to_obs][obs_to_goal]
+            new_goal = final_state[self.state_to_obs][self.obs_to_goal]
             for buffer_item in self.data:
-                buffer_item['state0'][state_to_goal] = new_goal
-                buffer_item['state1'][state_to_goal] = new_goal
-                super(EpisodicHerSASMemory, self).append(buffer_item)
+                new_buffer_item = self.change_goal(buffer_item, new_goal)
+                super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
         elif self.strategy == 'episode':
             final_states = [self.data[i]['state1'] for i in list(np.random.randint(len(self.data), size=4))]
             for final_state in final_states:
-                new_goal = final_state[state_to_obs][obs_to_goal]
+                new_goal = final_state[self.state_to_obs][self.obs_to_goal]
                 for buffer_item in self.data:
-                    buffer_item['state0'][state_to_goal] = new_goal
-                    buffer_item['state1'][state_to_goal] = new_goal
-                    super(EpisodicHerSASMemory, self).append(buffer_item)
+                    new_buffer_item = self.change_goal(buffer_item, new_goal)
+                    super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
         elif self.strategy == 'future':
             for idx, buffer_item in enumerate(self.data):
                 future_indices = np.random.randint(idx, len(self.data), size=4)
                 final_states = [self.data[i]['state1'] for i in list(future_indices)]
                 for final_state in final_states:
-                    new_goal = final_state[state_to_obs][obs_to_goal]
-                    buffer_item['state0'][state_to_goal] = new_goal
-                    buffer_item['state1'][state_to_goal] = new_goal
-                    super(EpisodicHerSASMemory, self).append(buffer_item)
+                    new_goal = final_state[self.state_to_obs][self.obs_to_goal]
+                    new_buffer_item = self.change_goal(buffer_item, new_goal)
+                    super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
         else:
             print('error her strategy')
             return
         self.data = []
+
+class EpisodicHerSASMemory(SASMemory):
+    def __init__(self, env_wrapper, limit, strategy):
+        super(EpisodicHerSASMemory, self).__init__(env_wrapper, limit)
+
+        self.strategy = strategy
+        self.data = []
+        self.state_to_goal = env_wrapper.state_to_goal
+        self.state_to_obs = env_wrapper.state_to_obs
+        self.obs_to_goal = env_wrapper.obs_to_goal
+
+    def append(self, buffer_item):
+        super(EpisodicHerSASMemory, self).append(buffer_item)
+        self.data.append(buffer_item)
+
+    def change_goal(self, buffer_item, new_goal):
+        res = buffer_item
+        res['state0'][self.state_to_goal] = new_goal
+        res['state1'][self.state_to_goal] = new_goal
+        return res
+
+    def end_episode(self):
+        if self.strategy == 'final':
+            final_state = self.data[-1]['state1']
+            new_goal = final_state[self.state_to_obs][self.obs_to_goal]
+            for buffer_item in self.data:
+                new_buffer_item = self.change_goal(buffer_item, new_goal)
+                super(EpisodicHerSASMemory, self).append(new_buffer_item)
+        elif self.strategy == 'episode':
+            final_states = [self.data[i]['state1'] for i in list(np.random.randint(len(self.data), size=4))]
+            for final_state in final_states:
+                new_goal = final_state[self.state_to_obs][self.obs_to_goal]
+                for buffer_item in self.data:
+                    new_buffer_item = self.change_goal(buffer_item, new_goal)
+                    super(EpisodicHerSASMemory, self).append(new_buffer_item)
+        elif self.strategy == 'future':
+            for idx, buffer_item in enumerate(self.data):
+                future_indices = np.random.randint(idx, len(self.data), size=4)
+                final_states = [self.data[i]['state1'] for i in list(future_indices)]
+                for final_state in final_states:
+                    new_goal = final_state[self.state_to_obs][self.obs_to_goal]
+                    new_buffer_item = self.change_goal(buffer_item, new_goal)
+                    super(EpisodicHerSASMemory, self).append(new_buffer_item)
+        else:
+            print('error her strategy')
+            return
+        self.data = []
+
 
 
 

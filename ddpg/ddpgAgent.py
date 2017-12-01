@@ -69,14 +69,6 @@ class DDPG_agent():
 
         y_i = []
         for k in range(self.batch_size):
-            # reward, terminal = self.env_wrapper.eval_exp(experiences['state0'][k],
-            #                                              experiences['action'][k],
-            #                                              experiences['state1'][k])
-            # if terminal:
-            #     y_i.append(reward)
-            # else:
-            #     y_i.append(reward + self.critic.gamma * target_q[k])
-            #TODO fix to work with SAS
             if experiences['terminal'][k]:
                 y_i.append(experiences['reward'][k])
             else:
@@ -226,9 +218,9 @@ class DDPG_agent():
 
             if self.train_step % self.eval_freq == 0:
                 self.test()
-
-            if self.train_step % self.save_freq == 0:
-                self.save()
+            #
+            # if self.train_step % self.save_freq == 0:
+            #     self.save()
 
             #TODO less train stats
             self.step_stats['Training steps'] = self.train_step
