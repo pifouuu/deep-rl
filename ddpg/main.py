@@ -20,6 +20,8 @@ from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSamp
 
 def main(args):
     params = 'memory_'+args['memory']+'_goal_'+args['sampler'] +'_wrapper_'+args['wrapper']
+    if args['memory'].startswith('hindsight'):
+        params+='_strategy_'+args['strategy']
     logdir = args['summary_dir']
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = logdir+params+'/'+now
@@ -150,7 +152,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='WithGoal')
     parser.add_argument('--memory', help='type of memory to use', default='hindsight_SARST')
-    parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
+    parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
     parser.add_argument('--sampler', help='type of goal sampling', default='Random')
 
     # run parameters
