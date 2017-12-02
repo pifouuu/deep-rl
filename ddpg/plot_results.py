@@ -1,9 +1,9 @@
 import json
-import numpy as np
-from notebooks.perfcollector import PerfCollector
+#from notebooks.perfcollector import PerfCollector
+from notebooks.perfcollector_dataframe import PerfCollectorData
 import os
 
-directory = "./perf_ofp/"  # "./experiments/"
+directory = "./experiments/" # "./perf_ofp/"  # "./experiments/"
 
 def get_perf_values(filename):
     with open(filename, 'r') as json_data:
@@ -22,7 +22,7 @@ def get_perf_values(filename):
 
 def plot_all():
     cpt = 0
-    collector = PerfCollector("./img/")
+    collector = PerfCollectorData("./img/")
     for delta in os.listdir(directory):
         collector.init(delta)
         perf_values = {}
@@ -33,9 +33,8 @@ def plot_all():
             cpt += 1
             collector.add(delta, perf_values)
         collector.plot(delta)
-    collector.plot_all()
     print(cpt, " files found")
     collector.stats()
-    collector.stats_all()
+    collector.plot_all()
 
 plot_all()
