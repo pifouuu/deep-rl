@@ -3,18 +3,13 @@ import numpy as np
 from logger import Logger
 from memory import Memory
 from envWrapper import NoGoal
-from perf_config_mcc import PerfConfig
 from actor import ActorNetwork
 from HLcritic import HuberLossCriticNetwork
 from ofpddpgAgent import OFPDDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise, NoNoise
 from plot import portrait_actor
 
-# Configuration
-config = PerfConfig()
-
-
-def perf_study(delta_clip, num):
+def perf_study_ofp(delta_clip, num, config):
     # Get the environment and extract the number of actions.
     env = config.env
 

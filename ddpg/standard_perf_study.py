@@ -1,13 +1,8 @@
 import tensorflow as tf
 import numpy as np
-import gym
-import argparse
-import pprint as pp
 from logger import Logger
 from memory import Memory
-import pickle
 from envWrapper import NoGoal
-from perf_config_mcc import PerfConfig
 from actor import ActorNetwork
 from HLcritic import HuberLossCriticNetwork
 from myddpgAgent import DDPG_agent
@@ -16,11 +11,8 @@ from noise import OrnsteinUhlenbeckActionNoise, NoNoise
 from rl.utils.printer import print_info
 import os
 
-# Configuration
-config = PerfConfig()
 
-
-def perf_study(delta_clip, num):
+def perf_study_standard(delta_clip, num, config):
     # Get the environment and extract the number of actions.
     env = config.env
     if not config.random_seed:
@@ -30,8 +22,8 @@ def perf_study(delta_clip, num):
     results_path = './experiments/{}/{}/'.format(delta_clip, num)
     #logger_step = Logger(dir=results_path,format_strs=['log','json', 'tensorboard'])
     #logger_episode = Logger(dir=results_path, format_strs=['log','stdout', 'json', 'tensorboard'])
-    logger_step = Logger(dir=results_path+'/log_steps',format_strs=['json'])
-    logger_episode = Logger(dir=results_path+'/log_episodes', format_strs=['json'])
+    logger_step = Logger(dir=results_path+'/log_steps',format_strs=['json', 'tensorboard'])
+    logger_episode = Logger(dir=results_path+'/log_episodes', format_strs=['json', 'tensorboard'])
         
     # 
     env_wrapper = NoGoal()
@@ -46,7 +38,7 @@ def perf_study(delta_clip, num):
     #memory.load_from_ManceronBuffer(file=config.memory_file)
 
     # Noise
-    actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
+    actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma = config.noise_factor)
     #actor_noise = NoNoise()
 
     with tf.Session() as sess:
