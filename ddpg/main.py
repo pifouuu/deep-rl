@@ -34,22 +34,9 @@ def main(args):
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = logdir+params+'/'+now
     save_dir = args['save_dir']+params+'/'+now
-    log_freq = args['log_freq']
-    target_clip = args['target_clip']
 
-    logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json', 'tensorboard_'+str(log_freq)])
+    logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json', 'tensorboard_'+str(args['log_freq'])])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json', 'tensorboard_1'])
-
-    actor_lr = float(args['actor_lr'])
-    tau = float(args['tau'])
-    critic_lr = float(args['critic_lr'])
-    gamma = float(args['gamma'])
-    batch_size = int(args['minibatch_size'])
-    eval_episodes = int(args['eval_episodes'])
-    max_episode_steps = int(args['max_episode_steps'])
-    max_steps = int(args['max_steps'])
-    eval_freq = int(args['eval_freq'])
-    save_freq = int(args['save_freq'])
 
     train_env = gym.make(args['env'])
     test_env = gym.make(args['env'])
@@ -92,7 +79,6 @@ def main(args):
     else:
         print("Nooooooo")
 
-
     state_dim = env_wrapper.state_shape[0]
     action_dim = env_wrapper.action_shape[0]
     action_bound = train_env.action_space.high
@@ -100,6 +86,7 @@ def main(args):
     assert (train_env.action_space.high == -train_env.action_space.low)
 
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
+
 
     with tf.Session() as sess:
 
@@ -113,17 +100,18 @@ def main(args):
                              state_dim,
                              action_dim,
                              action_bound,
-                             tau,
-                             actor_lr)
+                             float(args['tau']),
+                             float(args['actor_lr']),
+                             args['activation'])
 
         # actor.load_weights(args['save_dir']+params+'/2017_11_30_16_56_43/actor_weights_300.h5')
 
         critic = CriticNetwork(sess,
                                state_dim,
                                action_dim,
-                               gamma,
-                               tau,
-                               critic_lr)
+                               float(args['gamma']),
+                               float(args['tau']),
+                               float(args['critic_lr']))
 
         agent = DDPG_agent(sess,
                            actor,
@@ -136,15 +124,16 @@ def main(args):
                            goal_sampler,
                            logger_step,
                            logger_episode,
-                           batch_size,
-                           eval_episodes,
-                           max_episode_steps,
-                           max_steps,
-                           eval_freq,
+                           int(args['minibatch_size']),
+                           int(args['eval_episodes']),
+                           int(args['max_episode_steps']),
+                           int(args['max_steps']),
+                           int(args['eval_freq']),
                            save_dir,
-                           save_freq,
-                           log_freq,
-                           target_clip)
+                           int(args['save_freq']),
+                           int(args['log_freq']),
+                           args['target_clip'],
+                           args['invert_grads'])
         agent.run()
 
 if __name__ == '__main__':
@@ -159,13 +148,16 @@ if __name__ == '__main__':
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
-    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='goalC')
-    parser.add_argument('--memory', help='type of memory to use', default='hsarst')
+    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='no')
+    parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
-    parser.add_argument('--sampler', help='type of goal sampling', default='goalC')
+    parser.add_argument('--sampler', help='type of goal sampling', default='no')
     parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', action='store_true')
-    parser.set_defaults(target_clip=True)
+    parser.set_defaults(target_clip=False)
     parser.add_argument('--alpha', help="how much priorization in goal sampling", default=0.5)
+    parser.add_argument('--activation', help='actor final layer activation', default='linear')
+    parser.add_argument('--invert-grads', help='Gradient inverting for bounded action spaces', action='store_true')
+    parser.set_defaults(invert_grads=True)
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')

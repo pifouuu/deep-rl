@@ -7,6 +7,16 @@ import pickle
 import time
 from pathlib import Path
 
+def gradient_inverter(gradient, p_min, p_max):
+    """Gradient inverting as described in https://arxiv.org/abs/1511.04143"""
+    delta = p_max - p_min
+    if delta <= 0:
+        raise(ValueError("p_max <= p_min"))
+
+    inverted_gradient = tf.where(gradient >= 0, (p_max - gradient) / delta, (gradient - p_min) / delta)
+
+    return(inverted_gradient)
+
 class DDPG_agent():
     def __init__(self,
                  sess,
@@ -28,7 +38,8 @@ class DDPG_agent():
                  save_dir,
                  save_freq,
                  log_freq,
-                 target_clip):
+                 target_clip,
+                 invert_grads):
 
         #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
@@ -38,6 +49,7 @@ class DDPG_agent():
         self.max_steps = max_steps
         self.eval_freq = eval_freq
         self.target_clip = target_clip
+        self.invert_grads = invert_grads
 
         self.logger_step = logger_step
         self.logger_episode = logger_episode
@@ -69,7 +81,10 @@ class DDPG_agent():
 
         # Calculate targets
         target_q = self.critic.predict_target(
-            experiences['state1'], self.actor.predict_target(experiences['state1']))
+            experiences['state1'],
+            self.actor.predict_target(experiences['state1'])
+            # np.clip(self.actor.predict_target(experiences['state1']), -self.actor.action_bound, self.actor.action_bound)
+        )
 
         y_i = []
         for k in range(self.batch_size):
@@ -95,6 +110,9 @@ class DDPG_agent():
         a_outs = self.actor.predict(samples['state0'])
         # TODO : experiment with inverted gradients
         grads = self.critic.gradients(samples['state0'], a_outs)
+        if self.invert_grads:
+            for k in range(self.batch_size):
+                grads[k] *= (1-a_outs[k])/2 if grads[k]>=0 else (a_outs[k]+1)/2
         self.actor.train(samples['state0'], grads)
 
     def update_targets(self):
@@ -127,6 +145,7 @@ class DDPG_agent():
         for k in range(self.max_episode_steps):
             state = self.goal_sampler.process_observation(test_obs, test_goal)
             action = self.actor.target_model.predict(np.reshape(state, (1, self.actor.s_dim)))
+            action = np.clip(action, -self.actor.action_bound, self.actor.action_bound)
             next_obs, reward_env, done_env, info = self.test_env.step(action[0])
             next_state = self.goal_sampler.process_observation(next_obs, test_goal)
             reward, reached = self.env_wrapper.eval_exp(state, action, next_state)

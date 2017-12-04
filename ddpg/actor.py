@@ -10,7 +10,7 @@ import keras.backend as K
 import os
 
 class ActorNetwork(object):
-    def __init__(self, sess, state_size, action_size, action_bound, tau, learning_rate):
+    def __init__(self, sess, state_size, action_size, action_bound, tau, learning_rate, activation):
         self.sess = sess
         self.tau = tau
         self.s_dim = state_size
@@ -19,6 +19,7 @@ class ActorNetwork(object):
         self.action_bound = action_bound
         self.stat_ops = []
         self.stat_names = []
+        self.activation = activation
 
         K.set_session(sess)
 
@@ -59,7 +60,7 @@ class ActorNetwork(object):
         S = Input(shape=[state_size])
         h0 = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
         h1 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h0)
-        V = Dense(action_dim, activation="tanh",
+        V = Dense(action_dim, activation=self.activation,
                   kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h1)
         model = Model(inputs=S,outputs=V)
         return model, model.trainable_weights, S
