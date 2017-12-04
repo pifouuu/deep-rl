@@ -1,8 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import gym
-import argparse
-import pprint as pp
 from logger import Logger
 from memory import Memory
 import pickle
