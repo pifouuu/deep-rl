@@ -73,7 +73,6 @@ class CriticNetwork(object):
                   kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h3)
         model = Model(inputs=[S, A], outputs=V)
         adam = Adam(lr=self.learning_rate)
-        #TODO add clipping gradients/huber loss possibility
         model.compile(loss='mse', optimizer=adam)
         return model, A, S
 

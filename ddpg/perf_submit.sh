@@ -12,7 +12,7 @@ do
   (
     echo "Running experiment $TRIAL"
     export TRIAL
-    python3.5 main.py --summary-dir $LOGDIR --wrapper goal --memory sarst --sampler ${SAMPLER} > ${LOGS}/${PERF_STUDY}_${TRIAL}.out 2> ${LOGS}/${PERF_STUDY}_${TRIAL}.err
+    python3.4 main.py --summary-dir $LOGDIR --wrapper goal --memory sarst --sampler ${SAMPLER} > ${LOGS}/${PERF_STUDY}_${TRIAL}.out 2> ${LOGS}/${PERF_STUDY}_${TRIAL}.err
   ) &
 done
 

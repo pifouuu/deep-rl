@@ -29,6 +29,8 @@ def main(args):
     params += '_w_'+args['wrapper']
     if args['target_clip']:
         params += '_tclip'
+    if args['invert_grads']:
+        params += '_ig'
 
     logdir = args['summary_dir']
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
