@@ -108,7 +108,6 @@ class DDPG_agent():
     def train_actor(self, samples):
 
         a_outs = self.actor.predict(samples['state0'])
-        # TODO : experiment with inverted gradients
         grads = self.critic.gradients(samples['state0'], a_outs)
         if self.invert_grads:
             for k in range(self.batch_size):

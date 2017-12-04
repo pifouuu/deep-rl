@@ -88,7 +88,6 @@ def plot_trajectory(trajectory, actor, env, figure=None, figure_file="trajectory
             # Be careful to fill the matrix in the right order
             portrait[definition - (1 + index_y), index_x] = actor.predict(np.array([[x, y]]))
 
-    # TODO: Use the `corner` parameter
     plt.imshow(portrait, cmap="inferno", extent=[x_min, x_max, y_min, y_max], aspect='auto')
     plt.colorbar(label="action")
     # Add a point at the center
