@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 from logger import Logger
 from memory import Memory
-import pickle
 from envWrapper import NoGoal
 from perf_config_mcc import PerfConfig
 from actor import ActorNetwork

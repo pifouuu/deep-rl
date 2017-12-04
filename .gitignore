@@ -40,3 +40,7 @@ luac.out
 *.hex
 
 .DS_Store
+./.idea
+
+ddpg/experiments
+ddpg/perf_ofp
