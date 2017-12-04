@@ -11,9 +11,11 @@ def exp_smooth(tab, alpha):
     return smooth
 
 LOGDIR = './results/'
-PARAMS = [
-          'memory_hindsight_SARST_goal_Random_wrapper_WithGoal',
-          'memory_hindsight_SARST_goal_Random_wrapper_WithGoal_strategy_final'
+PARAMS = ['memory_SARST_goal_IntervalCurri_wrapper_IntervalCurri',
+          # 'memory_SARST_goal_NoGoal_wrapper_NoGoal',
+          # 'memory_SARST_goal_Random_wrapper_WithGoal',
+          # 'memory_SARST_goal_GoalCurri_wrapper_GoalCurri',
+          # 'memory_hindsight_SARST_goal_GoalCurri_wrapper_GoalCurri_strategy_future'
           ]
 
 # brewer2mpl.get_map args: set name  set type  number of colors
@@ -25,24 +27,8 @@ fig.subplots_adjust(left=0.12, bottom=0.12, right=0.99, top=0.99, wspace=0.1)
 param_eval = {}
 for i, param in enumerate(PARAMS):
     print(param)
-    res_files = glob.glob(LOGDIR+param+'/*/'+'log_step/progress.json')
-    if len(res_files)==0:
-        res_files = glob.glob(LOGDIR+param+'/*/'+'log_steps/progress.json')
-    eval_rewards = [[0] * 1000 for _ in range(len(res_files))]
-    sum_eval_rewards  = [0]*1000
-    for j, filename in enumerate(res_files):
-        with open(filename, 'r') as json_data:
-            lines = json_data.readlines()
-            print(len(lines))
-            for k, line in enumerate(lines) :
-                episode_data = json.loads(line)
-                if 'Test reward on initial goal' in episode_data:
-                    eval_rewards[j][k] = episode_data['Test reward on initial goal']
-    #         sum_eval_rewards = [x+y for x,y in zip(sum_eval_rewards, eval_rewards)]
-    # mean_eval_rewards = [x/len(res_files) for x in sum_eval_rewards]
-    # param_eval[param] = mean_eval_rewards
 
-    ax1 = fig.add_subplot(21*10+i+1)
+    ax1 = fig.add_subplot(32*10+i+1)
 
     ax1.grid(axis='y', color="0.9", linestyle='-', linewidth=1)
     ax1.spines['top'].set_visible(False)
@@ -51,6 +37,37 @@ for i, param in enumerate(PARAMS):
 
     for spine in ax1.spines.values():
         spine.set_position(('outward', 5))
+
+    res_files = glob.glob(LOGDIR+param+'/*/'+'log_step/progress.json')
+    if len(res_files) != 0:
+        eval_rewards = [[0] * 200 for i in range(len(res_files))]
+        x = range(1000, 200001, 1000)
+        for j, filename in enumerate(res_files):
+            with open(filename, 'r') as json_data:
+                lines = json_data.readlines()
+                for k, line in enumerate([lines[i] for i in range(999, 200000, 1000)]):
+                    episode_data = json.loads(line)
+                    if 'Test reward on initial goal' in episode_data:
+                        eval_rewards[j][k] = episode_data['Test reward on initial goal']
+
+    if len(res_files) == 0:
+        res_files = glob.glob(LOGDIR+param+'/*/'+'log_steps/progress.json')
+        eval_rewards = [[0] * 1000 for _ in range(len(res_files))]
+        x = range(200, 200001, 200)
+
+        for j, filename in enumerate(res_files):
+            with open(filename, 'r') as json_data:
+                lines = json_data.readlines()
+                print(len(lines))
+                for k, line in enumerate(lines) :
+                    episode_data = json.loads(line)
+                    if 'Test reward on initial goal' in episode_data:
+                        eval_rewards[j][k] = episode_data['Test reward on initial goal']
+
+    #         sum_eval_rewards = [x+y for x,y in zip(sum_eval_rewards, eval_rewards)]
+    # mean_eval_rewards = [x/len(res_files) for x in sum_eval_rewards]
+    # param_eval[param] = mean_eval_rewards
+
 
     ax1.tick_params(axis='x', direction='out')
     ax1.get_xaxis().tick_bottom()
@@ -64,15 +81,14 @@ for i, param in enumerate(PARAMS):
     ax1.set_yticks(np.arange(-100, 100, 20))
     ax1.set_ylabel("Reward per episode")
 
-    x = range(200, 200001, 200)
     converge = 0
     localmin = 0
     diverge = 0
     c = colors[0]
 
     for res in eval_rewards:
-        final_mean = np.mean(res[950:])
-        final_var = np.var(res[950:])
+        final_mean = np.mean(res[-20:])
+        final_var = np.var(res[-20:])
         l = 'solid'
         marker = 'o'
         label = ''
@@ -86,6 +102,7 @@ for i, param in enumerate(PARAMS):
             c = colors[3]
             diverge += 1
         ax1.plot(x, exp_smooth(res,0.5), linewidth=0.5, color=c, linestyle=l, marker=marker, markersize=0.5, label=label)
+        ax1.set_title(param)
     legend = ax1.legend(loc=0)
 
     print(converge, localmin, diverge)

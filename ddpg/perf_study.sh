@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SAMPLERS=(Random Initial)
+SAMPLERS=(rnd init)
 
 for SAMPLER in ${SAMPLERS[*]}
 do
