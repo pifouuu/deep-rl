@@ -19,9 +19,17 @@ from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSamp
 
 
 def main(args):
-    params = 'memory_'+args['memory']+'_goal_'+args['sampler'] +'_wrapper_'+args['wrapper']
-    if args['memory'].startswith('hindsight'):
-        params+='_strategy_'+args['strategy']
+
+    params = 'm_'+args['memory']
+    if args['memory'].startswith('h'):
+        params+='_strat_'+args['strategy']
+    params += '_g_'+args['sampler']
+    if args['sampler'].endswith('C'):
+        params += '_alpha_'+str(args['alpha'])
+    params += '_w_'+args['wrapper']
+    if args['target_clip']:
+        params += '_tclip'
+
     logdir = args['summary_dir']
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = logdir+params+'/'+now
@@ -31,7 +39,6 @@ def main(args):
 
     logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json', 'tensorboard_'+str(log_freq)])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json', 'tensorboard_1'])
-
 
     actor_lr = float(args['actor_lr'])
     tau = float(args['tau'])
@@ -48,39 +55,39 @@ def main(args):
     test_env = gym.make(args['env'])
 
     env_wrapper = None
-    if args['wrapper'] == 'NoGoal':
+    if args['wrapper'] == 'no':
         env_wrapper = NoGoalWrapper()
-    elif args['wrapper'] == 'WithGoal':
+    elif args['wrapper'] == 'goal':
         env_wrapper = WithGoal()
-    elif args['wrapper'] == 'IntervalCurri':
+    elif args['wrapper'] == 'intervalC':
         env_wrapper = IntervalCurriculum()
-    elif args['wrapper'] == 'GoalCurri':
+    elif args['wrapper'] == 'goalC':
         env_wrapper = GoalCurriculum()
     else:
         print("Nooooooooooooooooooooo")
 
     goal_sampler = None
-    if args['sampler'] == 'NoGoal':
+    if args['sampler'] == 'no':
         goal_sampler = NoGoalSampler()
-    elif args['sampler'] == 'Random':
+    elif args['sampler'] == 'rnd':
         goal_sampler = RandomGoalSampler(env_wrapper)
-    elif args['sampler'] == 'Initial':
+    elif args['sampler'] == 'init':
         goal_sampler = InitialGoalSampler(env_wrapper)
-    elif args['sampler'] == 'IntervalCurri':
-        goal_sampler = PrioritizedIntervalBuffer(int(1e3), 0.5, env_wrapper)
-    elif args['sampler'] == 'GoalCurri':
-        goal_sampler = PrioritizedGoalBuffer(int(1e3), 0.5, env_wrapper)
+    elif args['sampler'] == 'intervalC':
+        goal_sampler = PrioritizedIntervalBuffer(int(1e3), float(args['alpha']), env_wrapper)
+    elif args['sampler'] == 'goalC':
+        goal_sampler = PrioritizedGoalBuffer(int(1e3), float(args['alpha']), env_wrapper)
     else:
         print("Nooooooo")
 
     memory = None
-    if args['memory'] == 'SAS':
+    if args['memory'] == 'sas':
         memory = SASMemory(env_wrapper, limit=int(1e6))
-    elif args['memory'] == 'SARST':
+    elif args['memory'] == 'sarst':
         memory = SARSTMemory(env_wrapper, limit=int(1e6))
-    elif args['memory'] == 'hindsight_SARST':
+    elif args['memory'] == 'hsarst':
         memory = EpisodicHerSARSTMemory(env_wrapper, limit=int(1e6), strategy=args['strategy'])
-    elif args['memory'] == 'hindsight_SAS':
+    elif args['memory'] == 'hsas':
         memory = EpisodicHerSASMemory(env_wrapper, limit=int(1e6), strategy=args['strategy'])
     else:
         print("Nooooooo")
@@ -152,11 +159,13 @@ if __name__ == '__main__':
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
-    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='WithGoal')
-    parser.add_argument('--memory', help='type of memory to use', default='hindsight_SARST')
-    parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
-    parser.add_argument('--sampler', help='type of goal sampling', default='Random')
-    parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', action='store_false')
+    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='goalC')
+    parser.add_argument('--memory', help='type of memory to use', default='hsarst')
+    parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
+    parser.add_argument('--sampler', help='type of goal sampling', default='goalC')
+    parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', action='store_true')
+    parser.set_defaults(target_clip=True)
+    parser.add_argument('--alpha', help="how much priorization in goal sampling", default=0.5)
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
