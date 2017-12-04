@@ -13,9 +13,9 @@ trial = os.environ["TRIAL"]
 # Experiment attributes
 force = (os.environ.get("FORCE", "false") == "true")
 
-if config.run_type = "ofp":
+if config.run_type == "ofp":
     perf_study_ofp(delta_clip, trial, config)
-elif config.run_type = "standard ":
+elif config.run_type == "standard ":
     perf_study_standard(delta_clip, trial, config)
 else:
     print("WTF: unknown run type!")
