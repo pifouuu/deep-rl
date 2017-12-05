@@ -10,7 +10,7 @@ import pickle
 import time
 import datetime
 from actor import ActorNetwork
-from critic import CriticNetwork
+from HLcritic import HuberLossCriticNetwork
 from ddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise
 from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSampler, InitialGoalSampler, PrioritizedGoalBuffer
@@ -26,15 +26,14 @@ def main(args):
     params += '_g_'+args['sampler']
     if args['sampler'].endswith('C'):
         params += '_alpha_'+str(args['alpha'])
-    params += '_w_'+args['wrapper']
     if args['target_clip']:
         params += '_tclip'
     if args['invert_grads']:
         params += '_ig'
+    params += '_'+args['activation']
 
-    logdir = args['summary_dir']
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    final_dir = logdir+params+'/'+now
+    final_dir = args['summary_dir']+params+'/'+now
     save_dir = args['save_dir']+params+'/'+now
 
     logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json', 'tensorboard_'+str(args['log_freq'])])
@@ -44,27 +43,21 @@ def main(args):
     test_env = gym.make(args['env'])
 
     env_wrapper = None
-    if args['wrapper'] == 'no':
-        env_wrapper = NoGoalWrapper()
-    elif args['wrapper'] == 'goal':
-        env_wrapper = WithGoal()
-    elif args['wrapper'] == 'intervalC':
-        env_wrapper = IntervalCurriculum()
-    elif args['wrapper'] == 'goalC':
-        env_wrapper = GoalCurriculum()
-    else:
-        print("Nooooooooooooooooooooo")
-
     goal_sampler = None
     if args['sampler'] == 'no':
         goal_sampler = NoGoalSampler()
+        env_wrapper = NoGoalWrapper()
     elif args['sampler'] == 'rnd':
+        env_wrapper = WithGoal()
         goal_sampler = RandomGoalSampler(env_wrapper)
     elif args['sampler'] == 'init':
+        env_wrapper = WithGoal()
         goal_sampler = InitialGoalSampler(env_wrapper)
     elif args['sampler'] == 'intervalC':
+        env_wrapper = IntervalCurriculum()
         goal_sampler = PrioritizedIntervalBuffer(int(1e3), float(args['alpha']), env_wrapper)
     elif args['sampler'] == 'goalC':
+        env_wrapper = GoalCurriculum()
         goal_sampler = PrioritizedGoalBuffer(int(1e3), float(args['alpha']), env_wrapper)
     else:
         print("Nooooooo")
@@ -108,9 +101,10 @@ def main(args):
 
         # actor.load_weights(args['save_dir']+params+'/2017_11_30_16_56_43/actor_weights_300.h5')
 
-        critic = CriticNetwork(sess,
+        critic = HuberLossCriticNetwork(sess,
                                state_dim,
                                action_dim,
+                               float(args['delta']),
                                float(args['gamma']),
                                float(args['tau']),
                                float(args['critic_lr']))
@@ -145,28 +139,26 @@ if __name__ == '__main__':
     parser.add_argument('--actor-lr', help='actor network learning rate', default=0.0001)
     parser.add_argument('--critic-lr', help='critic network learning rate', default=0.001)
     parser.add_argument('--gamma', help='discount factor for critic updates', default=0.99)
-    parser.add_argument('--delta', help='delta in huber loss', default=None)
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
-    parser.add_argument('--wrapper', help='concatenate goal and observation in states', default='no')
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
     parser.add_argument('--sampler', help='type of goal sampling', default='no')
-    parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', action='store_true')
-    parser.set_defaults(target_clip=False)
     parser.add_argument('--alpha', help="how much priorization in goal sampling", default=0.5)
-    parser.add_argument('--activation', help='actor final layer activation', default='linear')
+    parser.add_argument('--delta', help='delta in huber loss', default='inf')
+    parser.add_argument('--activation', help='actor final layer activation', default='tanh')
     parser.add_argument('--invert-grads', help='Gradient inverting for bounded action spaces', action='store_true')
     parser.set_defaults(invert_grads=True)
+    parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', action='store_true')
+    parser.set_defaults(target_clip=False)
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
     parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=200)
-    parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info',
                         default='/home/pierre/PycharmProjects/deep-rl/ddpg/results/')
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',

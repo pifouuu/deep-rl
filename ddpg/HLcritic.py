@@ -1,7 +1,7 @@
 from critic import CriticNetwork
 
 import tensorflow as tf
-#import random, numpy, math, gym, sys
+import numpy as np
 from keras import backend as K
 from keras.optimizers import Adam
 from keras.layers import Dense, Flatten, Input, Lambda, Activation
@@ -15,24 +15,23 @@ HIDDEN2_UNITS = 100
 
 
 class HuberLossCriticNetwork(CriticNetwork):
-    def __init__(self, delta_clip, sess, state_size, action_size, gamma, tau, learning_rate):
-        super(HuberLossCriticNetwork,self).__init__(sess, state_size, action_size, gamma, tau, learning_rate)
+    def __init__(self, sess, state_size, action_size, delta_clip, gamma, tau, learning_rate):
         self.delta_clip = delta_clip
+        super(HuberLossCriticNetwork,self).__init__(sess, state_size, action_size, gamma, tau, learning_rate)
 
     def huber_loss(self, y_true, y_pred):
         err = y_true - y_pred
+        L2 = 0.5 * K.square(err)
+
+        # Deal separately with infinite delta (=no clipping)
+        if np.isinf(self.delta_clip):
+            return L2
 
         cond = K.abs(err) < self.delta_clip
-        L2 = 0.5 * K.square(err)
         L1 = self.delta_clip * (K.abs(err) - 0.5 * self.delta_clip)
-
-        loss = tf.where(cond, L2, L1)   # Keras does not cover where function in tensorflow :-(
+        loss = tf.where(cond, L2, L1)
 
         return K.mean(loss)
-
-        
-    def train(self):
-        self.model.train()
 
     def create_critic_network(self, state_size, action_dim):
         S = Input(shape=[state_size])

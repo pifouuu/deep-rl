@@ -12,7 +12,7 @@ def exp_smooth(tab, alpha):
     return smooth
 
 LOGDIR = './results/'
-PARAM = 'm_sarst_g_goalC_alpha_0.1_w_goalC_tclip'
+PARAM = 'm_sarst_g_goalC_alpha_0.9_w_goalC_tclip'
 res_step = glob.glob(LOGDIR + PARAM + '/*/' + 'log_step/progress.json')
 res_steps = glob.glob(LOGDIR + PARAM + '/*/' + 'log_steps/progress.json')
 
