@@ -12,7 +12,7 @@ def is_conv(values):
     duration = min(10,len(values))
     mymean = 0
     for i in range(duration):
-        mymean += values[len(values)-i][1]
+        mymean += values[len(values)-i-1][1]
     mymean = mymean/duration
     return (mymean >= 80.0)
 
@@ -20,7 +20,7 @@ def is_stuck(values):
     duration = min(10,len(values))
     mymean = 0
     for i in range(duration):
-        mymean += values[len(values)-i][1]
+        mymean += values[len(values)-i-1][1]
     mymean = mymean/duration
 
     return (mymean <= -19.0)
@@ -29,7 +29,7 @@ def is_noConv(values):
     duration = min(10,len(values))
     mymean = 0
     for i in range(duration):
-        mymean += values[len(values)-i][1]
+        mymean += values[len(values)-i-1][1]
     mymean = mymean/duration
     return (mymean > -19.0 and mymean <80.0)
 
