@@ -42,6 +42,9 @@ class OFPDDPG_agent(DDPG_agent):
         for key in sorted(critic_stats.keys()):
             self.step_stats[key] = (critic_stats[key])
 
+        if (self.step_stats['reference_action_grads'] > 100):
+            self.step_stats['divergence'] = self.train_step
+
     def test(self):
         test_rewards = []
         #print ("in test :", self.memory.size())

@@ -9,19 +9,29 @@ def is_wrong(values):
     return isinstance(valpair,numbers.Number)
 
 def is_conv(values):
-    valpair = values[len(values)-1]
-    val = valpair[1]
-    return (val >= 80.0)
+    duration = min(10,len(values))
+    mymean = 0
+    for i in range(duration):
+        mymean += values[len(values)-i][1]
+    mymean = mymean/duration
+    return (mymean >= 80.0)
 
 def is_stuck(values):
-    valpair = values[len(values)-1]
-    val = valpair[1]
-    return (val <= -19.0)
+    duration = min(10,len(values))
+    mymean = 0
+    for i in range(duration):
+        mymean += values[len(values)-i][1]
+    mymean = mymean/duration
+
+    return (mymean <= -19.0)
 
 def is_noConv(values):
-    valpair = values[len(values)-1]
-    val = valpair[1]
-    return (val > -19.0 and val <80.0)
+    duration = min(10,len(values))
+    mymean = 0
+    for i in range(duration):
+        mymean += values[len(values)-i][1]
+    mymean = mymean/duration
+    return (mymean > -19.0 and mymean <80.0)
 
 class PerfCollectorData():
     def __init__(self, image_folder, **kwargs):
