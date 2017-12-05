@@ -1,9 +1,8 @@
 import json
-#from notebooks.perfcollector import PerfCollector
-from notebooks.perfcollector_dataframe import PerfCollectorData
+from perfcollector_dataframe import PerfCollectorData
 import os
 
-directory = "./experiments/" # "./perf_ofp/"  # "./experiments/"
+directory = "./perf_ofp/"  # "./experiments/" #
 
 def get_perf_values(filename):
     with open(filename, 'r') as json_data:

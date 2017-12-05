@@ -35,27 +35,28 @@ class PerfCollectorData():
         self.data_num = d2.set_index('type')
 
     def init(self, delta):
-        self.data[delta] = [[],[],[]]
-        self.data_num[delta] = [0, 0, 0, 0]
+        self.data[float(delta)] = [[],[],[]]
+        self.data_num[float(delta)] = [0, 0, 0, 0]
 
     def add(self, delta, values):
         if is_wrong(values):
             print("ignored: ",values)
         else:
-            self.data_num.loc['total', delta] += 1
+            self.data_num.loc['total', float(delta)] += 1
             if is_conv(values):
-                self.data.loc['conv', delta].append(values)
-                self.data_num.loc['conv', delta] += 1
+                self.data.loc['conv', float(delta)].append(values)
+                self.data_num.loc['conv', float(delta)] += 1
             elif is_stuck(values):
-                self.data.loc['stuck', delta].append(values)
-                self.data_num.loc['stuck', delta] += 1
+                self.data.loc['stuck', float(delta)].append(values)
+                self.data_num.loc['stuck', float(delta)] += 1
             elif is_noConv(values):
-                self.data.loc['noconv', delta].append(values)
-                self.data_num.loc['noconv', delta] += 1
+                self.data.loc['noconv', float(delta)].append(values)
+                self.data_num.loc['noconv', float(delta)] += 1
             else:
                 print("PerfCollector::add: WTF, this should not happen!!!")
 
     def stats(self):
+        self.data_num.sort_index(axis=1, inplace=True)
         print (self.data_num)
 
     def plot(self, delta):
@@ -63,6 +64,7 @@ class PerfCollectorData():
         plt.xlabel("time steps")
         plt.ylabel("performance")
         plt.title("Performance for delta = {}".format(delta))
+        delta = float(delta)
 
         for values in self.data.loc['stuck', delta]:
             if len(values)>1:
@@ -92,7 +94,7 @@ class PerfCollectorData():
                 plt.plot(x,y, label="conv", c='b')
         #plt.legend()
         #plt.show()
-        plt.savefig(self.image_folder + 'perf_' + delta + '.png', bbox_inches='tight')
+        plt.savefig(self.image_folder + 'perf_' + str(delta) + '.png', bbox_inches='tight')
 
     def plot_all(self):
         plt.figure(1, figsize=(20,13))
@@ -102,29 +104,32 @@ class PerfCollectorData():
 
         for values in self.data.loc['stuck',:]:
             if len(values)>1:
-                x = []
-                y = []
                 for i in range(len(values)):
-                    x.append(values[i][0])
-                    y.append(values[i][1])
+                    x = []
+                    y = []
+                    for j in range(len(values[i])):
+                        x.append(values[i][j][0])
+                        y.append(values[i][j][1])
                 plt.plot(x,y, label="stuck", c='r')
 
         for values in self.data.loc['noconv',:]:
             if len(values)>1:
-                x = []
-                y = []
                 for i in range(len(values)):
-                    x.append(values[i][0])
-                    y.append(values[i][1])
+                    x = []
+                    y = []
+                    for j in range(len(values[i])):
+                        x.append(values[i][j][0])
+                        y.append(values[i][j][1])
                 plt.plot(x,y, label="noconv", c='g')
 
         for values in self.data.loc['conv',:]:
             if len(values)>1:
-                x = []
-                y = []
                 for i in range(len(values)):
-                    x.append(values[i][0])
-                    y.append(values[i][1])
+                    x = []
+                    y = []
+                    for j in range(len(values[i])):
+                        x.append(values[i][j][0])
+                        y.append(values[i][j][1])
                 plt.plot(x,y, label="conv", c='b')
         #plt.legend()
         #plt.show()

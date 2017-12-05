@@ -5,9 +5,9 @@ class PerfConfig(CommonConfig):
         # Basic variables
         super(PerfConfig, self).__init__(**kwargs)
 
-        self.memory_file = "data/replay_buffer_us_frequent.p"
+        #self.memory_file = "data/replay_buffer_us_frequent.p"
         #self.memory_file = "data/replay_buffer_us_fair_big.p"
-        #self.memory_file = "data/replay_buffer_gep.p"
+        self.memory_file = "data/replay_buffer_gep.p"
         self.reward_scaling = 1.0
         self.tau = 1e-3
         self.eval_episodes = 10 #number of episodes to run during evaluation', default=20
