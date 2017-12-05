@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-#PBS -l walltime=11:00:00
+#PBS -l walltime=1:00:00
 # Request a node per experiment to avoid competition between different TFs
 #PBS -l nodes=1:ppn=24
 #PBS -V
-NB_TRIALS=2
+NB_TRIALS=10
 LOGDIR=/home/fournier/deep-rl/ddpg/results/
 
 for TRIAL in $(seq $NB_TRIALS)
