@@ -31,6 +31,7 @@ def main(args):
     if args['invert_grads']:
         params += '_ig'
     params += '_'+args['activation']
+    params += '_gclip_'+args['delta']
 
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = args['summary_dir']+params+'/'+now
@@ -144,15 +145,13 @@ if __name__ == '__main__':
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
-    parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='future')
-    parser.add_argument('--sampler', help='type of goal sampling', default='no')
+    parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
+    parser.add_argument('--sampler', help='type of goal sampling', default='rnd')
     parser.add_argument('--alpha', help="how much priorization in goal sampling", default=0.5)
     parser.add_argument('--delta', help='delta in huber loss', default='inf')
     parser.add_argument('--activation', help='actor final layer activation', default='tanh')
-    parser.add_argument('--invert-grads', help='Gradient inverting for bounded action spaces', action='store_true')
-    parser.set_defaults(invert_grads=True)
-    parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', action='store_true')
-    parser.set_defaults(target_clip=False)
+    parser.add_argument('--invert-grads', help='Gradient inverting for bounded action spaces', default=False)
+    parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', default=False)
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
