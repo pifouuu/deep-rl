@@ -16,6 +16,6 @@ class PerfConfig(CommonConfig):
         self.eval_freq = 1000 #evaluation frequency', default=1000
         self.run_type = "standard"#"ofp" #"standard"#
         self.noise_factor = 0.3 #3.0
-        self.save_step_stats = False
+        self.save_step_stats = True
         # MCC requires a very big noise, since it's a delayed reward problem
         self.batch_size = 1
