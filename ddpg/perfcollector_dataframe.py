@@ -23,7 +23,7 @@ def is_stuck(values):
         mymean += values[len(values)-i-1][1]
     mymean = mymean/duration
 
-    return (mymean <= -99.0)
+    return (mymean <= -19.0)
 
 def is_noConv(values):
     duration = min(10,len(values))
@@ -31,7 +31,7 @@ def is_noConv(values):
     for i in range(duration):
         mymean += values[len(values)-i-1][1]
     mymean = mymean/duration
-    return (mymean > -99.0 and mymean <80.0)
+    return (mymean > -19.0 and mymean <80.0)
 
 class PerfCollectorData():
     def __init__(self, image_folder, **kwargs):

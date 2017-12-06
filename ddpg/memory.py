@@ -4,7 +4,7 @@ from segmentTree import SumSegmentTree, MinSegmentTree
 # added by Olivier Sigaud --------------------------------
 import pickle
 import matplotlib.pyplot as plt
-
+from envWrapper import NoGoal
 
 # end of added by Olivier Sigaud --------------------------------
 
@@ -121,7 +121,7 @@ class Memory():
     # maybe add the other accessors
 
     # specific to Continuous Mountain Car, could be generalized
-    def plot2D(self):
+    def plot2D(self, name):
         plt.figure(1, figsize=(13, 20))
         plt.xlabel("position")
         plt.ylabel("velocity")
@@ -136,6 +136,7 @@ class Memory():
         plt.set_cmap('jet')
         plt.scatter(states[:, 0], states[:, 1], s=1, c=rewards)
         plt.colorbar(label="rewards")
+        plt.savefig('./img/'+name+'.png', bbox_inches='tight')
         plt.show()
 
     # warning: only saves the content, does not save the parameters such as size_limit, etc.
@@ -344,3 +345,9 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             self._it_min[idx] = priority ** self._alpha
 
             self._max_priority = max(self._max_priority, priority)
+
+
+memory = Memory(NoGoal(), with_reward=True, limit=int(1e6))
+name = "replay_buffer_us_frequent"
+memory.load_from_ManceronBuffer(file="data/"+name+".p")
+memory.plot2D(name)
