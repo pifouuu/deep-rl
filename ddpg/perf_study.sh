@@ -41,6 +41,7 @@ do
                                     export PERF_STUDY="perf_${MEMORY}_${STRAT}_${SAMPLER}_${ALPHA}_${DELTA}_${ACTIVATION}_${IVG}_${TCLIP}"
                                     rm -f ${PERF_STUDY}.e*
                                     #qsub -N ${PERF_STUDY} -o "$LOGS/${PERF_STUDY}.out" -b "$LOGS/${PERF_STUDY}.err" -d $HOME/deep-rl/ddpg perf_submit.sh
+                                    $HOME/deep-rl/ddpg perf_submit.sh
                                     echo $LOGS
                                     echo $PERF_STUDY
                                 )

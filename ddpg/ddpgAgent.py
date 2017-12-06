@@ -259,6 +259,7 @@ class DDPG_agent():
             #     self.save()
 
             if self.train_step % self.log_freq == 0:
+                self.step_stats['training_step'] = self.train_step
                 for key in sorted(self.step_stats.keys()):
                     if key.startswith('list'):
                         log_key = key.split('/')[1]
