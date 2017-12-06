@@ -34,7 +34,8 @@ class DDPG_agent():
                  max_episode_steps,
                  max_steps,
                  eval_freq,
-                 save_step_stats):
+                 save_step_stats,
+                 averaging):
 
         #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
@@ -55,6 +56,7 @@ class DDPG_agent():
         self.train_env = train_env
         self.test_env = test_env
         self.save_step_stats = save_step_stats
+        self.averaging = averaging
 
         #portrait_actor(self.actor.target_model, self.test_env, save_figure=True, figure_file="saved_actor_const2.png")
         self.env_wrapper = env_wrapper
@@ -84,14 +86,50 @@ class DDPG_agent():
                 y_i.append(samples['reward'][k] + self.critic.gamma * target_q[k])
 
         # Update the critic given the targets
-        critic_loss = self.critic.train(
-            samples['state0'], samples['action'], np.reshape(y_i, (self.batch_size, 1)))
+        critic_loss = self.critic.train(samples['state0'], samples['action'], np.reshape(y_i, (self.batch_size, 1)))
         self.step_stats['Critic loss'] = critic_loss
+
+        critic_stats = self.critic.get_stats(samples)
+        for key in sorted(critic_stats.keys()):
+            self.step_stats[key] = (critic_stats[key])
+
+        if (self.step_stats['reference_action_grads'] > 100):
+            self.step_stats['divergence'] = self.train_step
+
+
+    def train_critic_no_averaging(self, samples):
+
+        # Calculate targets
+        target_q = self.critic.predict_target(samples['state1'], self.actor.predict_target(samples['state1']))
+        critic_loss = 0
+        for k in range(self.batch_size):
+            y_i = []
+            if samples['terminal1'][k]:
+                y_i.append(samples['reward'][k])
+            else:
+                y_i.append(samples['reward'][k] + self.critic.gamma * target_q[k])
+
+            # Update the critic given the targets
+            critic_loss += self.critic.train(samples['state0'], samples['action'], y_i)
+
+        critic_loss = critic_loss/self.batch_size
+        self.step_stats['Critic loss'] = critic_loss
+
+        critic_stats = self.critic.get_stats(samples)
+        for key in sorted(critic_stats.keys()):
+            self.step_stats[key] = (critic_stats[key])
+
+        if (self.step_stats['reference_action_grads'] > 100):
+            self.step_stats['divergence'] = self.train_step
 
     def train_actor(self, samples):
         a_outs = self.actor.predict(samples['state0'])
         grads = self.critic.gradients(samples['state0'], a_outs)
         self.actor.train(samples['state0'], grads)
+
+        actor_stats = self.actor.get_stats(samples)
+        for key in sorted(actor_stats.keys()):
+            self.step_stats[key] = (actor_stats[key])
 
     def update_targets(self):
         self.actor.target_train()
@@ -124,16 +162,13 @@ class DDPG_agent():
 
     def train(self):
         samples_train = self.memory.sample(self.batch_size)
-        self.train_critic(samples_train)
+        if (self.averaging):
+            self.train_critic(samples_train)
+        else:
+            self.train_critic_no_averaging(samples_train)
         self.train_actor(samples_train)
         self.update_targets()
 
-        actor_stats = self.actor.get_stats(samples_train)
-        for key in sorted(actor_stats.keys()):
-            self.step_stats[key] = (actor_stats[key])
-        critic_stats = self.critic.get_stats(samples_train)
-        for key in sorted(critic_stats.keys()):
-            self.step_stats[key] = (critic_stats[key])
 
     def test(self):
         test_rewards = []

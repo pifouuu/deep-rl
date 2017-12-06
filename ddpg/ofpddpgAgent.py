@@ -37,7 +37,6 @@ class OFPDDPG_agent(DDPG_agent):
         critic_loss = self.critic.train(samples['state0'], samples['action'], np.reshape(y_i, (self.batch_size, 1)))
         self.step_stats['Critic loss'] = critic_loss
 
-
         critic_stats = self.critic.get_stats(samples)
         for key in sorted(critic_stats.keys()):
             self.step_stats[key] = (critic_stats[key])
