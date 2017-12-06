@@ -18,12 +18,11 @@ HIDDEN2_UNITS = 100
 class CriticNetwork(object):
     def __init__(self, sess, state_size, action_size, gamma, tau, learning_rate):
         self.sess = sess
-        self.tau = tau
-        self.gamma = gamma
         self.s_dim = state_size
-        self.a_dim = action_size
-        self.learning_rate = learning_rate
         self.action_size = action_size
+        self.gamma = gamma
+        self.tau = tau
+        self.learning_rate = learning_rate
 
         self.stat_ops = []
         self.stat_names = []
@@ -59,11 +58,17 @@ class CriticNetwork(object):
         return self.model.train_on_batch([states, actions], targets)
 
     def target_train(self):
-        critic_weights = self.model.get_weights()
-        critic_target_weights = self.target_model.get_weights()
-        for i in range(len(critic_weights)):
-            critic_target_weights[i] = self.tau * critic_weights[i] + (1 - self.tau) * critic_target_weights[i]
+        if (self.tau<=1):
+            critic_weights = self.model.get_weights()
+            critic_target_weights = self.target_model.get_weights()
+            for i in range(len(critic_weights)):
+                critic_target_weights[i] = self.tau * critic_weights[i] + (1 - self.tau) * critic_target_weights[i]
+        else:
+            print ("target train called with tau = ", self.tau)
         self.target_model.set_weights(critic_target_weights)
+
+    def target_hard_update(self):
+        self.target_model.set_weights(self.model.get_weights())
 
     def create_critic_network(self, state_size, action_dim):
         S = Input(shape=[state_size])

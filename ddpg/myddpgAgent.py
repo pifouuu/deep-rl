@@ -96,7 +96,6 @@ class DDPG_agent():
         if (self.step_stats['reference_action_grads'] > 100):
             self.step_stats['divergence'] = self.train_step
 
-
     def train_critic_no_averaging(self, samples):
 
         # Calculate targets
@@ -135,7 +134,10 @@ class DDPG_agent():
 
     def update_targets(self):
         self.actor.target_train()
-        self.critic.target_train()
+        if (self.critic.tau<=1):
+            self.critic.target_train()
+        elif (self.train_step%self.critic.tau==0):
+            self.critic.target_hard_update()
 
     def save_weights(self, filepath, overwrite=False):
         self.actor.save_weights(filepath, overwrite=overwrite)
@@ -237,11 +239,7 @@ class DDPG_agent():
         #self.sess.run(tf.global_variables_initializer())
 
         # Initialize target network weights
-        #TODO : soft vs hard update
-        self.actor.target_train()
-        self.critic.target_train()
-
-        #TODO : load actor and critic if need be
+        self.update_targets()
 
         obs0 = self.train_env.reset()
         self.episode_init = obs0

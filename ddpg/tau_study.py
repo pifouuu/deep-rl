@@ -4,7 +4,6 @@ from logger import Logger
 from memory import Memory
 from envWrapper import NoGoal
 from actor import ActorNetwork
-#from HLcritic import HuberLossCriticNetwork
 from critic import CriticNetwork
 from myddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise, NoNoise
@@ -13,21 +12,20 @@ from rl.utils.printer import print_info
 import os
 
 
-def perf_study_standard(delta_clip, num, config):
+def tau_study_standard(tau, num, config):
     # Get the environment and extract the number of actions.
     env = config.env
     if not config.random_seed:
         np.random.seed(123)
         env.seed(123)
 
-    results_path = './experiments/{}/{}/'.format(delta_clip, num)
+    results_path = './experiments_tau/{}/{}/'.format(tau, num)
     if (config.save_step_stats):
         logger_step = Logger(dir=results_path+'/log_steps', format_strs=['json', 'tensorboard'])
         logger_episode = Logger(dir=results_path+'/log_episodes', format_strs=['json', 'tensorboard'])
     else:
         logger_step = Logger(dir=results_path + '/log_steps', format_strs=['json'])
         logger_episode = Logger(dir=results_path + '/log_episodes', format_strs=['json'])
-        
     # 
     env_wrapper = NoGoal()
     
@@ -50,21 +48,12 @@ def perf_study_standard(delta_clip, num, config):
             np.random.seed(config.seed)
             tf.set_random_seed(config.seed)
             env.seed(config.seed)
-        '''
-        critic = CriticNetwork(delta_clip,
-                                        sess,
-                                        state_dim,
-                                        action_dim,
-                                        config.gamma,
-                                        config.tau,
-                                        config.critic_lr)
-        '''
 
         critic = CriticNetwork(sess,
                                 state_dim,
                                 action_dim,
                                 config.gamma,
-                                config.tau,
+                                tau,
                                 config.critic_lr)
 
         actor = ActorNetwork(sess,

@@ -12,7 +12,6 @@ from keras.models import Sequential, Model
 HIDDEN1_UNITS = 100
 HIDDEN2_UNITS = 100
 
-
 class HuberLossCriticNetwork(CriticNetwork):
     def __init__(self, delta_clip, sess, state_size, action_size, gamma, tau, learning_rate):
         self.delta_clip = delta_clip
