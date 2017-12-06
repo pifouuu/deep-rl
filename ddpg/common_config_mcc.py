@@ -10,10 +10,7 @@ class CommonConfig:
         self.data_path = "data/"
         self.actor_lr = 1e-3
         self.critic_lr = 1e-3
-        
-        # MCC requires a very big noise, since it's a delayed reward problem
-        self.noise_sigma = 3.
-        self.batch_size = 128
+
         self.gamma = .99
         self.target_actor_update = 1e-3
 

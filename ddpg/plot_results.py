@@ -2,7 +2,7 @@ import json
 from perfcollector_dataframe import PerfCollectorData
 import os
 
-directory = "./perf_ofp/"  # "./experiments/" #
+directory = "./results/perf_ofp_gep2/"  # "./experiments/" #
 
 def get_perf_values(filename):
     with open(filename, 'r') as json_data:

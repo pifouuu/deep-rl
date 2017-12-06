@@ -16,8 +16,12 @@ def perf_study_ofp(delta_clip, num, config):
     results_path = './perf_ofp/{}/{}/'.format(delta_clip, num)
     # logger_step = Logger(dir=results_path,format_strs=['log','json', 'tensorboard'])
     # logger_episode = Logger(dir=results_path, format_strs=['log','stdout', 'json', 'tensorboard'])
-    logger_step = Logger(dir=results_path+'/log_steps', format_strs=['json', 'tensorboard'])
-    logger_episode = Logger(dir=results_path+'/log_episodes', format_strs=['json', 'tensorboard'])
+    if (config.save_step_stats):
+        logger_step = Logger(dir=results_path+'/log_steps', format_strs=['json', 'tensorboard'])
+        logger_episode = Logger(dir=results_path+'/log_episodes', format_strs=['json', 'tensorboard'])
+    else:
+        logger_step = Logger(dir=results_path + '/log_steps', format_strs=['json'])
+        logger_episode = Logger(dir=results_path + '/log_episodes', format_strs=['json'])
 
     env_wrapper = NoGoal()
 
