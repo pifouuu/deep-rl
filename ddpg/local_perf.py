@@ -1,5 +1,5 @@
 from standard_perf_study import perf_study_standard
-from ofp_perf_study import perf_study_ofp
+#from ofp_perf_study import perf_study_ofp
 from perf_config_mcc import PerfConfig
 
 config = PerfConfig()
