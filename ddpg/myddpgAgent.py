@@ -110,7 +110,9 @@ class DDPG_agent():
                 y_i.append(samples['reward'][k] + self.critic.gamma * target_q[k])
 
             # Update the critic given the targets
-            critic_loss += self.critic.train(samples['state0'], samples['action'], y_i)
+            s0 = np.array([samples['state0'][k]])
+            a0 = np.array([samples['action'][k]])
+            critic_loss += self.critic.train(s0, a0, y_i)
 
         critic_loss = critic_loss/self.batch_size
         self.step_stats['Critic loss'] = critic_loss
