@@ -4,15 +4,15 @@
 # Request a node per experiment to avoid competition between different TFs
 #PBS -l nodes=1:ppn=24
 #PBS -V
-NB_TRIALS=10
-LOGDIR=/home/fournier/deep-rl/ddpg/results/
+NB_TRIALS=1
+LOGDIR=./results/
 
 for TRIAL in $(seq $NB_TRIALS)
 do
   (
     echo "Running experiment $TRIAL"
     export TRIAL
-    python3.4 main.py \
+    python3 main.py \
     --summary-dir $LOGDIR \
     --max-steps 1200 \
     --memory ${MEMORY} \
@@ -22,7 +22,7 @@ do
     --delta ${DELTA} \
     --activation ${ACTIVATION} \
     --invert-grads ${IVG} \
-    --targe-clip ${TCLIP} \
+    --target-clip ${TCLIP} \
     > ${LOGS}/${PERF_STUDY}_${TRIAL}.out \
     2> ${LOGS}/${PERF_STUDY}_${TRIAL}.err
   ) &

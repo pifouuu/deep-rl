@@ -20,18 +20,16 @@ from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSamp
 
 def main(args):
 
-    params = 'm_'+args['memory']
-    if args['memory'].startswith('h'):
-        params+='_strat_'+args['strategy']
-    params += '_g_'+args['sampler']
-    if args['sampler'].endswith('C'):
-        params += '_alpha_'+str(args['alpha'])
-    if args['target_clip']:
-        params += '_tclip'
-    if args['invert_grads']:
-        params += '_ig'
-    params += '_'+args['activation']
-    params += '_gclip_'+args['delta']
+    params = args['memory'] +'_'+\
+        args['strategy'] +'_'+\
+        args['sampler'] +'_'+\
+        args['alpha'] +'_'+\
+        args['delta'] +'_'+\
+        args['activation'] +'_'+\
+        args['invert_grads'] +'_'+\
+        args['target_clip']
+
+    print(params)
 
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = args['summary_dir']+params+'/'+now
