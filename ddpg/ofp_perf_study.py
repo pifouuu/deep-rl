@@ -4,10 +4,10 @@ from logger import Logger
 from memory import Memory
 from envWrapper import NoGoal
 from actor import ActorNetwork
-from HLcritic import HuberLossCriticNetwork
+#from HLcritic import HuberLossCriticNetwork
+from critic import CriticNetwork
 from ofpddpgAgent import OFPDDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise, NoNoise
-from plot import portrait_actor
 
 def perf_study_ofp(delta_clip, num, config):
     # Get the environment and extract the number of actions.
@@ -32,7 +32,7 @@ def perf_study_ofp(delta_clip, num, config):
     assert (env.action_space.high == -env.action_space.low)
 
     memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
-    memory.load_from_ManceronBuffer(file=config.memory_file)
+    memory.load_from_ManceronBuffer_with_filter(file=config.memory_file)
 
     # Noise
     # actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
@@ -43,7 +43,7 @@ def perf_study_ofp(delta_clip, num, config):
             np.random.seed(config.seed)
             tf.set_random_seed(config.seed)
             env.seed(config.seed)
-
+        '''
         critic = HuberLossCriticNetwork(delta_clip,
                                         sess,
                                         state_dim,
@@ -51,6 +51,14 @@ def perf_study_ofp(delta_clip, num, config):
                                         config.gamma,
                                         config.tau,
                                         config.critic_lr)
+        '''
+        critic = CriticNetwork(sess,
+                                state_dim,
+                                action_dim,
+                                config.gamma,
+                                config.tau,
+                                config.critic_lr)
+
         actor = ActorNetwork(sess,
                              state_dim,
                              action_dim,

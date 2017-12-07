@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from segmentTree import SumSegmentTree, MinSegmentTree
 
 # added by Olivier Sigaud --------------------------------
@@ -175,6 +176,29 @@ class Memory():
             self.append(buffer_item, training=True)
             # end of added by Olivier Sigaud --------------------------------
 
+    # deals with the shift in position (substracts 0.5 to position) and limits the size
+    def load_from_ManceronBuffer_with_filter(self, file):
+        """
+        used to load a replay buffer saved under Pierre Manceron's format into a replay buffer of Pierre Fournier's format
+        """
+        with open(file, "rb") as fd:
+            manceron_memory = pickle.load(fd)
+
+        for idx in range(len(manceron_memory)):
+            sample = manceron_memory[idx]
+            state0 = sample[0]
+            state1 = sample[3]
+            buffer_item = {'state0': [state0[0] - 0.5, state0[1]],
+                           'action': sample[1],
+                           'reward': sample[2],
+                           'state1': [state1[0] - 0.5, state1[1]],
+                           'terminal1': sample[4]}
+            if sample[2]>80:
+                self.append(buffer_item, training=True)
+            elif random.random() < 0.1:
+                self.append(buffer_item, training=True)
+            # end of added by Olivier Sigaud --------------------------------
+
 
 class HerMemory(Memory):
     def __init__(self, env_wrapper, with_reward, limit, strategy):
@@ -348,6 +372,6 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
 
 memory = Memory(NoGoal(), with_reward=True, limit=int(1e6))
-name = "replay_buffer_us_frequent"
-memory.load_from_ManceronBuffer(file="data/"+name+".p")
+name = "replay_buffer_gep"
+memory.load_from_ManceronBuffer_with_filter(file="data/"+name+".p")
 memory.plot2D(name)
