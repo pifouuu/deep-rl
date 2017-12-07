@@ -15,10 +15,10 @@ EVAL_EPISODES = 20
 
 class OFPDDPG_agent(DDPG_agent):
     def __init__(self, update_actor, sess, actor, actor_noise, critic, env, env_wrapper, memory, logger_step,
-                 logger_episode, batch_size, eval_episodes, max_episode_steps, max_steps, eval_freq, save_step_stats):
+                 logger_episode, batch_size, eval_episodes, max_episode_steps, max_steps, eval_freq, save_step_stats,averaging):
         super(OFPDDPG_agent, self).__init__(sess, actor, actor_noise, critic, env, env, env_wrapper, memory,
                                             logger_step, logger_episode, batch_size, eval_episodes, max_episode_steps,
-                                            max_steps, eval_freq, save_step_stats)
+                                            max_steps, eval_freq, save_step_stats,averaging)
         self.update_actor = update_actor
 
     def train_critic(self, samples):

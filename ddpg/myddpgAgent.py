@@ -37,7 +37,6 @@ class DDPG_agent():
                  save_step_stats,
                  averaging):
 
-        #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
         self.batch_size = batch_size
         self.eval_episodes = eval_episodes
@@ -58,7 +57,6 @@ class DDPG_agent():
         self.save_step_stats = save_step_stats
         self.averaging = averaging
 
-        #portrait_actor(self.actor.target_model, self.test_env, save_figure=True, figure_file="saved_actor_const2.png")
         self.env_wrapper = env_wrapper
         self.memory = memory
         
