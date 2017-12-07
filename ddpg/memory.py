@@ -370,8 +370,9 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
             self._max_priority = max(self._max_priority, priority)
 
-
+'''
 memory = Memory(NoGoal(), with_reward=True, limit=int(1e6))
 name = "replay_buffer_gep"
 memory.load_from_ManceronBuffer_with_filter(file="data/"+name+".p")
 memory.plot2D(name)
+'''
