@@ -1,5 +1,6 @@
 import os
 from tau_study import tau_study_standard
+from tau_study_ofp import tau_study_ofp
 
 from perf_config_mcc import PerfConfig
 
@@ -13,7 +14,7 @@ trial = os.environ["TRIAL"]
 force = (os.environ.get("FORCE", "false") == "true")
 
 if config.run_type == "ofp":
-    tau_study_standard(tau, trial, config)
+    tau_study_ofp(tau, trial, config)
 elif config.run_type == "standard":
     tau_study_standard(tau, trial, config)
 else:

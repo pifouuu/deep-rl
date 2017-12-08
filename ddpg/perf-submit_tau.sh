@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-#PBS -l walltime=11:00:00
+#PBS -l walltime=99:00:00
 # Request a node per experiment to avoid competition between different TFs
 #PBS -l nodes=1:ppn=24
 #PBS -V
-NB_TRIALS=50
+NB_TRIALS=100
 
 for TRIAL in $(seq $NB_TRIALS)
 do

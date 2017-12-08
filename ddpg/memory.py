@@ -195,7 +195,7 @@ class Memory():
                            'terminal1': sample[4]}
             if sample[2]>80:
                 self.append(buffer_item, training=True)
-            elif random.random() < 0.1:
+            elif random.random() < 0.2:
                 self.append(buffer_item, training=True)
             # end of added by Olivier Sigaud --------------------------------
 
