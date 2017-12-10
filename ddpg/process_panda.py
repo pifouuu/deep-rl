@@ -16,19 +16,40 @@ def exp_smooth(tab, alpha):
     return smooth
 
 LOGDIR = './results/'
-PARAM = 'm_sarst_g_goalC_alpha_0.9_w_goalC_tclip'
-res_step = glob.glob(LOGDIR + PARAM + '/*/' + 'log_step/progress.json')
-res_steps = glob.glob(LOGDIR + PARAM + '/*/' + 'log_steps/progress.json')
-res_episode = glob.glob(LOGDIR + PARAM + '/*/' + 'log_episodes/progress.json')
+PARAMS = ['sarst_final_init_1_inf_linear_False_False',
+          'sarst_final_init_1_inf_linear_False_True',
+          'sarst_final_init_1_inf_linear_True_False',
+          'sarst_final_init_1_inf_linear_True_True',
+          'sarst_final_init_1_inf_tanh_False_False',
+          'sarst_final_init_1_inf_tanh_False_True',
+          'sarst_final_init_1_inf_tanh_True_False',
+          'sarst_final_init_1_inf_tanh_True_True',
+          'sarst_final_rnd_1_inf_linear_False_False',
+          'sarst_final_rnd_1_inf_linear_False_True',
+          'sarst_final_rnd_1_inf_linear_True_False',
+          'sarst_final_rnd_1_inf_linear_True_True',
+          'sarst_final_rnd_1_inf_tanh_False_False',
+          'sarst_final_rnd_1_inf_tanh_False_True',
+          'sarst_final_rnd_1_inf_tanh_True_False',
+          'sarst_final_rnd_1_inf_tanh_True_True']
 
 frames = []
 keys = []
-for num_run, run in enumerate(res_steps):
-    df = pd.read_json(run, lines=True)
-    df.index = range(200, 200001, 200)
-    frames.append(df)
-    keys.append(num_run)
-expe_res = pd.concat(frames, keys=keys)
+for PARAM in PARAMS:
+    param_vals = PARAM.split('_')
+    param_names = ['memory', 'strategy', 'sampler', 'alpha', 'delta', 'activation', 'invert_grads', 'target_clip']
+    res_steps = glob.glob(LOGDIR + PARAM + '/*/' + 'log_steps/progress.json')
+    # res_episode = glob.glob(LOGDIR + PARAM + '/*/' + 'log_episodes/progress.json')
+    for num_run, run in enumerate(res_steps):
+        try:
+            df = pd.read_json(run, lines=True)
+        except ValueError:
+            print("invalid")
+        for name, val in zip(param_names, param_vals):
+            df[name]=val
+        df['num_run']=num_run
+        frames.append(df)
+expe_res = pd.concat(frames, ignore_index=True)
 expe_res.index.names = ['run', 'step']
 
 means = expe_res.groupby('step').mean()

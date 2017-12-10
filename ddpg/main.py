@@ -11,6 +11,7 @@ import time
 import datetime
 from actor import ActorNetwork
 from HLcritic import HuberLossCriticNetwork
+from critic import CriticNetwork
 from ddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise
 from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSampler, InitialGoalSampler, PrioritizedGoalBuffer
@@ -27,7 +28,8 @@ def main(args):
         args['delta'] +'_'+\
         args['activation'] +'_'+\
         args['invert_grads'] +'_'+\
-        args['target_clip']
+        args['target_clip'] +'_'+\
+        args['max_episode_steps']
 
     print(params)
 
@@ -108,6 +110,13 @@ def main(args):
                                float(args['tau']),
                                float(args['critic_lr']))
 
+        # critic = CriticNetwork(sess,
+        #                                 state_dim,
+        #                                 action_dim,
+        #                                 float(args['gamma']),
+        #                                 float(args['tau']),
+        #                                 float(args['critic_lr']))
+
         agent = DDPG_agent(sess,
                            actor,
                            actor_noise,
@@ -127,8 +136,8 @@ def main(args):
                            save_dir,
                            int(args['save_freq']),
                            int(args['log_freq']),
-                           args['target_clip'],
-                           args['invert_grads'])
+                           args['target_clip']=='True',
+                           args['invert_grads']=='True')
         agent.run()
 
 if __name__ == '__main__':
@@ -144,7 +153,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
-    parser.add_argument('--sampler', help='type of goal sampling', default='rnd')
+    parser.add_argument('--sampler', help='type of goal sampling', default='no')
     parser.add_argument('--alpha', help="how much priorization in goal sampling", default=0.5)
     parser.add_argument('--delta', help='delta in huber loss', default='inf')
     parser.add_argument('--activation', help='actor final layer activation', default='tanh')
@@ -155,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
-    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=200)
+    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info',
                         default='/home/pierre/PycharmProjects/deep-rl/ddpg/results/')
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',

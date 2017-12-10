@@ -144,7 +144,6 @@ class DDPG_agent():
         for k in range(self.max_episode_steps):
             state = self.goal_sampler.process_observation(test_obs, test_goal)
             action = self.actor.target_model.predict(np.reshape(state, (1, self.actor.s_dim)))
-            action = np.clip(action, -self.actor.action_bound, self.actor.action_bound)
             next_obs, reward_env, done_env, info = self.test_env.step(action[0])
             next_state = self.goal_sampler.process_observation(next_obs, test_goal)
             reward, reached = self.env_wrapper.eval_exp(state, action, next_state)

@@ -25,7 +25,7 @@ class HuberLossCriticNetwork(CriticNetwork):
 
         # Deal separately with infinite delta (=no clipping)
         if np.isinf(self.delta_clip):
-            return L2
+            return K.mean(L2)
 
         cond = K.abs(err) < self.delta_clip
         L1 = self.delta_clip * (K.abs(err) - 0.5 * self.delta_clip)
