@@ -97,7 +97,7 @@ class PrioritizedBuffer(Buffer):
         if priority is None:
             self._it_sum[idx] = self._max_priority ** self.alpha
         else:
-            self._it_sum[idx] = priority
+            self._it_sum[idx] = priority ** self.alpha
 
     def sample_proportional_idx(self):
         sum = self._it_sum.sum()
