@@ -148,6 +148,35 @@ class PrioritizedGoalBuffer(PrioritizedBuffer):
         sample_idx, sample_dict = super().sample()
         goal = sample_dict['goal']
         return np.reshape(goal, (1,))
+
+class CompetenceProgressGoalBuffer(PrioritizedBuffer):
+    def __init__(self, limit, alpha, env_wrapper, actor, critic):
+        self.content = {'goal':(1,)}
+        super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.content, env_wrapper)
+        self.goals = env_wrapper.get_goals()
+        self.current_competences = [0]*len(self.goals)
+        self.actor = actor
+        self.critic = critic
+        for goal in self.goals:
+            buffer_item = {'goal': goal}
+            self.append(buffer_item, 1)
+
+    def update_competence(self):
+        states = np.array([[-0.5, 0, g] for g in self.goals])
+        a_outs = self.actor.predict_target(states)
+        q_outs = self.critic.predict_target(states, a_outs)
+        return list(np.reshape(q_outs,(len(self.goals),)))
+
+    def sample(self):
+        new_competences = self.update_competence()
+        for idx,new_comp in enumerate(new_competences):
+            competence_progress = np.abs(new_comp-self.current_competences[idx])
+            self.update_priority(idx, competence_progress)
+        self.current_compentences = new_competences
+        sample_idx, sample_dict = super(CompetenceProgressGoalBuffer, self).sample()
+        goal = sample_dict['goal']
+        return np.reshape(goal,(1,))
+
 #
 # def _demo():
 #     buffer = PrioritizedGoalBuffer(11, 1)

@@ -7,6 +7,9 @@ import pickle
 import time
 from pathlib import Path
 
+from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSampler, InitialGoalSampler, \
+    PrioritizedGoalBuffer, CompetenceProgressGoalBuffer
+
 def gradient_inverter(gradient, p_min, p_max):
     """Gradient inverting as described in https://arxiv.org/abs/1511.04143"""
     delta = p_max - p_min
@@ -39,7 +42,8 @@ class DDPG_agent():
                  save_freq,
                  log_freq,
                  target_clip,
-                 invert_grads):
+                 invert_grads,
+                 alpha):
 
         #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
@@ -65,11 +69,27 @@ class DDPG_agent():
         self.critic = critic
         self.train_env = train_env
         self.test_env = test_env
-        self.goal_sampler = goal_sampler
 
         #portrait_actor(self.actor.target_model, self.test_env, save_figure=True, figure_file="saved_actor_const2.png")
         self.env_wrapper = env_wrapper
         self.memory = memory
+        self.alpha = alpha
+
+        if goal_sampler == 'no':
+            self.goal_sampler = NoGoalSampler()
+        elif goal_sampler == 'rnd':
+            self.goal_sampler = RandomGoalSampler(self.env_wrapper)
+        elif goal_sampler == 'init':
+            self.goal_sampler = InitialGoalSampler(self.env_wrapper)
+        elif goal_sampler == 'intervalC':
+            self.goal_sampler = PrioritizedIntervalBuffer(int(1e3), self.alpha, self.env_wrapper)
+        elif goal_sampler == 'goalC':
+            self.goal_sampler = PrioritizedGoalBuffer(int(1e3), self.alpha, self.env_wrapper)
+        elif goal_sampler == 'cp':
+            self.goal_sampler = CompetenceProgressGoalBuffer(int(1e3), self.alpha,
+                                                             self.env_wrapper,
+                                                             self.actor,
+                                                             self.critic)
 
         self.train_step = 0
         self.episode = 0

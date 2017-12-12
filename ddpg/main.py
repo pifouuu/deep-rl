@@ -14,7 +14,7 @@ from HLcritic import HuberLossCriticNetwork
 from critic import CriticNetwork
 from ddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise
-from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSampler, InitialGoalSampler, PrioritizedGoalBuffer
+
 
 #TODO : Update doc on github on this code
 
@@ -44,22 +44,18 @@ def main(args):
     test_env = gym.make(args['env'])
 
     env_wrapper = None
-    goal_sampler = None
     if args['sampler'] == 'no':
-        goal_sampler = NoGoalSampler()
         env_wrapper = NoGoalWrapper()
     elif args['sampler'] == 'rnd':
         env_wrapper = WithGoal()
-        goal_sampler = RandomGoalSampler(env_wrapper)
     elif args['sampler'] == 'init':
         env_wrapper = WithGoal()
-        goal_sampler = InitialGoalSampler(env_wrapper)
     elif args['sampler'] == 'intervalC':
         env_wrapper = IntervalCurriculum()
-        goal_sampler = PrioritizedIntervalBuffer(int(1e3), float(args['alpha']), env_wrapper)
     elif args['sampler'] == 'goalC':
         env_wrapper = GoalCurriculum()
-        goal_sampler = PrioritizedGoalBuffer(int(1e3), float(args['alpha']), env_wrapper)
+    elif args['sampler'] == 'cp':
+        env_wrapper = GoalCurriculum()
     else:
         print("Nooooooo")
 
@@ -125,7 +121,7 @@ def main(args):
                            test_env,
                            env_wrapper,
                            memory,
-                           goal_sampler,
+                           args['sampler'],
                            logger_step,
                            logger_episode,
                            int(args['minibatch_size']),
@@ -137,7 +133,8 @@ def main(args):
                            int(args['save_freq']),
                            int(args['log_freq']),
                            args['target_clip']=='True',
-                           args['invert_grads']=='True')
+                           args['invert_grads']=='True',
+                           float(args['alpha']))
         agent.run()
 
 if __name__ == '__main__':
