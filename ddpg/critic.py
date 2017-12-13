@@ -53,6 +53,9 @@ class CriticNetwork(object):
     def predict_target(self, states, actions):
         return self.target_model.predict_on_batch([states, actions])
 
+    def predict(self, states, actions):
+        return self.model.predict_on_batch([states, actions])
+
     def train(self, states, actions, targets):
         return self.model.train_on_batch([states, actions], targets)
 

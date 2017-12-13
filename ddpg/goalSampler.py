@@ -166,8 +166,8 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
     def update_competence(self):
         starts = np.random.uniform(low=-0.6, high=-0.4, size=10)
         states = np.array([[start, 0, goal] for goal in self.goals for start in starts])
-        a_outs = self.actor.predict_target(states)
-        q_outs = list(self.critic.predict_target(states, a_outs))
+        a_outs = self.actor.predict(states)
+        q_outs = list(self.critic.predict(states, a_outs))
         q_mean_outs = [np.array(q_outs[k:k+10]).mean() for k in range(0,1000,10)]
         return q_mean_outs
 
