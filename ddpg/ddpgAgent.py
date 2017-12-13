@@ -279,6 +279,8 @@ class DDPG_agent():
 
             if self.train_step % self.log_freq == 0:
                 self.step_stats['training_step'] = self.train_step
+                self.step_stats['q_values'] = self.goal_sampler.competences
+                self.step_stats['d_q_values'] = self.goal_sampler.progresses
                 for key in sorted(self.step_stats.keys()):
                     if key.startswith('list'):
                         log_key = key.split('/')[1]

@@ -37,8 +37,8 @@ def main(args):
     final_dir = args['summary_dir']+params+'/'+now
     save_dir = args['save_dir']+params+'/'+now
 
-    logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json', 'tensorboard_'+str(args['log_freq'])])
-    logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json', 'tensorboard_1'])
+    logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json'])
+    logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json'])
 
     train_env = gym.make(args['env'])
     test_env = gym.make(args['env'])

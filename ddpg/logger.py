@@ -7,7 +7,7 @@ import time
 import datetime
 import tempfile
 import re
-
+import json_tricks
 LOG_OUTPUT_FORMATS = ['stdout', 'log', 'json']
 
 DEBUG = 10
@@ -82,11 +82,11 @@ class JSONOutputFormat(OutputFormat):
         self.file = file
 
     def writekvs(self, kvs):
-        for k, v in sorted(kvs.items()):
-            if hasattr(v, 'dtype'):
-                v = v.tolist()
-                kvs[k] = float(v)
-        self.file.write(json.dumps(kvs) + '\n')
+        # for k, v in sorted(kvs.items()):
+            # if hasattr(v, 'dtype'):
+            #     v = v.tolist()
+            #     kvs[k] = float(v)
+        self.file.write(json_tricks.dumps(kvs) + '\n')
         self.file.flush()
 
 class TensorBoardOutputFormat(OutputFormat):

@@ -115,7 +115,7 @@ class PrioritizedBuffer(Buffer):
 
     def update_priority(self, idx, priority):
         self._it_sum[idx] = priority ** self.alpha
-        self._max_priority = max(self._max_priority, priority)
+        # self._max_priority = max(self._max_priority, priority)
 
 
 class PrioritizedIntervalBuffer(PrioritizedBuffer):
@@ -154,27 +154,39 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
         self.content = {'goal':(1,)}
         super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.content, env_wrapper)
         self.goals = env_wrapper.get_goals()
-        self.current_competences = [0]*len(self.goals)
+        self.competences = [0]*len(self.goals)
+        self.progresses = [0]*len(self.goals)
         self.actor = actor
         self.critic = critic
+        self.nb_sampled = 0
         for goal in self.goals:
             buffer_item = {'goal': goal}
             self.append(buffer_item, 1)
 
     def update_competence(self):
-        states = np.array([[-0.5, 0, g] for g in self.goals])
+        starts = np.random.uniform(low=-0.6, high=-0.4, size=10)
+        states = np.array([[start, 0, goal] for goal in self.goals for start in starts])
         a_outs = self.actor.predict_target(states)
-        q_outs = self.critic.predict_target(states, a_outs)
-        return list(np.reshape(q_outs,(len(self.goals),)))
+        q_outs = list(self.critic.predict_target(states, a_outs))
+        q_mean_outs = [np.array(q_outs[k:k+10]).mean() for k in range(0,1000,10)]
+        return q_mean_outs
 
     def sample(self):
-        new_competences = self.update_competence()
-        for idx,new_comp in enumerate(new_competences):
-            competence_progress = np.abs(new_comp-self.current_competences[idx])
-            self.update_priority(idx, competence_progress)
-        self.current_compentences = new_competences
+        if self.nb_sampled % 10 == 0:
+            new_competences = self.update_competence()
+            self.progresses = [a - b for (a, b) in zip(new_competences, self.competences)]
+            for idx, progress in enumerate(self.progresses):
+                self.update_priority(idx, progress)
+            self.competences = new_competences
+
+            max_c_idx = np.argmax(self.competences)
+            max_p_idx = np.argmax(self.progresses)
+            print("max competence: {:f}, {:f}".format(self.goals[max_c_idx], self.competences[max_c_idx]))
+            print("max progress: {:f}, {:f}".format(self.goals[max_p_idx], self.progresses[max_p_idx]))
+
         sample_idx, sample_dict = super(CompetenceProgressGoalBuffer, self).sample()
         goal = sample_dict['goal']
+        self.nb_sampled += 1
         return np.reshape(goal,(1,))
 
 #
