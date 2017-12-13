@@ -85,7 +85,7 @@ class DDPG_agent():
             self.goal_sampler = PrioritizedIntervalBuffer(int(1e3), self.alpha, self.env_wrapper)
         elif goal_sampler == 'goalC':
             self.goal_sampler = PrioritizedGoalBuffer(int(1e3), self.alpha, self.env_wrapper)
-        elif goal_sampler == 'cp':
+        elif goal_sampler == 'comp':
             self.goal_sampler = CompetenceProgressGoalBuffer(int(1e3), self.alpha,
                                                              self.env_wrapper,
                                                              self.actor,

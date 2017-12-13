@@ -54,7 +54,7 @@ def main(args):
         env_wrapper = IntervalCurriculum()
     elif args['sampler'] == 'goalC':
         env_wrapper = GoalCurriculum()
-    elif args['sampler'] == 'cp':
+    elif args['sampler'] == 'comp':
         env_wrapper = GoalCurriculum()
     else:
         print("Nooooooo")
