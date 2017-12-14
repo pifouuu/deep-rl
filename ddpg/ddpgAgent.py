@@ -192,8 +192,8 @@ class DDPG_agent():
 
     def save_models(self):
         dir = self.save_dir+'/'
-        path = Path(dir)
-        path.mkdir(parents=True, exist_ok=True)
+        os.makedirs(dir, exist_ok=True)
+
         self.actor.save_model(dir+'actor_model_{}.h5'.format(self.train_step), overwrite=True)
         self.actor.save_target_model(dir + 'target_actor_model_{}.h5'.format(self.train_step), overwrite=True)
         self.critic.save_model(dir + 'critic_model_{}.h5'.format(self.train_step), overwrite=True)
@@ -201,8 +201,7 @@ class DDPG_agent():
 
     def save_weights(self):
         dir = self.save_dir+'/'
-        path = Path(dir)
-        path.mkdir(parents=True, exist_ok=True)
+        os.makedirs(dir, exist_ok=True)
         self.actor.save_weights(dir+'actor_weights_{}.h5'.format(self.train_step), overwrite=True)
         self.actor.save_target_weights(dir + 'target_actor_weights_{}.h5'.format(self.train_step), overwrite=True)
         self.critic.save_weights(dir + 'critic_weights_{}.h5'.format(self.train_step), overwrite=True)
@@ -210,8 +209,8 @@ class DDPG_agent():
 
     def save_archi(self):
         dir = self.save_dir+'/'
-        path = Path(dir)
-        path.mkdir(parents=True, exist_ok=True)
+        os.makedirs(dir, exist_ok=True)
+
         self.actor.save_archi(dir+'actor_archi.json', overwrite=True)
         self.actor.save_target_archi(dir + 'target_actor_archi.json', overwrite=True)
         self.critic.save_archi(dir + 'critic_archi.json', overwrite=True)
