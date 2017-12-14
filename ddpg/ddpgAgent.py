@@ -293,9 +293,9 @@ class DDPG_agent():
             if self.train_step % self.eval_freq == 0:
                 self.test()
 
-            if self.train_step % self.save_freq == 0:
-                self.save_models()
-                self.save_weights()
+            # if self.train_step % self.save_freq == 0:
+            #     self.save_models()
+            #     self.save_weights()
 
             if self.train_step % self.log_freq == 0:
                 self.step_stats['training_step'] = self.train_step
