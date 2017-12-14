@@ -14,6 +14,7 @@ class NoGoalSampler():
 class GoalSampler():
     def __init__(self, env_wrapper):
         self.env_wrapper = env_wrapper
+        self.stats = {}
 
     def get_initial_goal(self):
         return self.env_wrapper.get_initial_goal()
@@ -178,6 +179,8 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
             for idx, progress in enumerate(self.progresses):
                 self.update_priority(idx, progress)
             self.competences = new_competences
+            self.stats['q_values'] = self.competences
+            self.stats['d_q_values'] = self.progresses
 
         sample_idx, sample_dict = super(CompetenceProgressGoalBuffer, self).sample()
         goal = sample_dict['goal']
