@@ -190,7 +190,16 @@ class DDPG_agent():
                 test_rewards.append(reward)
             self.step_stats['Test reward on random goal'] = np.mean(test_rewards)
 
-    def save(self):
+    def save_models(self):
+        dir = self.save_dir+'/'
+        path = Path(dir)
+        path.mkdir(parents=True, exist_ok=True)
+        self.actor.save_model(dir+'actor_model_{}.h5'.format(self.train_step), overwrite=True)
+        self.actor.save_target_model(dir + 'target_actor_model_{}.h5'.format(self.train_step), overwrite=True)
+        self.critic.save_model(dir + 'critic_model_{}.h5'.format(self.train_step), overwrite=True)
+        self.critic.save_target_model(dir + 'target_critic_model_{}.h5'.format(self.train_step), overwrite=True)
+
+    def save_weights(self):
         dir = self.save_dir+'/'
         path = Path(dir)
         path.mkdir(parents=True, exist_ok=True)
@@ -198,6 +207,15 @@ class DDPG_agent():
         self.actor.save_target_weights(dir + 'target_actor_weights_{}.h5'.format(self.train_step), overwrite=True)
         self.critic.save_weights(dir + 'critic_weights_{}.h5'.format(self.train_step), overwrite=True)
         self.critic.save_target_weights(dir + 'target_critic_weights_{}.h5'.format(self.train_step), overwrite=True)
+
+    def save_archi(self):
+        dir = self.save_dir+'/'
+        path = Path(dir)
+        path.mkdir(parents=True, exist_ok=True)
+        self.actor.save_archi(dir+'actor_archi.json', overwrite=True)
+        self.actor.save_target_archi(dir + 'target_actor_archi.json', overwrite=True)
+        self.critic.save_archi(dir + 'critic_archi.json', overwrite=True)
+        self.critic.save_target_archi(dir + 'target_critic_archi.json', overwrite=True)
 
     def run(self):
 
@@ -225,6 +243,8 @@ class DDPG_agent():
         episode_init = current_obs
         train_goal = self.goal_sampler.sample()
         start_time = time.time()
+
+        self.save_archi()
 
         while self.train_step < self.max_steps:
             state = self.goal_sampler.process_observation(current_obs, train_goal)
@@ -273,9 +293,10 @@ class DDPG_agent():
 
             if self.train_step % self.eval_freq == 0:
                 self.test()
-            #
-            # if self.train_step % self.save_freq == 0:
-            #     self.save()
+
+            if self.train_step % self.save_freq == 0:
+                self.save_models()
+                self.save_weights()
 
             if self.train_step % self.log_freq == 0:
                 self.step_stats['training_step'] = self.train_step

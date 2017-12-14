@@ -9,9 +9,7 @@ from memory import SASMemory, EpisodicHerSASMemory, SARSTMemory, EpisodicHerSARS
 import pickle
 import time
 import datetime
-from actor import ActorNetwork
-from HLcritic import HuberLossCriticNetwork
-from critic import CriticNetwork
+from networks import ActorNetwork, CriticNetwork, HuberLossCriticNetwork
 from ddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise
 
@@ -96,8 +94,6 @@ def main(args):
                              float(args['actor_lr']),
                              args['activation'])
 
-        # actor.load_weights(args['save_dir']+params+'/2017_11_30_16_56_43/actor_weights_300.h5')
-
         critic = HuberLossCriticNetwork(sess,
                                state_dim,
                                action_dim,
@@ -105,13 +101,6 @@ def main(args):
                                float(args['gamma']),
                                float(args['tau']),
                                float(args['critic_lr']))
-
-        # critic = CriticNetwork(sess,
-        #                                 state_dim,
-        #                                 action_dim,
-        #                                 float(args['gamma']),
-        #                                 float(args['tau']),
-        #                                 float(args['critic_lr']))
 
         agent = DDPG_agent(sess,
                            actor,
@@ -167,7 +156,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
                         default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=400)
     parser.add_argument('--log-freq', help='saving models weights frequency', default=200)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)

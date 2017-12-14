@@ -88,16 +88,17 @@ class PrioritizedBuffer(Buffer):
             it_capacity *= 2
 
         self._it_sum = SumSegmentTree(it_capacity)
-        self._max_priority = 1.0
+        self._max_priority = 1e5
+        self._min_priority = 1e-5
 
     def append(self, buffer_item, priority=None):
         """See ReplayBuffer.store_effect"""
         idx = self.next_idx
         super().append(buffer_item)
         if priority is None:
-            self._it_sum[idx] = self._max_priority ** self.alpha
+            self._it_sum[idx] = self._min_priority
         else:
-            self._it_sum[idx] = priority ** self.alpha
+            self._it_sum[idx] = np.clip(priority ** self.alpha, self._min_priority, self._max_priority)
 
     def sample_proportional_idx(self):
         sum = self._it_sum.sum()
@@ -114,8 +115,7 @@ class PrioritizedBuffer(Buffer):
         return idx, result
 
     def update_priority(self, idx, priority):
-        self._it_sum[idx] = priority ** self.alpha
-        # self._max_priority = max(self._max_priority, priority)
+        self._it_sum[idx] = np.clip(priority ** self.alpha, self._min_priority, self._max_priority)
 
 
 class PrioritizedIntervalBuffer(PrioritizedBuffer):

@@ -8,6 +8,7 @@ from keras.optimizers import Adam
 import tensorflow as tf
 import keras.backend as K
 import os
+import json_tricks
 
 class ActorNetwork(object):
     def __init__(self, sess, state_size, action_size, action_bound, tau, learning_rate, activation):
@@ -83,11 +84,27 @@ class ActorNetwork(object):
     def save_weights(self, filepath, overwrite=False):
         self.model.save_weights(filepath, overwrite=overwrite)
 
-    def load_weights(self, filepath):
-        self.model.load_weights(filepath)
-
     def save_target_weights(self, filepath, overwrite=False):
         self.target_model.save_weights(filepath, overwrite=overwrite)
+
+    def save_model(self, filepath, overwrite=False):
+        self.model.save(filepath, overwrite=overwrite)
+
+    def save_target_model(self, filepath, overwrite=False):
+        self.target_model.save(filepath, overwrite=overwrite)
+
+    def save_archi(self, filepath, overwrite=False):
+        model_json = self.model.to_json()
+        with open(filepath, "w") as json_file:
+            json_file.write(json_tricks.dumps(json_tricks.loads(model_json), indent=4))
+
+    def save_target_archi(self, filepath, overwrite=False):
+        target_model_json = self.target_model.to_json()
+        with open(filepath, "w") as json_file:
+            json_file.write(json_tricks.dumps(json_tricks.loads(target_model_json), indent=4))
+
+    def load_weights(self, filepath):
+        self.model.load_weights(filepath)
 
     def load_target_weights(self, filepath):
         self.target_model.load_weights(filepath)
