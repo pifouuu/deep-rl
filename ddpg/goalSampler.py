@@ -179,11 +179,6 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
                 self.update_priority(idx, progress)
             self.competences = new_competences
 
-            max_c_idx = np.argmax(self.competences)
-            max_p_idx = np.argmax(self.progresses)
-            print("max competence: {:f}, {:f}".format(self.goals[max_c_idx], self.competences[max_c_idx]))
-            print("max progress: {:f}, {:f}".format(self.goals[max_p_idx], self.progresses[max_p_idx]))
-
         sample_idx, sample_dict = super(CompetenceProgressGoalBuffer, self).sample()
         goal = sample_dict['goal']
         self.nb_sampled += 1

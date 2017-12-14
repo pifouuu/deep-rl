@@ -147,7 +147,7 @@ if __name__ == '__main__':
     parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', default=False)
 
     # run parameters
-    parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0').h
+    parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
     parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
