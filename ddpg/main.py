@@ -152,9 +152,9 @@ if __name__ == '__main__':
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
     parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info',
-                        default='/home/pierre/PycharmProjects/deep-rl/ddpg/results/')
+                        default='/home/pierre/PycharmProjects/deep-rl/ddpg/results_temp/')
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
-                        default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves/')
+                        default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves_temp/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
     parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
     parser.add_argument('--log-freq', help='saving models weights frequency', default=200)
