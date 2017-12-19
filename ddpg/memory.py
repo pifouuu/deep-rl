@@ -64,13 +64,9 @@ class ReplayBuffer(object):
         """Get all of the data in a single array"""
         return (self.contents[:self.length])
 
-class Memory():
-    def __init__(self, contents, limit):
-        self.contents = contents
-        self.buffer = ReplayBuffer(limit, self.contents)
-
-    def size(self):
-        return self.buffer.length
+class Memory(ReplayBuffer):
+    def __init__(self, contents_shape, limit):
+        super(Memory, self).__init__(limit, contents_shape)
 
     def end_episode(self):
         pass
@@ -79,27 +75,24 @@ class Memory():
         # Draw such that we always have a proceeding element.
         batch_idxs = np.random.random_integers(self.nb_entries - 2, size=batch_size)
         result = {}
-        for name, value in self.buffer.contents.items():
+        for name, value in self.contents.items():
             result[name] = array_min2d(value.get_batch(batch_idxs))
-        return result
-
-    def append(self, buffer_item):
-        self.buffer.append(buffer_item)
+        return batch_idxs, result
 
     @property
     def nb_entries(self):
-        return len(self.buffer.contents['state0'])
+        return len(self.contents['state0'])
 
 
 class SARSTMemory(Memory):
     def __init__(self, env_wrapper, limit):
-        self.contents = {'state0': env_wrapper.state_shape,
+        self.contents_shape = {'state0': env_wrapper.state_shape,
                         'action': env_wrapper.action_shape,
                         'state1': env_wrapper.state_shape,
                         'reward': env_wrapper.reward_shape,
                          'terminal': env_wrapper.terminal_shape}
 
-        super(SARSTMemory, self).__init__(self.contents, limit)
+        super(SARSTMemory, self).__init__(self.contents_shape, limit)
 
     def build_exp(self, state, action, next_state, reward, terminal):
         dict = {'state0': state,
@@ -113,10 +106,10 @@ class SARSTMemory(Memory):
 class SASMemory(Memory):
     def __init__(self, env_wrapper, limit):
         self.env_wrapper = env_wrapper
-        self.contents = {'state0': env_wrapper.state_shape,
+        self.contents_shape = {'state0': env_wrapper.state_shape,
                     'action': env_wrapper.action_shape,
                     'state1': env_wrapper.state_shape}
-        super(SASMemory, self).__init__(self.contents, limit)
+        super(SASMemory, self).__init__(self.contents_shape, limit)
 
     def build_exp(self, state, action, next_state, reward, terminal):
         dict = {'state0': state,
@@ -125,7 +118,7 @@ class SASMemory(Memory):
         return dict
 
     def sample(self, batch_size):
-        dict = super(SASMemory, self).sample(batch_size)
+        _, dict = super(SASMemory, self).sample(batch_size)
         dict['reward'] = np.zeros((batch_size))
         dict['terminal'] = np.zeros((batch_size))
         for k in range(batch_size):
