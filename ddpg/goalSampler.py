@@ -175,9 +175,9 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
     def sample(self):
         if self.nb_sampled % 10 == 0:
             new_competences = self.update_competence()
-            self.progresses = [np.abs(a - b) for (a, b) in zip(new_competences, self.competences)]
+            self.progresses = [a - b for (a, b) in zip(new_competences, self.competences)]
             for idx, progress in enumerate(self.progresses):
-                self.update_priority(idx, progress)
+                self.update_priority(idx, np.abs(progress))
             self.competences = new_competences
             self.stats['q_values'] = self.competences
             self.stats['d_q_values'] = self.progresses
