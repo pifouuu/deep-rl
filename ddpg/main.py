@@ -27,9 +27,8 @@ def main(args):
         args['activation'] +'_'+\
         args['invert_grads'] +'_'+\
         args['target_clip'] +'_'+\
-        args['max_episode_steps']
-
-    print(params)
+        args['max_episode_steps'] +'_'+\
+        args['sigma']
 
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = args['summary_dir']+params+'/'+now
@@ -75,7 +74,7 @@ def main(args):
     # Ensure action bound is symmetric
     assert (train_env.action_space.high == -train_env.action_space.low)
 
-    actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
+    actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma=float(args['sigma']))
 
 
     with tf.Session() as sess:
@@ -141,6 +140,7 @@ if __name__ == '__main__':
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
     parser.add_argument('--sampler', help='type of goal sampling', default='no')
     parser.add_argument('--alpha', help="how much priorization in goal sampling", default=0.5)
+    parser.add_argument('--sigma', help="amount of exploration", default=0.3)
     parser.add_argument('--delta', help='delta in huber loss', default='inf')
     parser.add_argument('--activation', help='actor final layer activation', default='tanh')
     parser.add_argument('--invert-grads', help='Gradient inverting for bounded action spaces', default=False)
