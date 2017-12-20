@@ -156,7 +156,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
                         default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves_temp/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=400)
     parser.add_argument('--log-freq', help='saving models weights frequency', default=200)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)

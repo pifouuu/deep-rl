@@ -121,8 +121,8 @@ class PrioritizedBuffer(Buffer):
 
 class PrioritizedIntervalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env_wrapper):
-        self.content = {'interval': (2,)}
-        super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.content, env_wrapper)
+        self.contents_shape = {'interval': (2,)}
+        super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.contents_shape, env_wrapper)
         self.intervals = env_wrapper.get_intervals()
         self.priorities = env_wrapper.get_priorities()
         for interval, priority in zip(self.intervals, self.priorities):
@@ -137,8 +137,8 @@ class PrioritizedIntervalBuffer(PrioritizedBuffer):
 
 class PrioritizedGoalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env_wrapper):
-        self.content = {'goal':(1,)}
-        super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.content, env_wrapper)
+        self.contents_shape = {'goal':(1,)}
+        super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.contents_shape, env_wrapper)
         self.goals = env_wrapper.get_goals()
         self.priorities = env_wrapper.get_priorities()
         for goal, priority in zip(self.goals, self.priorities):
@@ -152,8 +152,8 @@ class PrioritizedGoalBuffer(PrioritizedBuffer):
 
 class CompetenceProgressGoalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env_wrapper, actor, critic):
-        self.content = {'goal':(1,)}
-        super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.content, env_wrapper)
+        self.contents_shape = {'goal':(1,)}
+        super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.contents_shape, env_wrapper)
         self.goals = env_wrapper.get_goals()
         self.competences = [0]*len(self.goals)
         self.progresses = [0]*len(self.goals)
@@ -186,6 +186,14 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
         goal = sample_dict['goal']
         self.nb_sampled += 1
         return np.reshape(goal,(1,))
+
+class memoryBasedSampler(GoalSampler):
+    def __init__(self, env_wrapper, memory):
+        super(memoryBasedSampler, self).__init__(env_wrapper)
+        self.memory = memory
+
+    def sample(self):
+        return self.memory.sample_goal()
 
 #
 # def _demo():

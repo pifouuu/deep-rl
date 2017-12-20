@@ -9,6 +9,7 @@ from pathlib import Path
 
 from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSampler, InitialGoalSampler, \
     PrioritizedGoalBuffer, CompetenceProgressGoalBuffer
+from goalMemory import array_min2d
 
 def gradient_inverter(gradient, p_min, p_max):
     """Gradient inverting as described in https://arxiv.org/abs/1511.04143"""
@@ -103,36 +104,37 @@ class DDPG_agent():
         target_q = self.critic.predict_target(
             experiences['state1'],
             self.actor.predict_target(experiences['state1'])
-            # np.clip(self.actor.predict_target(experiences['state1']), -self.actor.action_bound, self.actor.action_bound)
         )
 
         y_i = []
         for k in range(self.batch_size):
             if self.target_clip:
-                target_q_val = np.clip(target_q[k],
-                                   self.env_wrapper.min_reward/(1-self.critic.gamma),
-                                   self.env_wrapper.max_reward)
-            else:
-                target_q_val = target_q[k]
+                target_q[k] = np.clip(target_q[k],
+                                      self.env_wrapper.min_reward / (1 - self.critic.gamma),
+                                      self.env_wrapper.max_reward)
 
             if experiences['terminal'][k]:
                 y_i.append(experiences['reward'][k])
             else:
-                y_i.append(experiences['reward'][k] + self.critic.gamma * target_q_val)
+                y_i.append(experiences['reward'][k] + self.critic.gamma * target_q[k])
 
         # Update the critic given the targets
         critic_loss = self.critic.train(
             experiences['state0'], experiences['action'], np.reshape(y_i, (self.batch_size, 1)))
         self.step_stats['list/critic_loss'].append(critic_loss)
 
+        return target_q
+
     def train_actor(self, samples):
 
         a_outs = self.actor.predict(samples['state0'])
-        grads = self.critic.gradients(samples['state0'], a_outs)
+        q_vals, grads = self.critic.gradients(samples['state0'], a_outs)
         if self.invert_grads:
             for k in range(self.batch_size):
                 grads[k] *= (1-a_outs[k])/2 if grads[k]>=0 else (a_outs[k]+1)/2
         self.actor.train(samples['state0'], grads)
+
+        return q_vals
 
     def update_targets(self):
         self.actor.target_train()
@@ -145,10 +147,13 @@ class DDPG_agent():
         # self.hard_update_target_models()
 
     def train(self):
-        experiences = self.memory.sample(self.batch_size)
+        batch_idxs, experiences = self.memory.sample(self.batch_size)
 
-        self.train_critic(experiences)
-        self.train_actor(experiences)
+        target_q_vals = self.train_critic(experiences)
+        q_vals = self.train_actor(experiences)
+
+        self.memory.update_priorities(batch_idxs, target_q_vals, q_vals, self.train_step)
+
         self.update_targets()
 
         actor_stats = self.actor.get_stats(experiences)
@@ -293,9 +298,9 @@ class DDPG_agent():
             if self.train_step % self.eval_freq == 0:
                 self.test()
 
-            # if self.train_step % self.save_freq == 0:
-            #     self.save_models()
-            #     self.save_weights()
+            if self.train_step % self.save_freq == 0:
+                self.save_models()
+                self.save_weights()
 
             if self.train_step % self.log_freq == 0:
                 self.step_stats['training_step'] = self.train_step
