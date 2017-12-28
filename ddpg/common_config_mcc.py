@@ -1,5 +1,3 @@
-import gym
-
 class CommonConfig:
     def __init__(self):
         self.debug = False
@@ -23,11 +21,6 @@ class CommonConfig:
 
         # We have a total of experiment_epochs * epoch_steps steps training steps
         self.epoch_steps = 1000
-        self.experiments_nb = 100
-        # Number of tests episodes
-        self.epoch_tests = 10
-
-        self.env = gym.make('MountainCarContinuous-v0')
 
         if not self.random_seed:
             self.seed = 10

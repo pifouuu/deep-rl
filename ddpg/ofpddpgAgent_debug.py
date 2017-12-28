@@ -90,21 +90,8 @@ class OFPDDPG_agent(DDPG_agent):
         self.actor.target_train()
         self.critic.target_train()
 
-
-        obs0 = self.train_env.reset()
-        self.episode_init = obs0
-
-        #TODO : pass on to a sample goal function in the agent, not in the wrapper
-        self.train_goal = self.env_wrapper.sample_goal()
-
         #print ("in run :", self.memory.size())
         while self.train_step < self.max_steps:
-
-            obs1, sample = self.step(obs0, self.train_goal, test=False)
-
-            reward = sample['reward']
-            self.episode_reward += reward
-            self.total_reward += reward
 
             if self.memory.nb_entries > 3*self.batch_size:
                 self.train()
@@ -112,10 +99,9 @@ class OFPDDPG_agent(DDPG_agent):
             if self.train_step % self.eval_freq == 0:
                 self.test()
 
-            if self.episode_step >= self.max_episode_steps or sample['terminal1']:
-                self.endof_episode(sample)
-            else:
-                obs0 = obs1
+            if self.episode_step >= self.max_episode_steps:
+                self.episode_step = 0
+                self.episode += 1
 
             if self.save_step_stats:
                 self.step_stats['Training steps'] = self.train_step

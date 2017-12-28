@@ -13,13 +13,13 @@ class PerfConfig(CommonConfig):
         self.tau = 1e-3
         self.eval_episodes = 10 #number of episodes to run during evaluation', default=20
         self.max_episode_steps = 1000
-        self.max_steps = 6000 #1e7
+        self.max_steps = 1e7
         self.eval_freq = 1000 #evaluation frequency', default=1000
         self.run_type = "ofp" #"standard"#
-        # CMC requires a big noise, because of a specific problem
         self.noise_factor = 0.3 #3.0
         self.save_step_stats = False
         self.batch_size = 128
         self.averaging = True
 
-        self.env = gym.make('MountainCarContinuous-v0')
+        self.env = gym.make('HalfCheetah-v1')
+        print (self.env)

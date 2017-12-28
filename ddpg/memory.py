@@ -200,6 +200,36 @@ class Memory():
             # end of added by Olivier Sigaud --------------------------------
 
 
+    def load_from_Cedric(self, filename):
+        """
+        used to load a replay buffer saved under Cédric Colas' format into a replay buffer of Pierre Fournier's format
+        """
+        file = open(filename, 'rb')
+        buffer = pickle.load(file)
+        file.close()
+        print("nb essais : ",len(buffer))
+
+        for i in range(len(buffer)):
+        #for i in range(20):
+            for idx in range(len(buffer[i])):
+                buffer_item = buffer[i][idx]
+                self.append(buffer_item, training=True)
+
+    def count_success_from_Cedric(self, filename):
+        file = open(filename, 'rb')
+        buffer = pickle.load(file)
+        file.close()
+
+        success = 0
+        for i in range(len(buffer)):
+        #for i in range(20):
+            if buffer[i][-1]['terminal1']:
+                success += 1
+        return success
+
+
+            # end of added by Olivier Sigaud --------------------------------
+
 class HerMemory(Memory):
     def __init__(self, env_wrapper, with_reward, limit, strategy):
         """Replay buffer that does Hindsight Experience Replay
@@ -372,7 +402,9 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
 '''
 memory = Memory(NoGoal(), with_reward=True, limit=int(1e6))
-name = "replay_buffer_gep"
-memory.load_from_ManceronBuffer_with_filter(file="data/"+name+".p")
-memory.plot2D(name)
+filename = "CMC_buffer_1.rb"
+memory.load_from_Cedric(filename)
+memory.plot2D(filename)
+nb_success = memory.count_success_from_Cedric(filename)
+print (nb_success)
 '''

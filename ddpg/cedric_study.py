@@ -5,15 +5,15 @@ from memory import Memory
 from envWrapper_halfcheetah import NoGoal
 from actor import ActorNetwork
 from critic import CriticNetwork
-from ofpddpgAgent import OFPDDPG_agent
+from ofpddpgAgent_debug import OFPDDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise, NoNoise
 from perf_config_mcc import PerfConfig
 
-def tau_study_ofp(tau, num, config):
+def study_ofp(tau, name, config):
     # Get the environment and extract the number of actions.
     env = config.env
 
-    results_path = './tau_ofp/{}/{}/'.format(tau, num)
+    results_path = './tau_ofp/{}/{}/'.format(tau, 1)
     # logger_step = Logger(dir=results_path,format_strs=['log','json', 'tensorboard'])
     # logger_episode = Logger(dir=results_path, format_strs=['log','stdout', 'json', 'tensorboard'])
     if (config.save_step_stats):
@@ -29,13 +29,11 @@ def tau_study_ofp(tau, num, config):
     action_dim = env_wrapper.action_shape[0]
     action_bound = env.action_space.high
     # Ensure action bound is symmetric
-    assert (env.action_space.high == -env.action_space.low)
+    #assert (env.action_space.high == -env.action_space.low)
 
     memory = Memory(env_wrapper, with_reward=True, limit=int(1e6))
-    #memory.load_from_ManceronBuffer_with_filter(file=config.memory_file)
-    filename = "CMC_buffer_1.rb"
-    memory.load_from_Cedric(filename)
-    nb_success = memory.count_success_from_Cedric(filename)
+    memory.load_from_Cedric(name)
+    nb_success = memory.count_success_from_Cedric(name)
     print(nb_success)
 
     # Noise
@@ -93,6 +91,3 @@ def tau_study_ofp(tau, num, config):
                               config.averaging)
 
         agent.run()
-
-config = PerfConfig()
-tau_study_ofp(0.05, 0, config)
