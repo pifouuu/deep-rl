@@ -55,6 +55,7 @@ class NoGoal(object):
 
         return buffer_item
 
+
 class RandomGoal(object):
     def __init__(self):
         # Specific to continuous mountain car

@@ -1,4 +1,4 @@
-from cedric_study import study_ofp
+from cedric_study_cheetah import study_ofp
 from perf_config_halfcheetah import PerfConfig
 
 config = PerfConfig()

@@ -2,7 +2,7 @@ class CommonConfig:
     def __init__(self):
         self.debug = False
 
-        self.random_seed = True
+        self.random_seed = False
         self.actor_type = 1
         self.critic_type = 1
         self.data_path = "data/"
