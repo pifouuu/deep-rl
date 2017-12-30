@@ -155,6 +155,7 @@ class stop_first_reward():
 
         self.train_goal = self.env_wrapper.sample_goal()
 
+        print("starting")
 
         while self.train_step < self.max_steps:
 
