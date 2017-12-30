@@ -1,6 +1,7 @@
 from first_perf_study import first_perf_study
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 # Experiment attributes
 
