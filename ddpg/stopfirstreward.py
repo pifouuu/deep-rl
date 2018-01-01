@@ -172,7 +172,7 @@ class stop_first_reward():
 
             if self.memory.nb_entries > 3*self.batch_size:
                 self.train()
-            if self.train_step > 100000:
+            if self.train_step > 300000:
                 print("failure!")
                 return -1
             if sample['terminal1']:
