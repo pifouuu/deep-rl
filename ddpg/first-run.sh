@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-NAMES=(a b c d e f g h i j k l m n o p q r s t u v)
+NAMES=(a b c d e f g h i j k l m n o p q r s t)
 FORCE="true"
 
 for NAME in ${NAMES[*]}

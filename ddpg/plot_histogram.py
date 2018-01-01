@@ -23,5 +23,14 @@ def plot_histo():
     plt.xlabel('number of steps before first reward')
     plt.title('Histogram of the number of steps before reaching the first reward (' + str(n_runs) + ' runs)')
 
+def plot_histo2():
+    file = "collec1.steps"
+    nb_steps_tab = np.loadtxt(file)
+    print('mean number of steps before reaching a reward: ', nb_steps_tab.mean())
+    fig = plt.figure()
+    plt.hist(nb_steps_tab,bins=50 )
+    plt.xlabel('number of steps before first reward')
+    plt.title('Histogram of the number of steps before reaching the first reward (' + str(len(nb_steps_tab)) + ' runs)')
+    plt.savefig("histo_DDPG.png")
 
-plot_histo()
+plot_histo2()
