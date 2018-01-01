@@ -5,7 +5,6 @@ from segmentTree import SumSegmentTree, MinSegmentTree
 # added by Olivier Sigaud --------------------------------
 import pickle
 import matplotlib.pyplot as plt
-from envWrapper import NoGoal
 
 # end of added by Olivier Sigaud --------------------------------
 

@@ -70,13 +70,11 @@ class NoGoalHalfCheetah(object):
         return observation
 
     def evaluate_transition(self, state0, action, state1):
-        r = 0
         term = False
-        if state1[self.obs_to_goal] >= 0.45:
-            r += 100
-            term = True
-        r -= math.pow(action[0], 2) * 0.1
-        return r, term
+        reward_run = (state1[0] - state[0])/self.dt
+        reward_ctrl = - 0.1 * np.square(action).sum()
+        reward = reward_ctrl + reward_run
+        return reward, term
 
     def evaluate_goal(self, state):
         return True

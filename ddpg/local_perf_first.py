@@ -1,6 +1,10 @@
-from first_perf_study import first_perf_study
 import matplotlib.pyplot as plt
 import numpy as np
+
+from trial import trial
+from configs.cmc import CMCConfig
+
+config = CMCConfig()
 
 # Experiment attributes
 
@@ -12,7 +16,7 @@ def main_loop():
     for i in range(n_runs):
         nb_steps=-1
         while nb_steps<0:
-            nb_steps = first_perf_study()
+            nb_steps = trial(config)
         n_steps_success[i] = nb_steps
 
     print('mean number of steps before reaching a reward: ', n_steps_success.mean())
@@ -20,6 +24,5 @@ def main_loop():
     plt.hist(n_steps_success, )
     plt.xlabel('number of steps before first reward')
     plt.title('Histogram of the number of steps before reaching the first reward (' + str(n_runs) + ' runs)')
-
 
 main_loop()

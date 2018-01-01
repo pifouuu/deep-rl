@@ -1,21 +1,17 @@
 import os
-from ofp_perf_study import perf_study_ofp
-from standard_perf_study import perf_study_standard
+from trial import trial
 
-from perf_config_mcc import PerfConfig
+from configs.cmc import CMCConfig
 
-config = PerfConfig()
+config = CMCConfig()
 
 # Configuration
-delta_clip = float(os.environ["DELTA"])
-trial = os.environ["TRIAL"]
 
-# Experiment attributes
-force = (os.environ.get("FORCE", "false") == "true")
+config.trial = os.environ["TRIAL"]
+if config.run_type == "delta":
+    config.delta_clip = float(os.environ["DELTA"])
+elif config.run_type == "tau":
+    config.tau = float(os.environ["TAU"])
 
-if config.run_type == "ofp":
-    perf_study_ofp(delta_clip, trial, config)
-elif config.run_type == "standard":
-    perf_study_standard(delta_clip, trial, config)
-else:
-    print("WTF: unknown run type!")
+trial(config)
+
