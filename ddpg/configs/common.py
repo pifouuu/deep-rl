@@ -32,9 +32,6 @@ class CommonConfig:
         self.visualize_train = False
         self.visualize_test = True
 
-        # We have a total of experiment_epochs * epoch_steps steps training steps
-        self.epoch_steps = 1000
-
         self.study = None #"from_cedric"  # "standard"  #  "first" # "offline" #  "from_cedric_ofl"#
         self.buffer_name = None
         self.trial = 0
