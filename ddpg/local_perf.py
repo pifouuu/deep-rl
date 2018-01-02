@@ -3,6 +3,8 @@ from configs.cmc import CMCConfig
 
 config = CMCConfig()
 
+config.study = "standard"
+
 # Experiment attributes
 
 #with replay_buffer_mix, the right instability interval is in delta_clip between 5 and 25. 20 is close to 50% stability

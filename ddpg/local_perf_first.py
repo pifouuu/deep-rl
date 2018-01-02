@@ -5,8 +5,7 @@ from trial import trial
 from configs.cmc import CMCConfig
 
 config = CMCConfig()
-
-# Experiment attributes
+config.study = "first"
 
 def main_loop():
     n_runs = 1000

@@ -2,12 +2,15 @@ from trial import trial
 from configs.cmc import CMCConfig
 from configs.halfcheetah import HCConfig
 
-type = "cmc"
+#type = "cmc"
+type = "halfcheetah"
 
 if type=="cmc":
     config = CMCConfig()
 elif type=="halfcheetah":
     config = HCConfig()
+
+config.study = "from_cedric"
 
 def main_loop():
     if type == "cmc":

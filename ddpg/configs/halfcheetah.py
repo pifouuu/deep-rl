@@ -4,11 +4,12 @@ from configs.common import CommonConfig
 class HCConfig(CommonConfig):
     def __init__(self,**kwargs):
         # Basic variables
-        super(PerfConfig, self).__init__(**kwargs)
+        super(HCConfig, self).__init__(**kwargs)
 
         #self.memory_file = "data/replay_buffer_us_frequent.p"
         #self.memory_file = "data/replay_buffer_us_fair_big.p"
         #self.memory_file = "data/replay_buffer_gep.p"
+        self.type = "halfcheetah"
         self.reward_scaling = 1.0
         self.tau = 1e-3
         self.eval_episodes = 10 #number of episodes to run during evaluation', default=20
@@ -22,4 +23,7 @@ class HCConfig(CommonConfig):
         self.averaging = True
 
         self.env = gym.make('HalfCheetah-v1')
-        print (self.env)
+        if not self.random_seed:
+            self.env.seed(self.seed)
+
+        self.results_root_name = "hc_results"

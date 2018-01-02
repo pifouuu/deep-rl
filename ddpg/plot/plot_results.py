@@ -2,7 +2,7 @@ import json
 from perfcollector_dataframe import PerfCollectorData
 import os
 
-directory = "./tau_ofp/" #"./perf_ofp/" #"./experiments_tau/" #"./results/perf_ofp_GEP/"  #
+directory = "../hc_results/" #"./perf_ofp/" #"./experiments_tau/" #"./results/perf_ofp_GEP/"  #
 
 def get_perf_values(filename):
     with open(filename, 'r') as json_data:
@@ -21,7 +21,7 @@ def get_perf_values(filename):
 
 def plot_all():
     cpt = 0
-    collector = PerfCollectorData("./img/")
+    collector = PerfCollectorData("../img/")
     for delta in os.listdir(directory):
         collector.init(delta)
         perf_values = {}

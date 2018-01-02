@@ -147,6 +147,7 @@ class DDPG_agent():
             action = np.clip(action, -self.actor.action_bound, self.actor.action_bound)
             obs1, reward_env, done_env, info = self.train_env.step(action[0])
         sample = self.env_wrapper.process_step(state0, goal, action, obs1, reward_env, done_env, info)
+        sample['reward'] = reward_env #patch OSD to deal with half-cheetah
         return obs1, sample
 
     def train(self):
@@ -185,7 +186,7 @@ class DDPG_agent():
         self.episode_stats['New Test reward'] = mean_reward
         self.step_stats['Test reward'] = mean_reward
         print ('Test reward', mean_reward)
-        if mean_reward>97.5:
+        if mean_reward>4200.0:
             self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward),overwrite=True)
             #portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
             #self.actor.print_target_weights()

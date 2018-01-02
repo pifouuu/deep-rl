@@ -6,9 +6,7 @@ class CMCConfig(CommonConfig):
         # Basic variables
         super(CMCConfig, self).__init__(**kwargs)
 
-        #self.memory_file = "data/replay_buffer_us_frequent.p"
-        #self.memory_file = "data/replay_buffer_us_fair_big.p"
-        #self.memory_file = "data/replay_buffer_gep.p"
+        self.type = "cmc"
         self.reward_scaling = 1.0
         self.tau = 0.05
         self.delta_clip = 100
@@ -24,6 +22,8 @@ class CMCConfig(CommonConfig):
         self.averaging = True
 
         self.env = gym.make('MountainCarContinuous-v0')
-        self.study = "standard"  #"from_cedric" # "first" # "offline" #  "from_cedric_ofl"#
-        self.buffer_name = None
-        self.trial = 0
+        if not self.random_seed:
+            self.env.seed(self.seed)
+
+        self.results_root_name = "cmc_results"
+        self.memory_file = None

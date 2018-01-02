@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from logger import Logger
 from memory import Memory
-from envWrapper import NoGoal
+from envWrapper import NoGoalCMC, NoGoalHalfCheetah
 from agents.actor import ActorNetwork
 from agents.critic import CriticNetwork
 from agents.stopfirstrewardAgent import stop_first_reward_agent
@@ -15,7 +15,7 @@ def trial(config):
     # Get the environment and extract the number of actions.
     env = config.env
 
-    results_path = './exps/{}/{}/'.format(config.tau, config.trial)
+    results_path = './' + config.results_root_name + '/{}/{}/'.format(config.tau, config.trial)
     # logger_step = Logger(dir=results_path,format_strs=['log','json', 'tensorboard'])
     # logger_episode = Logger(dir=results_path, format_strs=['log','stdout', 'json', 'tensorboard'])
     if (config.save_step_stats):
@@ -25,8 +25,13 @@ def trial(config):
         logger_step = Logger(dir=results_path + '/log_steps', format_strs=['json'])
         logger_episode = Logger(dir=results_path + '/log_episodes', format_strs=['json'])
 
-    env_wrapper = NoGoal()
-    
+    if config.type=="cmc":
+        env_wrapper = NoGoalCMC()
+    elif config.type=="halfcheetah":
+        env_wrapper = NoGoalHalfCheetah()
+    else:
+        print("env type unknow:", config.type)
+
     state_dim = env_wrapper.state_shape[0]
     action_dim = env_wrapper.action_shape[0]
     action_bound = env.action_space.high
@@ -50,10 +55,6 @@ def trial(config):
 
     with tf.Session() as sess:
 
-        if not config.random_seed:
-            np.random.seed(config.seed)
-            tf.set_random_seed(config.seed)
-            env.seed(config.seed)
 
         critic = CriticNetwork(sess,
                                 state_dim,

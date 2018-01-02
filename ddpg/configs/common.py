@@ -1,8 +1,21 @@
+import tensorflow as tf
+import numpy as np
+
 class CommonConfig:
     def __init__(self):
         self.debug = False
 
-        self.random_seed = True
+        self.random_seed = False
+
+        if not self.random_seed:
+            self.seed = 10
+        else:
+            self.seed = None
+
+        if not self.random_seed:
+            np.random.seed(self.seed)
+            tf.set_random_seed(self.seed)
+
         self.actor_type = 1
         self.critic_type = 1
         self.data_path = "data/"
@@ -22,7 +35,7 @@ class CommonConfig:
         # We have a total of experiment_epochs * epoch_steps steps training steps
         self.epoch_steps = 1000
 
-        if not self.random_seed:
-            self.seed = 10
-        else:
-            self.seed = None
+        self.study = None #"from_cedric"  # "standard"  #  "first" # "offline" #  "from_cedric_ofl"#
+        self.buffer_name = None
+        self.trial = 0
+

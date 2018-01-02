@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-class NoGoal(object):
+class NoGoalCMC(object):
     def __init__(self):
         # Specific to continuous mountain car
         self.state_shape = (2,)
@@ -65,13 +65,15 @@ class NoGoalHalfCheetah(object):
         self.terminal_shape = (1,)
         self.obs_to_goal = [0]
         self.eps = 0.1
+        self.dt = 0.05
 
     def process_observation(self, observation, goal):
         return observation
 
     def evaluate_transition(self, state0, action, state1):
         term = False
-        reward_run = (state1[0] - state[0])/self.dt
+        #reward_run = (state1[0] - state0[0])/self.dt
+        reward_run = state0[0]
         reward_ctrl = - 0.1 * np.square(action).sum()
         reward = reward_ctrl + reward_run
         return reward, term
@@ -80,6 +82,7 @@ class NoGoalHalfCheetah(object):
         return True
 
     def sample_initial_goal(self):
+        #print("asking for a goal speed")
         return [0.45]
 
     def sample_goal(self):
@@ -92,13 +95,13 @@ class NoGoalHalfCheetah(object):
         # Compute reward and terminal condition
         r, done = self.evaluate_transition(state0, action, state1)
 
-        buffer_item = {'state0': state0,
+        sample = {'state0': state0,
                        'action': action,
                        'reward': r,
                        'state1': state1,
                        'terminal1': done}
 
-        return buffer_item
+        return sample
 
 class RandomGoal(object):
     def __init__(self):
