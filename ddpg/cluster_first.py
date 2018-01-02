@@ -3,13 +3,12 @@ from configs.cmc import CMCConfig
 import numpy as np
 import os
 
-# Experiment attributes
-
 # Configuration
 name = os.environ["NAME"]
 essai = os.environ["TRIAL"]
 
 config = CMCConfig()
+config.study = "first"
 
 filepath = "./first/"
 filename = filepath + name + str(essai)

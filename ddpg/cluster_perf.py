@@ -3,9 +3,11 @@ from trial import trial
 
 from configs.cmc import CMCConfig
 
-config = CMCConfig()
-
 # Configuration
+config = CMCConfig()
+config.study = "offline"
+config.memory_file = "data/replay_buffer_gep.p"
+
 
 config.trial = os.environ["TRIAL"]
 if config.run_type == "delta":
