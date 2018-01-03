@@ -1,5 +1,4 @@
 import numpy as np
-import random
 from segmentTree import SumSegmentTree, MinSegmentTree
 
 # added by Olivier Sigaud --------------------------------
@@ -194,7 +193,7 @@ class Memory():
                            'terminal1': sample[4]}
             if sample[2]>80:
                 self.append(buffer_item, training=True)
-            elif random.random() < 0.2:
+            elif np.random.random() < 0.2:
                 self.append(buffer_item, training=True)
             # end of added by Olivier Sigaud --------------------------------
 

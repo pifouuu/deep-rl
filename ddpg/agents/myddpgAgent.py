@@ -186,7 +186,7 @@ class DDPG_agent():
         self.episode_stats['New Test reward'] = mean_reward
         self.step_stats['Test reward'] = mean_reward
         print ('Test reward', mean_reward)
-        if mean_reward>4200.0:
+        if mean_reward>5780.0:
             self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward),overwrite=True)
             #portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
             #self.actor.print_target_weights()
@@ -222,16 +222,18 @@ class DDPG_agent():
 
     def run(self):
 
-        #self.sess.run(tf.global_variables_initializer())
-
         # Initialize target network weights
         self.update_targets()
+
+        #print("r6:", np.random.random())
 
         obs0 = self.train_env.reset()
         self.episode_init = obs0
 
         #TODO : pass on to a sample goal function in the agent, not in the wrapper
         self.train_goal = self.env_wrapper.sample_goal()
+
+        #print("r7:", np.random.random())
 
         while self.train_step < self.max_steps:
 
@@ -246,8 +248,12 @@ class DDPG_agent():
             if self.memory.nb_entries > 3*self.batch_size:
                 self.train()
 
+            #print("r8:", np.random.random())
+
             if self.train_step % self.eval_freq == 0:
                 self.test()
+
+            #print("r9:", np.random.random())
 
             if self.episode_step >= self.max_episode_steps or sample['terminal1']:
                 self.endof_episode(sample)
@@ -260,6 +266,7 @@ class DDPG_agent():
                     self.logger_step.logkv(key, self.step_stats[key])
                 self.logger_step.dumpkvs()
 
+            #print("r10:", np.random.random())
 
             self.train_step += 1
             self.episode_step += 1

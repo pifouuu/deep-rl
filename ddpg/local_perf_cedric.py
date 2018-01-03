@@ -11,6 +11,7 @@ elif type=="halfcheetah":
     config = HCConfig()
 
 config.study = "from_cedric"
+config.frozen = True
 
 def main_loop():
     if type == "cmc":
@@ -21,8 +22,9 @@ def main_loop():
             #name = "CMC_buffer_sig/simu_CMC2_" + str(i) + "_buffer"
             trial(config)
     elif type == "halfcheetah":
-        config.buffer_name = "cedric_buffers/simu_Cheetah1_10_3425.rb"
+        config.buffer_name = "cedric_buffers/simu_Cheetah1_13_buffer_50k_score1432"
         trial(config)
+
 
 
 main_loop()

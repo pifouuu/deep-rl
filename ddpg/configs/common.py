@@ -35,4 +35,5 @@ class CommonConfig:
         self.study = None #"from_cedric"  # "standard"  #  "first" # "offline" #  "from_cedric_ofl"#
         self.buffer_name = None
         self.trial = 0
+        self.frozen = False
 

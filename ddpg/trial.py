@@ -7,6 +7,7 @@ from agents.actor import ActorNetwork
 from agents.critic import CriticNetwork
 from agents.stopfirstrewardAgent import stop_first_reward_agent
 from agents.myddpgAgent import DDPG_agent
+from agents.fbddpgAgent import FB_DDPG_agent
 from agents.oflddpgAgent import OFL_DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise, NoNoise
 
@@ -45,7 +46,6 @@ def trial(config):
         memory.load_from_Cedric(config.buffer_name)
         nb_success = memory.count_success_from_Cedric(config.buffer_name)
         print(nb_success)
-
 
     # Noise
     if config.study == "offline" or config.study=="from_cedric_ofl" or config.study=="from_cedric":
@@ -122,7 +122,26 @@ def trial(config):
                                    config.save_step_stats,
                                    config.averaging)
         elif config.study == "standard" or config.study=="from_cedric":
-            agent = DDPG_agent(sess,
+            if config.frozen:
+                agent = FB_DDPG_agent(sess,
+                                   actor,
+                                   actor_noise,
+                                   critic,
+                                   env,
+                                   env,
+                                   env_wrapper,
+                                   memory,
+                                   logger_step,
+                                   logger_episode,
+                                   config.batch_size,
+                                   config.eval_episodes,
+                                   config.max_episode_steps,
+                                   config.max_steps,
+                                   config.eval_freq,
+                                   config.save_step_stats,
+                                   config.averaging)
+            else:
+                agent = DDPG_agent(sess,
                                actor,
                                actor_noise,
                                critic,
