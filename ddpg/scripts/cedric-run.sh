@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-NAMES=(a b c d e f g h i j k l m n o p q r s t)
-FORCE="true"
+NAMES=(a b c d e f g)
 
 for NAME in ${NAMES[*]}
 do
@@ -11,9 +10,8 @@ do
   (
     export LOGS
     export NAME
-    export FORCE
-    export PERF_STUDY="xfirst_$NAME"
+    export PERF_STUDY="xcedric_$NAME"
     rm -f $LOGS/${PERF_STUDY}.e* $LOGS/${PERF_STUDY}.o* ${PERF_STUDY}.e* ${PERF_STUDY}.o*
-    qsub -N ${PERF_STUDY} -o "$LOGS/${PERF_STUDY}.out" -b "$LOGS/${PERF_STUDY}.err" -d . first-submit.sh
+    qsub -N ${PERF_STUDY} -o "$LOGS/${PERF_STUDY}.out" -b "$LOGS/${PERF_STUDY}.err" -d . cedric-submit.sh
   )
 done
