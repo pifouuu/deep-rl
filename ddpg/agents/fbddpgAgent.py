@@ -56,6 +56,7 @@ class FB_DDPG_agent():
         self.total_reward = 0
         self.nb_goals_reached = 0
         self.episode_init = None
+        self.best_score = 8000
 
 
     def train_critic(self, samples):
@@ -186,8 +187,9 @@ class FB_DDPG_agent():
         self.episode_stats['New Test reward'] = mean_reward
         self.step_stats['Test reward'] = mean_reward
         print ('Test reward', mean_reward)
-        if mean_reward>5200.0:
+        if mean_reward>self.best_score:
             self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward),overwrite=True)
+            self.best_score = mean_reward
             #portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
             #self.actor.print_target_weights()
             #sys.exit()

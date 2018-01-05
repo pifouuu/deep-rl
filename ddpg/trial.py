@@ -48,7 +48,7 @@ def trial(config):
         print(nb_success)
 
     # Noise
-    if config.study == "offline" or config.study=="from_cedric_ofl": #or config.study=="from_cedric":
+    if config.study == "offline" or config.study=="from_cedric_ofl" or config.study=="from_cedric":
         actor_noise = NoNoise()
     else:
         actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma = config.noise_factor)

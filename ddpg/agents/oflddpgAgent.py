@@ -13,6 +13,7 @@ class OFL_DDPG_agent(DDPG_agent):
                                             logger_step, logger_episode, batch_size, eval_episodes, max_episode_steps,
                                             max_steps, eval_freq, save_step_stats,averaging)
         self.update_actor = update_actor
+        self.best_score = 97.5
 
     def train_critic(self, samples):
 
@@ -65,8 +66,9 @@ class OFL_DDPG_agent(DDPG_agent):
         self.episode_stats['New Test reward'] = mean_reward
         self.step_stats['Test reward'] = mean_reward
         print ('Test reward', mean_reward)
-        if mean_reward > 97.5:
+        if mean_reward > self.best_score:
             self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward), overwrite=True)
+            self.best_score = mean_reward
                 # portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
                 # self.actor.print_target_weights()
                 # sys.exit()
