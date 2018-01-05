@@ -25,7 +25,7 @@ def main_loop():
             trial(config)
     elif type == "halfcheetah":
         #config.buffer_name = "cedric_buffers/simu_Cheetah1_14_buffer_1500k_score1700.txt"
-        config.buffer_name = "cedric_buffers/simu_Cheetah1_13_buffer_50k_score1432.txt"
+        config.buffer_name = "simu_Cheetah1_13_buffer_50k_score1432.txt"
         trial(config)
 
 
