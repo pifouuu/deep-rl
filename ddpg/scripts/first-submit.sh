@@ -11,7 +11,7 @@ do
   (
     echo "Running experiment $TRIAL"
     export TRIAL
-    python ../main/cluster_first.py > ${LOGS}/${PERF_STUDY}_${TRIAL}.out 2> ${LOGS}/${PERF_STUDY}_${TRIAL}.err
+    python cluster_first.py > ${LOGS}/${PERF_STUDY}_${TRIAL}.out 2> ${LOGS}/${PERF_STUDY}_${TRIAL}.err
   ) &
 done
 
