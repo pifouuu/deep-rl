@@ -13,8 +13,9 @@ elif type=="halfcheetah":
     config = HCConfig()
 
 config.study = "from_cedric"
-config.frozen = False
+config.frozen = True
 config.trial = os.environ["TRIAL"]
+config.name = os.environ["NAME"]
 
 def main_loop():
     if type == "cmc":

@@ -10,8 +10,8 @@ if type=="cmc":
 elif type=="halfcheetah":
     config = HCConfig()
 
-config.study = "from_cedric"
-config.frozen = True
+config.study = "standard"#""from_cedric"
+config.frozen = False
 
 def main_loop():
     if type == "cmc":

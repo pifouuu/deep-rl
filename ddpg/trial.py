@@ -16,7 +16,10 @@ def trial(config):
     # Get the environment and extract the number of actions.
     env = config.env
 
-    results_path = './' + config.results_root_name + '/{}/{}/'.format(config.tau, config.trial)
+    if config.Name==None:
+        results_path = './' + config.results_root_name + '/{}/{}/'.format(config.tau, config.trial)
+    else:
+        results_path = './' + config.results_root_name + '/{}/{}/'.format(config.name, config.trial)
     # logger_step = Logger(dir=results_path,format_strs=['log','json', 'tensorboard'])
     # logger_episode = Logger(dir=results_path, format_strs=['log','stdout', 'json', 'tensorboard'])
     if (config.save_step_stats):

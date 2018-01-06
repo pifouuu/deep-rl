@@ -36,4 +36,4 @@ class CommonConfig:
         self.buffer_name = None
         self.trial = 0
         self.frozen = False
-
+        self.name = None
