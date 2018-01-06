@@ -16,7 +16,7 @@ def trial(config):
     # Get the environment and extract the number of actions.
     env = config.env
 
-    if config.Name==None:
+    if config.name==None:
         results_path = './' + config.results_root_name + '/{}/{}/'.format(config.tau, config.trial)
     else:
         results_path = './' + config.results_root_name + '/{}/{}/'.format(config.name, config.trial)
