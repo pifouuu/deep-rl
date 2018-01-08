@@ -17,8 +17,8 @@ do
     python3.4 main.py \
     --summary-dir $LOGDIR \
     --save-dir $SAVEDIR \
-    --max-steps 200000 \
-    --save-freq 10000 \
+    --max-steps 1200 \
+    --save-freq 200 \
     --max-episode-steps ${NSTEP} \
     --memory ${MEMORY} \
     --strategy ${STRAT} \

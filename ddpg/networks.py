@@ -146,7 +146,7 @@ class CriticNetwork(Network):
         return self.sess.run([self.out, self.action_grads], feed_dict={
             self.state: states,
             self.action: actions
-        })[0]
+        })
 
     def predict_target(self, states, actions):
         return self.target_model.predict_on_batch([states, actions])

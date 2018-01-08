@@ -1,15 +1,11 @@
-import tensorflow as tf
-import numpy as np
-
 import os
-import sys
-import pickle
 import time
-from pathlib import Path
 
+import numpy as np
+import tensorflow as tf
 from goalSampler import PrioritizedIntervalBuffer, RandomGoalSampler, NoGoalSampler, InitialGoalSampler, \
     PrioritizedGoalBuffer, CompetenceProgressGoalBuffer
-from goalMemory import array_min2d
+
 
 def gradient_inverter(gradient, p_min, p_max):
     """Gradient inverting as described in https://arxiv.org/abs/1511.04143"""
