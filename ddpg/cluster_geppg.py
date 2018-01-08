@@ -13,7 +13,7 @@ elif type=="halfcheetah":
     config = HCConfig()
 
 config.study = "from_cedric"
-config.frozen = True
+config.frozen = False
 config.trial = os.environ["TRIAL"]
 config.name = os.environ["NAME"]
 
