@@ -282,7 +282,7 @@ class DDPG_agent():
                 current_obs = self.train_env.reset()
                 episode_init = current_obs
                 train_goal = self.goal_sampler.sample()
-                self.memory.end_episode()
+                self.memory.end_episode(reached)
 
                 for key in sorted(self.episode_stats.keys()):
                     self.logger_episode.logkv(key, self.episode_stats[key])
