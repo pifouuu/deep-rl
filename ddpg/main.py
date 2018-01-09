@@ -12,12 +12,20 @@ import datetime
 from networks import ActorNetwork, CriticNetwork, HuberLossCriticNetwork
 from ddpgAgent import DDPG_agent
 from noise import OrnsteinUhlenbeckActionNoise
+import random as rn
+import os
+os.environ['PYTHONHASHSEED'] = '0'
 
+session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
 
 #TODO : Update doc on github on this code
 
 
 def main(args):
+
+    if args['random_seed'] is not None:
+        np.random.seed(int(args['random_seed']))
+        rn.seed(int(args['random_seed']))
 
     params = args['memory'] +'_'+\
         args['strategy'] +'_'+\
@@ -40,6 +48,10 @@ def main(args):
 
     train_env = gym.make(args['env'])
     test_env = gym.make(args['env'])
+
+    if args['random_seed'] is not None:
+        train_env.seed(int(args['random_seed']))
+        test_env.seed(int(args['random_seed']))
 
     env_wrapper = None
     if args['sampler'] == 'no':
@@ -77,14 +89,10 @@ def main(args):
 
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
 
+    if args['random_seed'] is not None:
+        tf.set_random_seed(int(args['random_seed']))
 
-    with tf.Session() as sess:
-
-        if args['random_seed'] is not None:
-            np.random.seed(int(args['random_seed']))
-            tf.set_random_seed(int(args['random_seed']))
-            train_env.seed(int(args['random_seed']))
-            test_env.seed(int(args['random_seed']))
+    with tf.Session(graph=tf.get_default_graph(), config=session_conf) as sess:
 
         actor = ActorNetwork(sess,
                              state_dim,
@@ -148,7 +156,7 @@ if __name__ == '__main__':
 
     # run parameters
     parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
-    parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
+    parser.add_argument('--random-seed', help='random seed for repeatability', default=10)
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
     parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info',
