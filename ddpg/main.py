@@ -35,9 +35,8 @@ def main(args):
         args['activation'] +'_'+\
         args['invert_grads'] +'_'+\
         args['target_clip'] +'_'+\
-        args['max_episode_steps']
-
-    print(params)
+        args['max_episode_steps'] +'_'+\
+        args['sigma']
 
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = args['summary_dir']+params+'/'+now
@@ -87,7 +86,7 @@ def main(args):
     # Ensure action bound is symmetric
     assert (train_env.action_space.high == -train_env.action_space.low)
 
-    actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
+    actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma=float(args['sigma']))
 
     if args['random_seed'] is not None:
         tf.set_random_seed(int(args['random_seed']))
@@ -149,6 +148,7 @@ if __name__ == '__main__':
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
     parser.add_argument('--sampler', help='type of goal sampling', default='no')
     parser.add_argument('--alpha', help="how much priorization in goal sampling", default=0.5)
+    parser.add_argument('--sigma', help="amount of exploration", default=0.3)
     parser.add_argument('--delta', help='delta in huber loss', default='inf')
     parser.add_argument('--activation', help='actor final layer activation', default='tanh')
     parser.add_argument('--invert-grads', help='Gradient inverting for bounded action spaces', default=False)
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
                         default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves_temp/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=400)
     parser.add_argument('--log-freq', help='saving models weights frequency', default=200)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)

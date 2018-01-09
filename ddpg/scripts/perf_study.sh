@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
-MEMORIES=(sarst)
-STRATS=(final)
-SAMPLERS=(intervalC goalC)
-ALPHAS=(0.1 1 5)
+MEMORIES=(sarst hsarst)
+STRATS=(future)
+SAMPLERS=(init rnd intervalC comp)
+ALPHAS=(0.5 1 2)
 DELTAS=(inf)
-ACTIVATIONS=(tanh linear)
-IVGS=(False True)
-TCLIPS=(False True)
-NSTEPS=(200)
+ACTIVATIONS=(tanh)
+IVGS=(True)
+TCLIPS=(True)
+NSTEPS=(1000)
+EXPLOS=(0.3)
 
 for MEMORY in ${MEMORIES[*]}
 do
@@ -28,24 +29,28 @@ do
                             do
                                 for NSTEP in ${NSTEPS[*]}
                                 do
-                                    export LOGS=logs/perf/${MEMORY}_${STRAT}_${SAMPLER}_${ALPHA}_${DELTA}_${ACTIVATION}_${IVG}_${TCLIP}_${NSTEP}
-                                    rm -rf $LOGS
-                                    mkdir -p $LOGS
-                                    (
-                                        export LOGS
-                                        export MEMORY
-                                        export STRAT
-                                        export SAMPLER
-                                        export ALPHA
-                                        export DELTA
-                                        export ACTIVATION
-                                        export IVG
-                                        export TCLIP
-                                        export NSTEP
-                                        export PERF_STUDY="perf_${MEMORY}_${STRAT}_${SAMPLER}_${ALPHA}_${DELTA}_${ACTIVATION}_${IVG}_${TCLIP}_${NSTEP}"
-                                        rm -f ${PERF_STUDY}.e*
-                                        qsub -N ${PERF_STUDY} -o "$LOGS/${PERF_STUDY}.out" -b "$LOGS/${PERF_STUDY}.err" -d $HOME/deep-rl/ddpg perf_submit.sh
-                                    )
+                                    for EXPLO in ${EXPLOS[*]}
+                                    do
+                                        export LOGS=logs/perf/${MEMORY}_${STRAT}_${SAMPLER}_${ALPHA}_${DELTA}_${ACTIVATION}_${IVG}_${TCLIP}_${NSTEP}_${EXPLO}
+                                        rm -rf $LOGS
+                                        mkdir -p $LOGS
+                                        (
+                                            export LOGS
+                                            export MEMORY
+                                            export STRAT
+                                            export SAMPLER
+                                            export ALPHA
+                                            export DELTA
+                                            export ACTIVATION
+                                            export IVG
+                                            export TCLIP
+                                            export NSTEP
+                                            export EXPLO
+                                            export PERF_STUDY="perf_${MEMORY}_${STRAT}_${SAMPLER}_${ALPHA}_${DELTA}_${ACTIVATION}_${IVG}_${TCLIP}_${NSTEP}_${EXPLO}"
+                                            rm -f ${PERF_STUDY}.e*
+                                            qsub -N ${PERF_STUDY} -o "$LOGS/${PERF_STUDY}.out" -b "$LOGS/${PERF_STUDY}.err" -d $HOME/deep-rl/ddpg perf_submit.sh
+                                        )
+                                    done
                                 done
                             done
                         done

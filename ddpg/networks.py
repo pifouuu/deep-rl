@@ -143,10 +143,10 @@ class CriticNetwork(Network):
         self.stat_names += ['reference_action_grads']
 
     def gradients(self, states, actions):
-        return self.sess.run(self.action_grads, feed_dict={
+        return self.sess.run([self.out, self.action_grads], feed_dict={
             self.state: states,
             self.action: actions
-        })[0]
+        })
 
     def predict_target(self, states, actions):
         return self.target_model.predict_on_batch([states, actions])

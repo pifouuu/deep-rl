@@ -6,6 +6,7 @@
 #PBS -V
 NB_TRIALS=20
 LOGDIR=./results/
+SAVEDIR=./saves/
 
 for TRIAL in $(seq $NB_TRIALS)
 do
@@ -15,13 +16,16 @@ do
     export TRIAL
     python3.4 main.py \
     --summary-dir $LOGDIR \
+    --save-dir $SAVEDIR \
     --max-steps 200000 \
+    --save-freq 10000 \
     --max-episode-steps ${NSTEP} \
     --memory ${MEMORY} \
     --strategy ${STRAT} \
     --sampler ${SAMPLER} \
     --alpha ${ALPHA} \
     --delta ${DELTA} \
+    --sigma ${SIGMA} \
     --activation ${ACTIVATION} \
     --invert-grads ${IVG} \
     --target-clip ${TCLIP} \

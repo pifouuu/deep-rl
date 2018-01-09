@@ -121,8 +121,8 @@ class PrioritizedBuffer(Buffer):
 
 class PrioritizedIntervalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env_wrapper):
-        self.content = {'interval': (2,)}
-        super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.content, env_wrapper)
+        self.contents_shape = {'interval': (2,)}
+        super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.contents_shape, env_wrapper)
         self.intervals = env_wrapper.get_intervals()
         self.priorities = env_wrapper.get_priorities()
         for interval, priority in zip(self.intervals, self.priorities):
@@ -137,8 +137,8 @@ class PrioritizedIntervalBuffer(PrioritizedBuffer):
 
 class PrioritizedGoalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env_wrapper):
-        self.content = {'goal':(1,)}
-        super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.content, env_wrapper)
+        self.contents_shape = {'goal':(1,)}
+        super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.contents_shape, env_wrapper)
         self.goals = env_wrapper.get_goals()
         self.priorities = env_wrapper.get_priorities()
         for goal, priority in zip(self.goals, self.priorities):
@@ -152,8 +152,8 @@ class PrioritizedGoalBuffer(PrioritizedBuffer):
 
 class CompetenceProgressGoalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env_wrapper, actor, critic):
-        self.content = {'goal':(1,)}
-        super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.content, env_wrapper)
+        self.contents_shape = {'goal':(1,)}
+        super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.contents_shape, env_wrapper)
         self.goals = env_wrapper.get_goals()
         self.competences = [0]*len(self.goals)
         self.progresses = [0]*len(self.goals)
@@ -175,9 +175,9 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
     def sample(self):
         if self.nb_sampled % 10 == 0:
             new_competences = self.update_competence()
-            self.progresses = [np.abs(a - b) for (a, b) in zip(new_competences, self.competences)]
+            self.progresses = [a - b for (a, b) in zip(new_competences, self.competences)]
             for idx, progress in enumerate(self.progresses):
-                self.update_priority(idx, progress)
+                self.update_priority(idx, np.abs(progress))
             self.competences = new_competences
             self.stats['q_values'] = self.competences
             self.stats['d_q_values'] = self.progresses
