@@ -16,7 +16,7 @@ import random as rn
 import os
 os.environ['PYTHONHASHSEED'] = '0'
 
-session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+# session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
 
 #TODO : Update doc on github on this code
 
@@ -91,7 +91,7 @@ def main(args):
     if args['random_seed'] is not None:
         tf.set_random_seed(int(args['random_seed']))
 
-    with tf.Session(graph=tf.get_default_graph(), config=session_conf) as sess:
+    with tf.Session() as sess:
 
         actor = ActorNetwork(sess,
                              state_dim,
