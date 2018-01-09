@@ -48,11 +48,11 @@ class WithGoal(EnvWrapper):
 
     def eval_exp(self, state0, action, state1):
         r = 0
-        term = False
-        if np.abs(state1[self.state_to_obs][self.obs_to_goal] -
-                          state1[self.state_to_goal]) < self.eps:
+        goal_reached = state1[self.state_to_obs][self.obs_to_goal]
+        goal_aimed = state1[self.state_to_goal]
+        term = (goal_aimed>-0.5 and goal_reached>goal_aimed) or (goal_aimed<-0.5 and goal_reached<goal_aimed)
+        if term:
             r += 100
-            term = True
         r -= math.pow(action[0], 2) * 0.1
         return r, term
 

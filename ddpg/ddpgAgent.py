@@ -267,10 +267,12 @@ class DDPG_agent():
             if self.episode_step >= self.max_episode_steps or reached:
 
                 self.episode += 1
-                if reached: self.nb_goals_reached += 1
+                if reached:
+                    self.nb_goals_reached += 1
                 self.episode_stats['Episode'] = self.episode
                 self.episode_stats['Start'] = episode_init[0]
                 self.episode_stats['Goal'] = train_goal[0]
+                self.episode_stats['Final_state'] = next_state[0]
                 self.episode_stats['Train reward'] = self.episode_reward
                 self.episode_stats['Episode steps'] = self.episode_step
                 self.episode_stats['Goal reached'] = self.nb_goals_reached
