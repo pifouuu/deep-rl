@@ -58,7 +58,7 @@ class NoGoalCMC(object):
 
 class NoGoalHalfCheetah(object):
     def __init__(self):
-        # Specific to continuous mountain car
+        # Specific to half-cheetah
         self.state_shape = (17,)
         self.action_shape = (6,)
         self.reward_shape = (1,)
@@ -102,6 +102,57 @@ class NoGoalHalfCheetah(object):
                        'terminal1': done}
 
         return sample
+
+class NoGoalHopper(object):
+    def __init__(self):
+        # Specific to hopper
+        self.state_shape = (11,)
+        self.action_shape = (3,)
+        self.reward_shape = (1,)
+        self.terminal_shape = (1,)
+        self.obs_to_goal = [0]
+        self.eps = 0.1
+        self.dt = 0.05
+
+    def process_observation(self, observation, goal):
+        return observation
+
+    def evaluate_transition(self, state0, action, state1):
+        height = state0[1]
+        ang = state0[2]
+        alive_bonus = 1.0
+        reward = state0[0]
+        reward += alive_bonus
+        reward -= 1e-3 * np.square(action).sum()
+        term = not (np.isfinite(state0).all() and (np.abs(state0[2:]) < 100).all() and
+                    (height > .7) and (abs(ang) < .2))
+        return reward, term
+
+    def evaluate_goal(self, state):
+        return True
+
+    def sample_initial_goal(self):
+        #print("asking for a goal speed")
+        return [0.45]
+
+    def sample_goal(self):
+        return self.sample_initial_goal()
+
+    def process_step(self, state0, goal, action, new_obs, r_env, done_env, info):
+        # Compute next complete state
+        state1 = self.process_observation(new_obs, goal)
+
+        # Compute reward and terminal condition
+        r, done = self.evaluate_transition(state0, action, state1)
+
+        sample = {'state0': state0,
+                       'action': action,
+                       'reward': r,
+                       'state1': state1,
+                       'terminal1': done}
+
+        return sample
+
 
 class RandomGoal(object):
     def __init__(self):

@@ -148,7 +148,8 @@ class DDPG_agent():
             action = np.clip(action, -self.actor.action_bound, self.actor.action_bound)
             obs1, reward_env, done_env, info = self.train_env.step(action[0])
         sample = self.env_wrapper.process_step(state0, goal, action, obs1, reward_env, done_env, info)
-        sample['reward'] = reward_env #patch OSD to deal with half-cheetah
+        sample['reward'] = reward_env #patch OSD to deal with mujoco simulations
+        sample['terminal1'] = done_env #patch OSD to deal with mujoco simulations
         return obs1, sample
 
     def train(self):

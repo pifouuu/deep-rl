@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from logger import Logger
 from memory import Memory
-from envWrapper import NoGoalCMC, NoGoalHalfCheetah
+from envWrapper import NoGoalCMC, NoGoalHalfCheetah, NoGoalHopper
 from agents.actor import ActorNetwork
 from agents.critic import CriticNetwork
 from agents.stopfirstrewardAgent import stop_first_reward_agent
@@ -29,12 +29,14 @@ def trial(config):
         logger_step = Logger(dir=results_path + '/log_steps', format_strs=['json'])
         logger_episode = Logger(dir=results_path + '/log_episodes', format_strs=['json'])
 
-    if config.type=="cmc":
+    if config.envname=="cmc":
         env_wrapper = NoGoalCMC()
-    elif config.type=="halfcheetah":
+    elif config.envname=="halfcheetah":
         env_wrapper = NoGoalHalfCheetah()
+    elif config.envname == "hopper":
+        env_wrapper = NoGoalHopper()
     else:
-        print("env type unknow:", config.type)
+        print("env name unknow:", config.envname)
 
     state_dim = env_wrapper.state_shape[0]
     action_dim = env_wrapper.action_shape[0]

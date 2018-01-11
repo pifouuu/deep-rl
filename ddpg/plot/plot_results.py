@@ -1,8 +1,9 @@
 import json
 from perfcollector_dataframe import PerfCollectorData
 import os
+import matplotlib.pyplot as plt
 
-directory = "../cmc_geppg_nonoise_nofrozen/" #"../hc_results/" #"./perf_ofp/" #"./experiments_tau/" #"./results/perf_ofp_GEP/"  #
+directory = "../hop_results/" #"../cmc_geppg_nonoise_nofrozen/" #"../hc_results/" #"./perf_ofp/" #"./experiments_tau/" #"./results/perf_ofp_GEP/"  #
 
 def get_perf_values(filename):
     with open(filename, 'r') as json_data:
@@ -36,4 +37,31 @@ def plot_all():
     collector.stats()
     collector.plot_all()
 
-plot_all()
+def plot_all_enum():
+    perf_values = []
+    for name in os.listdir(directory):
+        experiment_path = directory + name + "/"
+        for file in os.listdir(experiment_path):
+            filename = experiment_path + file + "/log_episodes/progress.json"
+            perf_values.append(get_perf_values(filename))
+    plot_local(perf_values)
+
+def plot_local(perf_values):
+    plt.figure(1, figsize=(20,13))
+    plt.xlabel("time steps")
+    plt.ylabel("performance")
+    plt.title("Performance")
+
+    for values in perf_values:
+        if len(values)>1:
+            x = []
+            y = []
+            for i in range(len(values)):
+                x.append(values[i][0])
+                y.append(values[i][1])
+            plt.plot(x,y, label="label", c='b')
+    #plt.legend()
+    #plt.show()
+    plt.savefig("../img/perf.png", bbox_inches='tight')
+
+plot_all_enum()

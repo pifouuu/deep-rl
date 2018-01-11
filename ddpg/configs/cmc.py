@@ -6,7 +6,7 @@ class CMCConfig(CommonConfig):
         # Basic variables
         super(CMCConfig, self).__init__(**kwargs)
 
-        self.type = "cmc"
+        self.envname = "cmc"
         self.reward_scaling = 1.0
         self.tau = 0.05
         self.delta_clip = 100
@@ -14,7 +14,6 @@ class CMCConfig(CommonConfig):
         self.max_episode_steps = 1000
         self.max_steps = 1e7#6000 #
         self.eval_freq = 1000 #evaluation frequency', default=1000
-        self.run_type = "tau" #"delta"#
         # CMC requires a big noise, because of a specific problem
         self.noise_factor = 0.3 #3.0
         self.save_step_stats = False
