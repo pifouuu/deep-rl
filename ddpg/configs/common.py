@@ -37,4 +37,3 @@ class CommonConfig:
         self.trial = 0
         self.frozen = False
         self.name = None
-        self.run_type = None  # "ofp" #"standard"#

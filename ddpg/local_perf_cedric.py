@@ -15,7 +15,6 @@ elif envname == "hopper":
     config = HopConfig()
 
 config.study = "standard"# "from_cedric"
-config.run_type = "standard"# "ofp" #not used any more in trial() => some refactoring would help
 config.frozen = False
 
 def main_loop():
