@@ -37,3 +37,4 @@ class CommonConfig:
         self.trial = 0
         self.frozen = False
         self.name = None
+        self.ddpg_noise = None

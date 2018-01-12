@@ -14,8 +14,9 @@ elif envname== "halfcheetah":
 elif envname == "hopper":
     config = HopConfig()
 
-config.study = "standard"# "from_cedric"
+config.study = "from_cedric"#"standard"#
 config.frozen = False
+config.ddpg_noise = True
 
 def main_loop():
     if envname == "cmc":
@@ -31,7 +32,7 @@ def main_loop():
         trial(config)
     elif envname == "hopper":
         # config.buffer_name = "cedric_buffers/simu_Cheetah1_14_buffer_1500k_score1700.txt"
-        config.buffer_name = "cedric_buffers/simu_Cheetah1_13_buffer_50k_score1432.txt"
+        config.buffer_name = "cedric_buffers/Hopper_modelx_buffer.txt"
         trial(config)
     else:
         print("environment unknown")

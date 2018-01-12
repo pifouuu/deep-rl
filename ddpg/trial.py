@@ -53,10 +53,10 @@ def trial(config):
         print(nb_success)
 
     # Noise
-    if config.study == "offline" or config.study=="from_cedric_ofl" or config.study=="from_cedric":
-        actor_noise = NoNoise()
-    else:
+    if config.ddpg_noise:
         actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma = config.noise_factor)
+    else:
+        actor_noise = NoNoise()
 
     with tf.Session() as sess:
 

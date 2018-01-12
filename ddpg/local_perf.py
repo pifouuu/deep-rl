@@ -4,6 +4,7 @@ from configs.cmc import CMCConfig
 config = CMCConfig()
 
 config.study = "standard"
+config.ddpg_noise = True
 
 # Experiment attributes
 
