@@ -56,7 +56,8 @@ class DDPG_agent():
         self.total_reward = 0
         self.nb_goals_reached = 0
         self.episode_init = None
-        self.best_score = 8600
+        #self.best_score = 8600
+        self.best_score = 0
 
 
     def train_critic(self, samples):
