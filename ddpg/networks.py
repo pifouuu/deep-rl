@@ -71,9 +71,8 @@ class Network(object):
         print (self.model.get_weights())
 
 class ActorNetwork(Network):
-    def __init__(self, sess, state_size, action_size, action_bound, tau, learning_rate, activation):
+    def __init__(self, sess, state_size, action_size, tau, learning_rate, activation):
         super(ActorNetwork, self).__init__(sess, state_size, action_size, tau, learning_rate)
-        self.action_bound = action_bound
         self.activation = activation
 
         #Now create the model

@@ -3,15 +3,14 @@ import numpy as np
 import gym
 import argparse
 import pprint as pp
-from logger import Logger
-from envWrapper import WithGoal, NoGoalWrapper, GoalCurriculum, IntervalCurriculum
-from memory import SASMemory, EpisodicHerSASMemory, SARSTMemory, EpisodicHerSARSTMemory
+from ddpg.logger import Logger
+from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
 import pickle
 import time
 import datetime
-from networks import ActorNetwork, CriticNetwork, HuberLossCriticNetwork
-from ddpgAgent import DDPG_agent
-from noise import OrnsteinUhlenbeckActionNoise
+from ddpg.networks import ActorNetwork, CriticNetwork, HuberLossCriticNetwork
+from ddpg.ddpgAgent import DDPG_agent
+from ddpg.noise import OrnsteinUhlenbeckActionNoise
 import random as rn
 import os
 os.environ['PYTHONHASHSEED'] = '0'
@@ -27,6 +26,9 @@ def main(args):
         np.random.seed(int(args['random_seed']))
         rn.seed(int(args['random_seed']))
 
+    train_env = gym.make(args['env'])
+    test_env = gym.make(args['env'])
+
     params = args['memory'] +'_'+\
         args['strategy'] +'_'+\
         args['sampler'] +'_'+\
@@ -35,8 +37,10 @@ def main(args):
         args['activation'] +'_'+\
         args['invert_grads'] +'_'+\
         args['target_clip'] +'_'+\
-        args['max_episode_steps'] +'_'+\
+        str(train_env.env._max_episode_steps)+'_'+\
         args['sigma']
+
+    #TODO we should not have to call train_env.env...
 
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     final_dir = args['summary_dir']+params+'/'+now
@@ -45,46 +49,25 @@ def main(args):
     logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json'])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json'])
 
-    train_env = gym.make(args['env'])
-    test_env = gym.make(args['env'])
+
+
+    action_bounds = train_env.action_space.high
+    obs_dim = train_env.observation_space.high.shape[0]
+    action_dim = action_bounds.shape[0]
+    goal_dim = len(train_env.state_to_goal)
+    state_dim = obs_dim+goal_dim
 
     if args['random_seed'] is not None:
         train_env.seed(int(args['random_seed']))
         test_env.seed(int(args['random_seed']))
 
-    env_wrapper = None
-    if args['sampler'] == 'no':
-        env_wrapper = NoGoalWrapper()
-    elif args['sampler'] == 'rnd':
-        env_wrapper = WithGoal()
-    elif args['sampler'] == 'init':
-        env_wrapper = WithGoal()
-    elif args['sampler'] == 'intervalC':
-        env_wrapper = IntervalCurriculum()
-    elif args['sampler'] == 'goalC':
-        env_wrapper = GoalCurriculum()
-    elif args['sampler'] == 'comp':
-        env_wrapper = GoalCurriculum()
-    else:
-        print("Nooooooo")
-
     memory = None
-    if args['memory'] == 'sas':
-        memory = SASMemory(env_wrapper, limit=int(1e6))
-    elif args['memory'] == 'sarst':
-        memory = SARSTMemory(env_wrapper, limit=int(1e6))
+    if args['memory'] == 'sarst':
+        memory = SARSTMemory(train_env, limit=int(1e6))
     elif args['memory'] == 'hsarst':
-        memory = EpisodicHerSARSTMemory(env_wrapper, limit=int(1e6), strategy=args['strategy'])
-    elif args['memory'] == 'hsas':
-        memory = EpisodicHerSASMemory(env_wrapper, limit=int(1e6), strategy=args['strategy'])
+        memory = EpisodicHerSARSTMemory(train_env, limit=int(1e6), strategy=args['strategy'])
     else:
         print("Nooooooo")
-
-    state_dim = env_wrapper.state_shape[0]
-    action_dim = env_wrapper.action_shape[0]
-    action_bound = train_env.action_space.high
-    # Ensure action bound is symmetric
-    assert (train_env.action_space.high == -train_env.action_space.low)
 
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma=float(args['sigma']))
 
@@ -96,18 +79,17 @@ def main(args):
         actor = ActorNetwork(sess,
                              state_dim,
                              action_dim,
-                             action_bound,
                              float(args['tau']),
                              float(args['actor_lr']),
                              args['activation'])
 
         critic = HuberLossCriticNetwork(sess,
-                               state_dim,
-                               action_dim,
-                               float(args['delta']),
-                               float(args['gamma']),
-                               float(args['tau']),
-                               float(args['critic_lr']))
+                                        state_dim,
+                                        action_dim,
+                                        float(args['delta']),
+                                        float(args['gamma']),
+                                        float(args['tau']),
+                                        float(args['critic_lr']))
 
         agent = DDPG_agent(sess,
                            actor,
@@ -115,14 +97,12 @@ def main(args):
                            critic,
                            train_env,
                            test_env,
-                           env_wrapper,
                            memory,
                            args['sampler'],
                            logger_step,
                            logger_episode,
                            int(args['minibatch_size']),
                            int(args['eval_episodes']),
-                           int(args['max_episode_steps']),
                            int(args['max_steps']),
                            int(args['eval_freq']),
                            save_dir,
@@ -155,10 +135,9 @@ if __name__ == '__main__':
     parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', default=False)
 
     # run parameters
-    parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='MountainCarContinuous-v0')
-    parser.add_argument('--random-seed', help='random seed for repeatability', default=10)
+    parser.add_argument('--env', help='choose the gym env', default='MountainCarContinuous-v0')
+    parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
-    parser.add_argument('--max-episode-steps', help='max number of steps before resetting environment', default=1000)
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info',
                         default='/home/pierre/PycharmProjects/deep-rl/ddpg/results_temp/')
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
