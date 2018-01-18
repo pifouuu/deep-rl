@@ -13,9 +13,10 @@ config.frozen = False
 config.ddpg_noise = True
 
 filepath = "./first/" + name + "/"
-filename = filepath  + str(essai) + ".txt"
+os.makedirs(filepath, exist_ok=True)
+filename = filepath + str(essai) + ".txt"
 nb_steps=-1
 while nb_steps<0:
     nb_steps = trial(config)
-os.makedirs(filepath, exist_ok=True)
-np.savetxt(filename,{nb_steps})
+
+np.savetxt(filename,nb_steps)
