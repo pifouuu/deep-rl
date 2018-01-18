@@ -60,7 +60,6 @@ def trial(config):
 
     with tf.Session() as sess:
 
-
         critic = CriticNetwork(sess,
                                 state_dim,
                                 action_dim,
