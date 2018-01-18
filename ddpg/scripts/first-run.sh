@@ -4,7 +4,7 @@ NAMES=(a b c d e f g h i j k l m n o p q r s t)
 
 for NAME in ${NAMES[*]}
 do
-  export LOGS=logs/perf/$NAME
+  export LOGS=logs/first/$NAME
   rm -rf $LOGS
   mkdir -p $LOGS
   (
