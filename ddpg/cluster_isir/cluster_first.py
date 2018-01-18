@@ -9,6 +9,8 @@ essai = os.environ["TRIAL"]
 
 config = CMCConfig()
 config.study = "first"
+config.frozen = False
+config.ddpg_noise = True
 
 filepath = "./first/"
 filename = filepath + name + str(essai)
