@@ -15,8 +15,9 @@ config.ddpg_noise = True
 filepath = "./first/" + name + "/"
 os.makedirs(filepath, exist_ok=True)
 filename = filepath + str(essai) + ".txt"
+file = open(filename,"w")
 nb_steps=-1
 while nb_steps<0:
     nb_steps = trial(config)
 
-np.savetxt(filename,[nb_steps])
+file.write(str(nb_steps))
