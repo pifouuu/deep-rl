@@ -4,8 +4,8 @@ from configs.cmc import CMCConfig
 from configs.halfcheetah import HCConfig
 
 
-type = "cmc"
-#type = "halfcheetah"
+#type = "cmc"
+type = "halfcheetah"
 
 if type=="cmc":
     config = CMCConfig()
