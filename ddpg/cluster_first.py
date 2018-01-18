@@ -19,4 +19,4 @@ nb_steps=-1
 while nb_steps<0:
     nb_steps = trial(config)
 
-np.savetxt(filename,{nb_steps})
+np.savetxt(filename,[nb_steps])
