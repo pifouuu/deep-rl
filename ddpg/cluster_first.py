@@ -12,10 +12,10 @@ config.study = "first"
 config.frozen = False
 config.ddpg_noise = True
 
-filepath = "./first/"
-filename = filepath + name + "/" + str(essai)
+filepath = "./first/" + name + "/"
+filename = filepath  + str(essai) + ".txt"
 nb_steps=-1
 while nb_steps<0:
     nb_steps = trial(config)
-os.makedirs(filename, exist_ok=True)
+os.makedirs(filepath, exist_ok=True)
 np.savetxt(filename,{nb_steps})
