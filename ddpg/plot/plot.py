@@ -73,8 +73,8 @@ def plot_trajectory(trajectory, actor, env, figure=None, figure_file="trajectory
     plt.scatter(trajectory["x"], trajectory["y"], c=range(1, len(trajectory["x"]) + 1))
     plt.colorbar(orientation="horizontal", label="steps")
 
-    if env.observation_space.dim != 2:
-        raise(ValueError("The provided environment has an observation space of dimension {}, whereas it should be 2".format(env.observation_space.dim)))
+    #if env.observation_space.dim != 2:
+        #raise(ValueError("The provided environment has an observation space of dimension {}, whereas it should be 2".format(env.observation_space.dim)))
 
     # Add the actor phase portrait
     portrait = np.zeros((definition, definition))

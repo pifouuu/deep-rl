@@ -3,7 +3,7 @@ from perfcollector_dataframe import PerfCollectorData
 import os
 import matplotlib.pyplot as plt
 
-directory = "../hop_results/" #"../cmc_geppg_nonoise_nofrozen/" #"../hc_results/" #"./perf_ofp/" #"./experiments_tau/" #"./results/perf_ofp_GEP/"  #
+directory = "../hc_results/" #"../hop_results/" #"../cmc_geppg_nonoise_nofrozen/" #"./perf_ofp/" #"./experiments_tau/" #"./results/perf_ofp_GEP/"  #
 
 def get_perf_values(filename):
     with open(filename, 'r') as json_data:

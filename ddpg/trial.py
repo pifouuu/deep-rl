@@ -161,7 +161,8 @@ def trial(config):
                                config.max_steps,
                                config.eval_freq,
                                config.save_step_stats,
-                               config.averaging)
+                               config.averaging,
+                               config.visu_policy)
         else:
             print("config.study not known",config.study)
 

@@ -16,6 +16,8 @@ config.study = "from_cedric"
 config.frozen = False
 config.trial = os.environ["TRIAL"]
 config.name = os.environ["NAME"]
+config.ddpg_noise = True
+config.visu_policy = False
 
 def main_loop():
     if type == "cmc":

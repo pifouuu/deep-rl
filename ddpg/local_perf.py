@@ -5,6 +5,7 @@ config = CMCConfig()
 
 config.study = "standard"
 config.ddpg_noise = True
+config.visu_policy = True
 
 # Experiment attributes
 

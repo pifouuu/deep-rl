@@ -1,5 +1,6 @@
-
+import os
 import numpy as np
+from plot.plot import portrait_actor, portrait_critic, plot_trajectory
 
 EVAL_FREQ = 10
 EVAL_EPISODES = 20
@@ -22,7 +23,8 @@ class DDPG_agent():
                  max_steps,
                  eval_freq,
                  save_step_stats,
-                 averaging):
+                 averaging,
+                 visu_policy = False):
 
         self.sess = sess
         self.batch_size = batch_size
@@ -58,6 +60,7 @@ class DDPG_agent():
         self.episode_init = None
         #self.best_score = 8600
         self.best_score = 0
+        self.visu_policy = visu_policy
 
 
     def train_critic(self, samples):
@@ -201,6 +204,61 @@ class DDPG_agent():
         self.logger_episode.dumpkvs()
         return mean_reward
 
+
+    def test_with_CMC_visu(self):
+        test_rewards = []
+        traj = []
+
+        for episode in range(self.eval_episodes):
+
+            loc_traj = {}
+            loc_traj["x"] = []
+            loc_traj["y"] = []
+            ep_test_reward = 0
+            test_obs = self.test_env.reset()
+            self.test_goal = self.env_wrapper.sample_initial_goal()
+            #fig_name = "saved_actor_ante.png"
+            #portrait_actor(self.actor.target_model, self.test_env, save_figure=True, figure_file=fig_name)
+
+            for k in range(self.max_episode_steps):
+                test_obs1, test_sample = self.step(test_obs, self.test_goal, k, test=True)
+                ep_test_reward += test_sample['reward']
+                if test_sample['terminal1']:
+                    break
+                else:
+                    test_obs = test_obs1
+                #print_status("{}/{}".format(k, self.max_episode_steps))
+                loc_traj["x"].append(test_obs1[0])
+                loc_traj["y"].append(test_obs1[1])
+            test_rewards.append(ep_test_reward)
+            traj.append(loc_traj)
+
+        mean_reward = np.mean(test_rewards)
+        filepath = self.logger_episode.dir  + "_" + str(self.train_step) + "_" + str(mean_reward) + "/"
+        os.makedirs(filepath, exist_ok=True)
+        critic_file = filepath + "critic.png"
+
+        for episode in range(self.eval_episodes):
+            traj_file = filepath + "traj" + str(episode) + ".png"
+            plot_trajectory(traj[episode], self.actor.target_model, self.test_env, save_figure=True, figure_file=traj_file)
+
+        portrait_critic(self.critic.target_model, self.test_env, action=[-1], save_figure=True, figure_file=critic_file)
+        self.episode_stats['New Training steps'] = self.train_step
+        self.episode_stats['New Test reward'] = mean_reward
+        self.step_stats['Test reward'] = mean_reward
+        print ('Training steps', self.train_step, ': reward', mean_reward)
+        if mean_reward> self.best_score:
+            self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward),overwrite=True)
+            self.best_score = mean_reward
+            #portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
+            #self.actor.print_target_weights()
+            #sys.exit()
+
+        for key in sorted(self.episode_stats.keys()):
+            self.logger_episode.logkv(key, self.episode_stats[key])
+        self.logger_episode.dumpkvs()
+        return mean_reward
+
     def endof_episode(self, sample):
         '''
         self.episode_stats['Episode'] = self.episode
@@ -255,7 +313,10 @@ class DDPG_agent():
             #print("r8:", np.random.random())
 
             if self.train_step % self.eval_freq == 0:
-                self.test()
+                if self.visu_policy:
+                    self.test_with_CMC_visu()
+                else:
+                    self.test()
 
             #print("r9:", np.random.random())
 

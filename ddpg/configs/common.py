@@ -38,3 +38,4 @@ class CommonConfig:
         self.frozen = False
         self.name = None
         self.ddpg_noise = None
+        self.visu_policy = False
