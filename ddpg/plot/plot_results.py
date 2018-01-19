@@ -59,7 +59,7 @@ def plot_local(perf_values):
             for i in range(len(values)):
                 x.append(values[i][0])
                 y.append(values[i][1])
-            plt.plot(x,y, label="label", c='b')
+            plt.plot(x,y, label="label")
     #plt.legend()
     #plt.show()
     plt.savefig("../img/perf.png", bbox_inches='tight')

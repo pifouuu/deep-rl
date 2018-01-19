@@ -11,7 +11,7 @@ config = CMCConfig()
 config.study = "first"
 config.frozen = False
 config.ddpg_noise = True
-config.noise_factor = sigma
+config.noise_factor = float(sigma)
 
 filepath = "./first/" + sigma + "/"
 os.makedirs(filepath, exist_ok=True)
