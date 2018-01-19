@@ -13,7 +13,7 @@ do
     export NAME
     for TRIAL in $(seq $NB_TRIALS)
     do(
-        echo "Running experiment $TRIAL"
+        echo "Running experiment $NAME $TRIAL"
         export TRIAL
         python cluster_first.py > ${LOGS}/${PERF_STUDY}_${NAME}_${TRIAL}.out 2> ${LOGS}/${PERF_STUDY}_${NAME}_${TRIAL}.err
     ) &
