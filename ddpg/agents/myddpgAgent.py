@@ -2,6 +2,16 @@ import os
 import numpy as np
 from plot.plot import portrait_actor, portrait_critic, plot_trajectory
 
+zero_string = []
+zero_string.append("0000000")
+zero_string.append("000000")
+zero_string.append("00000")
+zero_string.append("0000")
+zero_string.append("000")
+zero_string.append("00")
+zero_string.append("0")
+
+
 EVAL_FREQ = 10
 EVAL_EPISODES = 20
 
@@ -234,15 +244,17 @@ class DDPG_agent():
             traj.append(loc_traj)
 
         mean_reward = np.mean(test_rewards)
-        filepath = self.logger_episode.dir  + "_" + str(self.train_step) + "_" + str(mean_reward) + "/"
+        stepname = zero_string[len(str(self.train_step))] + str(self.train_step)
+        filepath = self.logger_episode.dir  + "_" + stepname + "_" + str(mean_reward) + "/"
         os.makedirs(filepath, exist_ok=True)
-        critic_file = filepath + "critic.png"
+
+        critic_file = filepath + stepname + "critic.png"
 
         for episode in range(self.eval_episodes):
-            traj_file = filepath + "traj" + str(episode) + ".png"
-            plot_trajectory(traj[episode], self.actor.target_model, self.test_env, save_figure=True, figure_file=traj_file)
+            traj_file = filepath + stepname + "traj" + str(episode) + ".png"
+            plot_trajectory(self.train_step, traj[episode], self.actor.target_model, self.test_env, save_figure=True, figure_file=traj_file)
 
-        portrait_critic(self.critic.target_model, self.test_env, action=[-1], save_figure=True, figure_file=critic_file)
+        portrait_critic(self.train_step, self.actor.target_model, self.critic.target_model, self.test_env, save_figure=True, figure_file=critic_file)
         self.episode_stats['New Training steps'] = self.train_step
         self.episode_stats['New Test reward'] = mean_reward
         self.step_stats['Test reward'] = mean_reward

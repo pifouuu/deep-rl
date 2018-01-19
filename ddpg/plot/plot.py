@@ -38,7 +38,7 @@ def portrait_actor(actor, env, figure=None, definition=50, plot=True, save_figur
             plt.close()
 
 
-def portrait_critic(critic, env, figure=None, definition=50, plot=True, action=[-1], save_figure=False, figure_file="critic.png"):
+def portrait_critic(nbsteps, actor, critic, env, figure=None, definition=50, plot=True, save_figure=False, figure_file="critic.png"):
     #if env.observation_space.dim != 2:
         #raise(ValueError("The provided environment has an observation space of dimension {}, whereas it should be 2".format(env.observation_space.dim)))
 
@@ -50,6 +50,7 @@ def portrait_critic(critic, env, figure=None, definition=50, plot=True, action=[
     for index_x, x in enumerate(np.linspace(x_min, x_max, num=definition)):
         for index_y, y in enumerate(np.linspace(y_min, y_max, num=definition)):
             # Be careful to fill the matrix in the right order
+            action = actor.predict(np.array([[x, y]]))
             portrait[definition - (1 + index_y), index_x] = critic.predict_on_batch([np.array([[x, y]]), np.array(action)])
     if plot or save_figure:
         if figure is None:
@@ -60,14 +61,14 @@ def portrait_critic(critic, env, figure=None, definition=50, plot=True, action=[
         plt.scatter([0], [0])
         plt.xlabel(x_label)
         plt.ylabel(y_label)
-        plt.title("Critic phase portrait at action {}".format(action))
+        plt.title("Critic phase portrait at step {}".format(nbsteps))
         if save_figure:
             # TODO: Create the directory if it doesn't exist
             plt.savefig(figure_file)
             plt.close()
 
 
-def plot_trajectory(trajectory, actor, env, figure=None, figure_file="trajectory.png", definition=50, plot=True, save_figure=False,):
+def plot_trajectory(nbsteps, trajectory, actor, env, figure=None, figure_file="trajectory.png", definition=50, plot=True, save_figure=False,):
     if figure is None:
         plt.figure(figsize=(10, 10))
     plt.scatter(trajectory["x"], trajectory["y"], c=range(1, len(trajectory["x"]) + 1))
@@ -91,6 +92,7 @@ def plot_trajectory(trajectory, actor, env, figure=None, figure_file="trajectory
     # TODO: Use the `corner` parameter
     plt.imshow(portrait, cmap="inferno", extent=[x_min, x_max, y_min, y_max], aspect='auto')
     plt.colorbar(label="action")
+    plt.title("Actor and trajectory at step {}".format(nbsteps))
     # Add a point at the center
     plt.scatter([0], [0])
     plt.xlabel(x_label)

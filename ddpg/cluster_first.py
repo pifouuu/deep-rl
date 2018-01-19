@@ -4,15 +4,16 @@ import numpy as np
 import os
 
 # Configuration
-name = os.environ["NAME"]
+sigma = os.environ["SIGMA"]
 essai = os.environ["TRIAL"]
 
 config = CMCConfig()
 config.study = "first"
 config.frozen = False
 config.ddpg_noise = True
+config.noise_factor = sigma
 
-filepath = "./first/" + name + "/"
+filepath = "./first/" + sigma + "/"
 os.makedirs(filepath, exist_ok=True)
 filename = filepath + str(essai) + ".txt"
 file = open(filename,"w")
