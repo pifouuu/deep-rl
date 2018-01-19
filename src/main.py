@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import gym
+from gym.envs.registration import make
 import argparse
 import pprint as pp
 from ddpg.logger import Logger
@@ -26,8 +26,8 @@ def main(args):
         np.random.seed(int(args['random_seed']))
         rn.seed(int(args['random_seed']))
 
-    train_env = gym.make(args['env'])
-    test_env = gym.make(args['env'])
+    train_env = make(args['env'])
+    test_env = make(args['env'])
 
     params = args['memory'] +'_'+\
         args['strategy'] +'_'+\
@@ -37,7 +37,6 @@ def main(args):
         args['activation'] +'_'+\
         args['invert_grads'] +'_'+\
         args['target_clip'] +'_'+\
-        str(train_env.env._max_episode_steps)+'_'+\
         args['sigma']
 
     #TODO we should not have to call train_env.env...
@@ -139,9 +138,9 @@ if __name__ == '__main__':
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info',
-                        default='/home/pierre/PycharmProjects/deep-rl/ddpg/results_temp/')
+                        default='/home/pierre/PycharmProjects/deep-rl/log/resultsLocal/')
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
-                        default='/home/pierre/PycharmProjects/deep-rl/ddpg/saves_temp/')
+                        default='/home/pierre/PycharmProjects/deep-rl/log/saveLocal/')
     parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
     parser.add_argument('--save-freq', help='saving models weights frequency', default=400)
     parser.add_argument('--log-freq', help='saving models weights frequency', default=200)
