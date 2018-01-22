@@ -15,7 +15,7 @@ class CMCConfig(CommonConfig):
         self.max_steps = 1e7#6000 #
         self.eval_freq = 1000 #evaluation frequency', default=1000
         # CMC requires a big noise, because of a specific problem
-        self.noise_factor = 2.0#0.3 #
+        self.noise_factor = 0.9#0.3 #
         self.save_step_stats = False
         self.batch_size = 128
         self.averaging = True
