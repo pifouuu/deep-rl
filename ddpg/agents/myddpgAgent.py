@@ -203,7 +203,8 @@ class DDPG_agent():
         self.step_stats['Test reward'] = mean_reward
         print ('Training steps', self.train_step, ': reward', mean_reward)
         if mean_reward> self.best_score:
-            self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward),overwrite=True)
+            self.actor.save_target_weights("actors/good_actor_{}_{}.save".format(mean_reward, self.train_step),
+                                           overwrite=True)
             self.best_score = mean_reward
             #portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
             #self.actor.print_target_weights()
@@ -259,7 +260,7 @@ class DDPG_agent():
         self.step_stats['Test reward'] = mean_reward
         print ('Training steps', self.train_step, ': reward', mean_reward)
         if mean_reward> self.best_score:
-            self.actor.save_target_weights("actors/good_actor_{}.save".format(mean_reward),overwrite=True)
+            self.actor.save_target_weights("actors/good_actor_{}_{}.save".format(mean_reward,self.train_step),overwrite=True)
             self.best_score = mean_reward
             #portrait_actor(self.actor.target_model,self.test_env,save_figure=True)
             #self.actor.print_target_weights()
