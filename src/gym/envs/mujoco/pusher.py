@@ -11,7 +11,7 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def _step(self, a):
         vec_1 = self.get_body_com("object") - self.get_body_com("tips_arm")
-        vec_2 = self.get_body_com("object") - self.get_body_com("goal")
+        vec_2 = self.get_body_com("object") - self.get_body_com("goal_wrappers")
 
         reward_near = - np.linalg.norm(vec_1)
         reward_dist = - np.linalg.norm(vec_2)
@@ -53,5 +53,5 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             self.model.data.qvel.flat[:7],
             self.get_body_com("tips_arm"),
             self.get_body_com("object"),
-            self.get_body_com("goal"),
+            self.get_body_com("goal_wrappers"),
         ])

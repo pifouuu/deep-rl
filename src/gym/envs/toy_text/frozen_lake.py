@@ -48,10 +48,10 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
     S : starting point, safe
     F : frozen surface, safe
     H : hole, fall to your doom
-    G : goal, where the frisbee is located
+    G : goal_wrappers, where the frisbee is located
 
-    The episode ends when you reach the goal or fall in a hole.
-    You receive a reward of 1 if you reach the goal, and zero otherwise.
+    The episode ends when you reach the goal_wrappers or fall in a hole.
+    You receive a reward of 1 if you reach the goal_wrappers, and zero otherwise.
 
     """
 

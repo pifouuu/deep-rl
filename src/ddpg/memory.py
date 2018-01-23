@@ -108,45 +108,31 @@ class EpisodicHerSARSTMemory(SARSTMemory):
     def __init__(self, env, limit, strategy):
         """Replay buffer that does Hindsight Experience Replay
         obs_to_goal is a function that converts observations to goals
-        goal_slice is a slice of indices of goal in observation
+        goal_slice is a slice of indices of goal_wrappers in observation
         """
         super(EpisodicHerSARSTMemory, self).__init__(env, limit)
 
         self.strategy = strategy
         self.data = []
         self.env = env
-        self.state_to_goal = env.state_to_goal
-        self.state_to_obs = env.state_to_obs
-        self.obs_to_goal = env.obs_to_goal
 
     def append(self, buffer_item):
         super(EpisodicHerSARSTMemory, self).append(buffer_item)
         self.data.append(buffer_item)
 
-    def change_goal(self, buffer_item, new_goal):
-        res = buffer_item
-        res['state0'][self.state_to_goal] = new_goal
-        res['state1'][self.state_to_goal] = new_goal
-        res['reward'], res['terminal'] = self.env.eval_exp(res['state0'],
-                                                                   res['action'],
-                                                                   res['state1'])
-        return res
-
     def end_episode(self, goal_reached):
         if self.strategy == 'final' and (not goal_reached):
             final_state = self.data[-1]['state1']
-            new_goal = final_state[self.state_to_obs][self.obs_to_goal]
             for buffer_item in self.data:
-                new_buffer_item = self.change_goal(buffer_item, new_goal)
+                new_buffer_item = self.env.change_goal(buffer_item, final_state)
                 super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
         elif self.strategy == 'episode':
             indices = range(0, len(self.data))
             random_indices = rnd.sample(indices, np.min([4, len(indices)]))
             final_states = [self.data[i]['state1'] for i in list(random_indices)]
             for final_state in final_states:
-                new_goal = final_state[self.state_to_obs][self.obs_to_goal]
                 for buffer_item in self.data:
-                    new_buffer_item = self.change_goal(buffer_item, new_goal)
+                    new_buffer_item = self.env.change_goal(buffer_item, final_state)
                     super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
         elif self.strategy == 'future':
             for idx, buffer_item in enumerate(self.data):
@@ -154,8 +140,7 @@ class EpisodicHerSARSTMemory(SARSTMemory):
                 future_indices = rnd.sample(indices, np.min([4, len(indices)]))
                 final_states = [self.data[i]['state1'] for i in list(future_indices)]
                 for final_state in final_states:
-                    new_goal = final_state[self.state_to_obs][self.obs_to_goal]
-                    new_buffer_item = self.change_goal(buffer_item, new_goal)
+                    new_buffer_item = self.env.change_goal(buffer_item, final_state)
                     super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
         else:
             print('error her strategy')

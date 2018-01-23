@@ -92,33 +92,33 @@ class PrioritizedBuffer(Buffer):
     def update_priority(self, idx, priority):
         self._it_sum[idx] = np.clip(priority ** self.alpha, self._min_priority, self._max_priority)
 
-class PrioritizedGoalBuffer(PrioritizedBuffer):
-    def __init__(self, limit, alpha, env):
-        self.contents_shape = {'goal':(self.env.goal_dim,)}
-        super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.contents_shape, env)
-        self.goals = env.goals()
-        self.priorities = env.difficulties()
-        for goal, priority in zip(self.goals, self.priorities):
-            buffer_item = {'goal': goal}
-            self.append(buffer_item, priority)
-
-    def sample(self):
-        sample_idx, sample_dict = super().sample()
-        goal = sample_dict['goal']
-        return np.reshape(goal, (self.env.goal_dim,))
+# class PrioritizedGoalBuffer(PrioritizedBuffer):
+#     def __init__(self, limit, alpha, env):
+#         self.contents_shape = {'goal_wrappers':(self.env.goal_dim,)}
+#         super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.contents_shape, env)
+#         self.goals = env.goals()
+#         self.priorities = env.difficulties()
+#         for goal_wrappers, priority in zip(self.goals, self.priorities):
+#             buffer_item = {'goal_wrappers': goal_wrappers}
+#             self.append(buffer_item, priority)
+#
+#     def sample(self):
+#         sample_idx, sample_dict = super().sample()
+#         goal_wrappers = sample_dict['goal_wrappers']
+#         return np.reshape(goal_wrappers, (self.env.goal_dim,))
 
 class CompetenceProgressGoalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env, actor, critic):
-        self.contents_shape = {'goal':(self.env.goal_dim,)}
+        self.contents_shape = {'goal_wrappers':(len(env.state_to_goal),)}
         super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.contents_shape, env)
-        self.goals = env.goals()
+        self.goals = env.goals
         self.competences = [0]*len(self.goals)
         self.progresses = [0]*len(self.goals)
         self.actor = actor
         self.critic = critic
         self.nb_sampled = 0
         for goal in self.goals:
-            buffer_item = {'goal': goal}
+            buffer_item = {'goal_wrappers': goal}
             self.append(buffer_item, 1)
 
     def update_competence(self):
@@ -140,6 +140,6 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
             self.stats['d_q_values'] = self.progresses
 
         sample_idx, sample_dict = super(CompetenceProgressGoalBuffer, self).sample()
-        goal = sample_dict['goal']
+        goal = sample_dict['goal_wrappers']
         self.nb_sampled += 1
         return np.reshape(goal,(self.env.goal_dim,))

@@ -37,7 +37,7 @@ def sanity_check_dependencies():
 # (generally by caling `gym.undo_logger_setup()`), but in exchange,
 # the library becomes much more usable for the uninitiated.
 #
-# Gym's design goal generally is to be simple and intuitive, and while
+# Gym's design goal_wrappers generally is to be simple and intuitive, and while
 # the tradeoff is definitely not obvious in this case, we've come down
 # on the side of auto-configuring the logger.
 

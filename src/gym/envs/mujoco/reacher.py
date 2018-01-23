@@ -25,10 +25,10 @@ from gym.envs.mujoco import mujoco_env
 #     def reset_model(self):
 #         qpos = self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq) + self.init_qpos
 #         while True:
-#             self.goal = self.np_random.uniform(low=-.2, high=.2, size=2)
-#             if np.linalg.norm(self.goal) < 2:
+#             self.goal_wrappers = self.np_random.uniform(low=-.2, high=.2, size=2)
+#             if np.linalg.norm(self.goal_wrappers) < 2:
 #                 break
-#         qpos[-2:] = self.goal
+#         qpos[-2:] = self.goal_wrappers
 #         qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
 #         qvel[-2:] = 0
 #         self.set_state(qpos, qvel)
@@ -48,11 +48,6 @@ class ReacherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self):
         utils.EzPickle.__init__(self)
         mujoco_env.MujocoEnv.__init__(self, 'reacher.xml', 2)
-        self.action_bounds = self.action_space.high
-        self.min_reward = -2.4
-        self.max_reward = 0
-        self.goal_dim = 0
-
 
     def _step(self, a):
         self.do_simulation(a, self.frame_skip)
@@ -69,9 +64,7 @@ class ReacherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def reset_model(self):
         qpos = self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq) + self.init_qpos
-        # self.goal = self.get_random_goal()
-        self.goal = np.array([0, 0.1])
-        qpos[-2:] = self.goal
+        qpos[-2:] = np.array([0, 0.1])
         qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
         qvel[-2:] = 0
         self.set_state(qpos, qvel)
@@ -79,29 +72,14 @@ class ReacherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def _get_obs(self):
         theta = self.model.data.qpos.flat[:2]
-        theta_dot = self.model.data.qvel.flat[:2]
-        fingertip_com = self.get_body_com("fingertip")
         return np.concatenate([
             np.cos(theta),
             np.sin(theta),
-            theta_dot,
-            fingertip_com,
+            self.model.data.qpos.flat[2:],
+            self.model.data.qvel.flat[:2],
+            self.get_body_com("fingertip") - self.get_body_com("target")
         ])
 
-    def eval_exp(self, _, action, agent_state_1):
-        pass
-
-    def get_random_goal(self):
-        return []
-
-    def get_initial_goal(self):
-        return []
-
-
-
-    @property
-    def has_goal(self):
-        return False
 
 
 

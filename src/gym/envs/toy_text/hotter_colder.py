@@ -7,7 +7,7 @@ from gym.utils import seeding
 
 class HotterColder(gym.Env):
     """Hotter Colder
-    The goal of hotter colder is to guess closer to a randomly selected number
+    The goal_wrappers of hotter colder is to guess closer to a randomly selected number
 
     After each step the agent receives an observation of:
     0 - No guess yet submitted (only after reset)

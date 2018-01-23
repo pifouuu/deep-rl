@@ -14,6 +14,12 @@ from ddpg.noise import OrnsteinUhlenbeckActionNoise
 import random as rn
 import os
 os.environ['PYTHONHASHSEED'] = '0'
+import pkg_resources
+
+def load(name):
+    entry_point = pkg_resources.EntryPoint.parse('x={}'.format(name))
+    result = entry_point.load(False)
+    return result
 
 # session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
 
@@ -28,8 +34,13 @@ def main(args):
 
     train_env = make(args['env'])
     test_env = make(args['env'])
+    if train_env.spec._goal_wrapper_entry_point is not None:
+        wrapper_cls = load(train_env.spec._goal_wrapper_entry_point)
+        train_env = wrapper_cls(train_env)
+        test_env = wrapper_cls(test_env)
 
-    params = args['memory'] +'_'+\
+    params = args['env'] +'_'+\
+        args['memory'] +'_'+\
         args['strategy'] +'_'+\
         args['sampler'] +'_'+\
         args['alpha'] +'_'+\
@@ -47,8 +58,6 @@ def main(args):
 
     logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json'])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json'])
-
-
 
     action_bounds = train_env.action_space.high
     obs_dim = train_env.observation_space.high.shape[0]
@@ -125,8 +134,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
-    parser.add_argument('--sampler', help='type of goal sampling', default='no')
-    parser.add_argument('--alpha', help="how much priorization in goal sampling", default=0.5)
+    parser.add_argument('--sampler', help='type of goal_wrappers sampling', default='no')
+    parser.add_argument('--alpha', help="how much priorization in goal_wrappers sampling", default=0.5)
     parser.add_argument('--sigma', help="amount of exploration", default=0.3)
     parser.add_argument('--delta', help='delta in huber loss', default='inf')
     parser.add_argument('--activation', help='actor final layer activation', default='tanh')

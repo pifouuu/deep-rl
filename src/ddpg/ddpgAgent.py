@@ -3,8 +3,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
-from .goalSampler2 import RandomGoalSampler, \
-    PrioritizedGoalBuffer, CompetenceProgressGoalBuffer
+from .goalSampler2 import RandomGoalSampler, CompetenceProgressGoalBuffer
 
 
 def gradient_inverter(gradient, p_min, p_max):
@@ -68,15 +67,19 @@ class DDPG_agent():
         self.memory = memory
         self.alpha = alpha
 
-        if goal_sampler == 'no' or goal_sampler == 'rnd':
+        if len(self.train_env.state_to_goal) == 0:
             self.goal_sampler = RandomGoalSampler(self.train_env)
-        elif goal_sampler == 'goalC':
-            self.goal_sampler = PrioritizedGoalBuffer(int(1e3), self.alpha, self.train_env)
-        elif goal_sampler == 'comp':
-            self.goal_sampler = CompetenceProgressGoalBuffer(int(1e3), self.alpha,
-                                                             self.train_env,
-                                                             self.actor,
-                                                             self.critic)
+        else:
+            if goal_sampler == 'rnd':
+                self.goal_sampler = RandomGoalSampler(self.train_env)
+            elif goal_sampler == 'comp':
+                self.goal_sampler = CompetenceProgressGoalBuffer(int(1e3), self.alpha,
+                                                                 self.train_env,
+                                                                 self.actor,
+                                                                 self.critic)
+            else:
+                print("no matching sampler")
+                raise RuntimeError
 
         self.train_step = 0
         self.episode = 0
@@ -156,17 +159,18 @@ class DDPG_agent():
 
     def run_test_episode(self, goal):
         ep_test_reward = 0
+        self.test_env.goal = goal
         state_0 = self.test_env.reset()
 
         while True:
 
-            agent_state_0 = np.concatenate([state_0, goal])
+            agent_state_0 = self.train_env.add_goal(state_0, goal)
 
             action = self.actor.model.predict(np.reshape(agent_state_0, (1, self.actor.s_dim)))
             action = np.clip(action, self.test_env.action_space.low, self.test_env.action_space.high)
 
             state_1, reward, terminal, info = self.test_env.step(action[0])
-            agent_state_1 = np.concatenate([state_1, goal])
+            agent_state_1 = self.train_env.add_goal(state_1, goal)
 
             agent_reward, agent_terminal = self.test_env.eval_exp(agent_state_0, action, agent_state_1, reward,
                                                                    terminal)
@@ -243,9 +247,10 @@ class DDPG_agent():
         self.actor.target_train()
         self.critic.target_train()
 
-        state_0 = self.train_env.reset()
         goal = self.goal_sampler.sample()
-        agent_state_0 = np.concatenate([state_0, goal])
+        self.train_env.goal = goal
+        state_0 = self.train_env.reset()
+        agent_state_0 = self.train_env.add_goal(state_0, goal)
         episode_init = agent_state_0
 
         # self.save_archi()
@@ -258,7 +263,7 @@ class DDPG_agent():
             action = np.clip(action, self.train_env.action_space.low, self.train_env.action_space.high)
 
             state_1, reward, terminal, info = self.train_env.step(action[0])
-            agent_state_1 = np.concatenate([state_1, goal])
+            agent_state_1 = self.train_env.add_goal(state_1, goal)
             agent_reward, agent_terminal = self.train_env.eval_exp(agent_state_0, action, agent_state_1, reward, terminal)
             reward = agent_reward
             terminal = agent_terminal or (terminal and info['past_limit'])
@@ -267,7 +272,7 @@ class DDPG_agent():
 
             self.memory.append(experience)
             self.episode_reward += reward
-            agent_state_0 = np.concatenate([state_1,goal])
+            agent_state_0 = agent_state_1
             self.train_step += 1
             self.episode_step += 1
 
@@ -281,16 +286,17 @@ class DDPG_agent():
                     self.nb_goals_reached += 1
                 self.episode_stats['Episode'] = self.episode
                 self.episode_stats['Start'] = episode_init[self.train_env.state_to_obs]
-                self.episode_stats['Goal'] = episode_init[self.train_env.state_to_goal]
+                self.episode_stats['Goal'] = goal
                 self.episode_stats['Train reward'] = self.episode_reward
                 self.episode_stats['Episode steps'] = self.episode_step
                 self.episode_stats['Goal reached'] = self.nb_goals_reached
                 self.episode_stats['Duration'] = time.time() - start_time
                 self.episode_stats['Train step'] = self.train_step
 
-                state_0 = self.train_env.reset()
                 goal = self.goal_sampler.sample()
-                agent_state_0 = np.concatenate([state_0, goal])
+                self.train_env.goal = goal
+                state_0 = self.train_env.reset()
+                agent_state_0 = self.train_env.add_goal(state_0, goal)
                 episode_init = agent_state_0
                 self.memory.end_episode(not info['past_limit'])
 

@@ -42,7 +42,7 @@ def is_natural(hand):  # Is this hand a natural blackjack?
 class BlackjackEnv(gym.Env):
     """Simple blackjack environment
 
-    Blackjack is a card game where the goal is to obtain cards that sum to as
+    Blackjack is a card game where the goal_wrappers is to obtain cards that sum to as
     near as possible to 21 without going over.  They're playing against a fixed
     dealer.
     Face cards (Jack, Queen, King) have point value 10.

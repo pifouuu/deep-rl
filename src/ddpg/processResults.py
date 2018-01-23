@@ -47,8 +47,8 @@ for i, param in enumerate(PARAMS):
                 lines = json_data.readlines()
                 for k, line in enumerate([lines[i] for i in range(999, 200000, 1000)]):
                     episode_data = json.loads(line)
-                    if 'Test reward on initial goal' in episode_data:
-                        eval_rewards[j][k] = episode_data['Test reward on initial goal']
+                    if 'Test reward on initial goal_wrappers' in episode_data:
+                        eval_rewards[j][k] = episode_data['Test reward on initial goal_wrappers']
 
     if len(res_files) == 0:
         res_files = glob.glob(LOGDIR+param+'/*/'+'log_steps/progress.json')
@@ -61,8 +61,8 @@ for i, param in enumerate(PARAMS):
                 print(len(lines))
                 for k, line in enumerate(lines) :
                     episode_data = json.loads(line)
-                    if 'Test reward on initial goal' in episode_data:
-                        eval_rewards[j][k] = episode_data['Test reward on initial goal']
+                    if 'Test reward on initial goal_wrappers' in episode_data:
+                        eval_rewards[j][k] = episode_data['Test reward on initial goal_wrappers']
 
     #         sum_eval_rewards = [x+y for x,y in zip(sum_eval_rewards, eval_rewards)]
     # mean_eval_rewards = [x/len(res_files) for x in sum_eval_rewards]
@@ -117,12 +117,12 @@ plt.show()
 #     marker = 'o'
 #     label = ''
 #     c = colors[0]
-#     # if params_dict['goal']=='True':
+#     # if params_dict['goal_wrappers']=='True':
 #     #     c = colors[0]
-#     #     label += 'with goal, '
-#     # if params_dict['goal']=='False':
+#     #     label += 'with goal_wrappers, '
+#     # if params_dict['goal_wrappers']=='False':
 #     #     c = colors[1]
-#     #     label += 'without goal, '
+#     #     label += 'without goal_wrappers, '
 #     # if params_dict['delta']=='1':
 #     #     l='dashed'
 #     #     label += 'clipping 1, '

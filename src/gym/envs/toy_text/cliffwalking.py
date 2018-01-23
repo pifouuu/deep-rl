@@ -22,11 +22,11 @@ class CliffWalkingEnv(discrete.DiscreteEnv):
 
     The board is a 4x12 matrix, with (using Numpy matrix indexing):
         [3, 0] as the start at bottom-left
-        [3, 11] as the goal at bottom-right
+        [3, 11] as the goal_wrappers at bottom-right
         [3, 1..10] as the cliff at bottom-center
 
     Each time step incurs -1 reward, and stepping into the cliff incurs -100 reward 
-    and a reset to the start. An episode terminates when the agent reaches the goal.
+    and a reset to the start. An episode terminates when the agent reaches the goal_wrappers.
     """
     metadata = {'render.modes': ['human', 'ansi']}
 

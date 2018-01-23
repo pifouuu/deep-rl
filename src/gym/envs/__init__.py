@@ -72,17 +72,25 @@ register(
 )
 
 register(
-    id='MountainCarContinuous-v0',
+    id='CMC-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
-    goal_wrapper_entry_point='gym.wrappers.goal_wrapper:goal_wrapper',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
     max_episode_steps=999,
     reward_threshold=90.0,
 )
 
 register(
-    id='MountainCarContinuousGoal-v0',
+    id='CMCPos-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
-    goal_wrapper_entry_point='gym.wrappers.goal_wrapper:Continuous_MountainCarEnvGoal',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcPos',
+    max_episode_steps=999,
+    reward_threshold=90.0,
+)
+
+register(
+    id='CMCFull-v0',
+    entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcFull',
     max_episode_steps=999,
     reward_threshold=90.0,
 )
@@ -215,15 +223,23 @@ register(
 register(
     id='Reacher-v1',
     entry_point='gym.envs.mujoco:ReacherEnv',
-    goal_wrapper_entry_point='gym.wrappers.goal_wrapper:goal_wrapper',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
     max_episode_steps=50,
     reward_threshold=-3.75,
 )
 
 register(
-    id='ReacherGoal-v1',
+    id='ReacherBenchmark-v1',
     entry_point='gym.envs.mujoco:ReacherEnv',
-    goal_wrapper_entry_point='gym.wrappers.goal_wrapper:ReacherEnvGoal',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherBenchmark',
+    max_episode_steps=50,
+    reward_threshold=-3.75,
+)
+
+register(
+    id='ReacherSparse-v1',
+    entry_point='gym.envs.mujoco:ReacherEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherSparse',
     max_episode_steps=50,
     reward_threshold=-3.75,
 )
@@ -266,15 +282,15 @@ register(
 register(
     id='HalfCheetah-v1',
     entry_point='gym.envs.mujoco:HalfCheetahEnv',
-    goal_wrapper_entry_point='gym.wrappers.goal_wrapper:goal_wrapper',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
     max_episode_steps=1000,
     reward_threshold=4800.0,
 )
 
 register(
-    id='HalfCheetahGoal-v1',
-    entry_point='gym.envs.mujoco:HalfCheetahEnv',
-    goal_wrapper_entry_point='gym.wrappers.goal_wrapper:HalfCheetahEnvGoal',
+    id='HalfCheetahG-v1',
+    entry_point='gym.envs.mujoco:HalfCheetahEnvFull',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.hc:HcRootx',
     max_episode_steps=1000,
     reward_threshold=4800.0,
 )

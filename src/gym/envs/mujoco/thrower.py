@@ -13,7 +13,7 @@ class ThrowerEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def _step(self, a):
         ball_xy = self.get_body_com("ball")[:2]
-        goal_xy = self.get_body_com("goal")[:2]
+        goal_xy = self.get_body_com("goal_wrappers")[:2]
 
         if not self._ball_hit_ground and self.get_body_com("ball")[2] < -0.25:
             self._ball_hit_ground = True
@@ -58,5 +58,5 @@ class ThrowerEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             self.model.data.qvel.flat[:7],
             self.get_body_com("r_wrist_roll_link"),
             self.get_body_com("ball"),
-            self.get_body_com("goal"),
+            self.get_body_com("goal_wrappers"),
         ])

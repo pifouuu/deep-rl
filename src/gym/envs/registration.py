@@ -26,7 +26,7 @@ class EnvSpec(object):
         id (str): The official environment ID
         entry_point (Optional[str]): The Python entrypoint of the environment class (e.g. module.name:Class)
         goal_wrapper_entry_point (Optional[str]): python entrypoint of the wrapper class
-        goal_sampler_entry_point (Optional[str]): python entrypoint of the goal sampler class
+        goal_sampler_entry_point (Optional[str]): python entrypoint of the goal_wrappers sampler class
         trials (int): The number of trials to average reward over
         reward_threshold (Optional[int]): The reward threshold before the task is considered solved
         local_only: True iff the environment is to be used only on the local machine (e.g. debugging envs)
@@ -124,7 +124,7 @@ class EnvSpec(object):
 class EnvRegistry(object):
     """Register an env by ID. IDs remain stable over time and are
     guaranteed to resolve to the same environment dynamics (or be
-    desupported). The goal is that results on a particular environment
+    desupported). The goal_wrappers is that results on a particular environment
     should always be comparable, and not depend on the version of the
     code that was running.
     """
@@ -142,9 +142,6 @@ class EnvRegistry(object):
                             max_episode_steps=env.spec.max_episode_steps,
                             max_episode_seconds=env.spec.max_episode_seconds)
 
-        if (env.spec._goal_wrapper_entry_point is not None):
-            wrapper_cls = load(env.spec._goal_wrapper_entry_point)
-            env = wrapper_cls(env)
         return env
 
 

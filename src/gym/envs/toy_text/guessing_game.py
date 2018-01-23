@@ -30,12 +30,12 @@ class GuessingGame(gym.Env):
     in order to efficiently explore the available actions
 
     The purpose is to have agents optimise their exploration parameters (e.g. how far to
-    explore from previous actions) based on previous experience. Because the goal changes
+    explore from previous actions) based on previous experience. Because the goal_wrappers changes
     each episode a state-value or action-value function isn't able to provide any additional
     benefit apart from being able to tell whether to increase or decrease the next guess.
 
     The perfect agent would likely learn the bounds of the action space (without referring
-    to them explicitly) and then follow binary tree style exploration towards to goal number
+    to them explicitly) and then follow binary tree style exploration towards to goal_wrappers number
     """
     def __init__(self):
         self.range = 1000  # Randomly selected number is within +/- this value
