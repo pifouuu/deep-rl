@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 # Configuration
-sigma = os.environ["SIGMA"]
+#sigma = os.environ["SIGMA"]
 essai = os.environ["TRIAL"]
 name  = os.environ["NAME"]
 
