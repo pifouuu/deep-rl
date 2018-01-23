@@ -6,6 +6,7 @@ from configs.cmc import CMCConfig
 
 config = CMCConfig()
 config.study = "first"
+config.frozen = False
 config.ddpg_noise = True
 
 def main_loop():

@@ -73,7 +73,7 @@ def plot_trajectory(nbsteps, trajs, actor, env, figure=None, figure_file="trajec
         plt.figure(figsize=(10, 10))
 
     for i in range(len(trajs)):
-        plt.scatter(trajs[i]["x"], trajs[i]["y"], c=range(1, len(trajs[i]["x"]) + 1))
+        plt.scatter(trajs[i]["x"], trajs[i]["y"], c=range(1, len(trajs[i]["x"]) + 1), s=3)
     plt.colorbar(orientation="horizontal", label="steps")
 
     #if env.observation_space.dim != 2:

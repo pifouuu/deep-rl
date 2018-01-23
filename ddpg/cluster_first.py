@@ -14,12 +14,12 @@ config.frozen = False
 config.ddpg_noise = True
 #config.noise_factor = float(sigma)
 
-filepath = "./first/" + name + "/" #+ sigma + "/"
-os.makedirs(filepath, exist_ok=True)
-filename = filepath + str(essai) + ".txt"
-file = open(filename,"w")
+#filepath = "./first/" + name + "/" #+ sigma + "/"
+#os.makedirs(filepath, exist_ok=True)
+#filename = filepath + str(essai) + ".txt"
+#file = open(filename,"w")
 nb_steps=-1
 while nb_steps<0:
     nb_steps = trial(config)
 
-file.write(str(nb_steps))
+#file.write(str(nb_steps))
