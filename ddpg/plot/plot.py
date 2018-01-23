@@ -68,10 +68,12 @@ def portrait_critic(nbsteps, actor, critic, env, figure=None, definition=50, plo
             plt.close()
 
 
-def plot_trajectory(nbsteps, trajectory, actor, env, figure=None, figure_file="trajectory.png", definition=50, plot=True, save_figure=False,):
+def plot_trajectory(nbsteps, trajs, actor, env, figure=None, figure_file="trajectory.png", definition=50, plot=True, save_figure=False,):
     if figure is None:
         plt.figure(figsize=(10, 10))
-    plt.scatter(trajectory["x"], trajectory["y"], c=range(1, len(trajectory["x"]) + 1))
+
+    for i in range(len(trajs)):
+        plt.scatter(trajs[i]["x"], trajs[i]["y"], c=range(1, len(trajs[i]["x"]) + 1))
     plt.colorbar(orientation="horizontal", label="steps")
 
     #if env.observation_space.dim != 2:
@@ -94,7 +96,7 @@ def plot_trajectory(nbsteps, trajectory, actor, env, figure=None, figure_file="t
     plt.colorbar(label="action")
     plt.title("Actor and trajectory at step {}".format(nbsteps))
     # Add a point at the center
-    plt.scatter([0], [0])
+    plt.scatter([-0.5], [0])
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.savefig(figure_file)

@@ -220,7 +220,6 @@ class DDPG_agent():
         traj = []
 
         for episode in range(self.eval_episodes):
-
             loc_traj = {}
             loc_traj["x"] = []
             loc_traj["y"] = []
@@ -250,9 +249,9 @@ class DDPG_agent():
 
         critic_file = filepath + stepname + "critic.png"
 
-        for episode in range(self.eval_episodes):
-            traj_file = filepath + stepname + "traj" + str(episode) + ".png"
-            plot_trajectory(self.train_step, traj[episode], self.actor.target_model, self.test_env, save_figure=True, figure_file=traj_file)
+
+        traj_file = filepath + stepname + "traj.png"
+        plot_trajectory(self.train_step, traj, self.actor.target_model, self.test_env, save_figure=True, figure_file=traj_file)
 
         portrait_critic(self.train_step, self.actor.target_model, self.critic.target_model, self.test_env, save_figure=True, figure_file=critic_file)
         self.episode_stats['New Training steps'] = self.train_step
