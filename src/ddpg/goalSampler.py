@@ -1,43 +1,17 @@
-from segmentTree import SumSegmentTree, MinSegmentTree
+from .segmentTree import SumSegmentTree, MinSegmentTree
 import numpy as np
 
-class NoGoalSampler():
-    def process_observation(self, observation, goal):
-        return observation
-
-    def get_initial_goal(self):
-        return [0.45]
-
-    def sample(self):
-        return [0.45]
-
 class GoalSampler():
-    def __init__(self, env_wrapper):
-        self.env_wrapper = env_wrapper
+    def __init__(self, env):
+        self.env = env
         self.stats = {}
 
-    def get_initial_goal(self):
-        return self.env_wrapper.get_initial_goal()
-
-    def get_random_goal(self):
-        return self.env_wrapper.get_random_goal()
-
-    def process_observation(self, observation, goal):
-        return np.concatenate([observation,goal])
-
 class RandomGoalSampler(GoalSampler):
-    def __init__(self, env_wrapper):
-        super(RandomGoalSampler, self).__init__(env_wrapper)
+    def __init__(self, env):
+        super(RandomGoalSampler, self).__init__(env)
 
     def sample(self):
-        return self.get_random_goal()
-
-class InitialGoalSampler(GoalSampler):
-    def __init__(self, env_wrapper):
-        super(InitialGoalSampler, self).__init__(env_wrapper)
-
-    def sample(self):
-        return self.get_initial_goal()
+        return self.env.get_random_goal()
 
 class RingBuffer(object):
     def __init__(self, maxlen, shape, dtype='float32'):
@@ -118,43 +92,26 @@ class PrioritizedBuffer(Buffer):
     def update_priority(self, idx, priority):
         self._it_sum[idx] = np.clip(priority ** self.alpha, self._min_priority, self._max_priority)
 
-
-class PrioritizedIntervalBuffer(PrioritizedBuffer):
-    def __init__(self, limit, alpha, env_wrapper):
-        self.contents_shape = {'interval': (2,)}
-        super(PrioritizedIntervalBuffer, self).__init__(limit, alpha, self.contents_shape, env_wrapper)
-        self.intervals = env_wrapper.get_intervals()
-        self.priorities = env_wrapper.get_priorities()
-        for interval, priority in zip(self.intervals, self.priorities):
-            buffer_item = {'interval': interval}
-            self.append(buffer_item, priority)
-
-    def sample(self):
-        sample_idx, sample_dict = super().sample()
-        a,b = sample_dict['interval'][0], sample_dict['interval'][1]
-        goal = np.random.uniform(a, b, (1,))
-        return goal
-
-class PrioritizedGoalBuffer(PrioritizedBuffer):
-    def __init__(self, limit, alpha, env_wrapper):
-        self.contents_shape = {'goal':(1,)}
-        super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.contents_shape, env_wrapper)
-        self.goals = env_wrapper.get_goals()
-        self.priorities = env_wrapper.get_priorities()
-        for goal, priority in zip(self.goals, self.priorities):
-            buffer_item = {'goal': goal}
-            self.append(buffer_item, priority)
-
-    def sample(self):
-        sample_idx, sample_dict = super().sample()
-        goal = sample_dict['goal']
-        return np.reshape(goal, (1,))
+# class PrioritizedGoalBuffer(PrioritizedBuffer):
+#     def __init__(self, limit, alpha, env):
+#         self.contents_shape = {'goal_wrappers':(self.env.goal_dim,)}
+#         super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.contents_shape, env)
+#         self.goals = env.goals()
+#         self.priorities = env.difficulties()
+#         for goal_wrappers, priority in zip(self.goals, self.priorities):
+#             buffer_item = {'goal_wrappers': goal_wrappers}
+#             self.append(buffer_item, priority)
+#
+#     def sample(self):
+#         sample_idx, sample_dict = super().sample()
+#         goal_wrappers = sample_dict['goal_wrappers']
+#         return np.reshape(goal_wrappers, (self.env.goal_dim,))
 
 class CompetenceProgressGoalBuffer(PrioritizedBuffer):
-    def __init__(self, limit, alpha, env_wrapper, actor, critic):
-        self.contents_shape = {'goal':(1,)}
-        super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.contents_shape, env_wrapper)
-        self.goals = env_wrapper.get_goals()
+    def __init__(self, limit, alpha, env, actor, critic):
+        self.contents_shape = {'goal':(len(env.state_to_goal),)}
+        super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.contents_shape, env)
+        self.goals = env.goals
         self.competences = [0]*len(self.goals)
         self.progresses = [0]*len(self.goals)
         self.actor = actor
@@ -185,7 +142,7 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
         sample_idx, sample_dict = super(CompetenceProgressGoalBuffer, self).sample()
         goal = sample_dict['goal']
         self.nb_sampled += 1
-        return np.reshape(goal,(1,))
+        return np.reshape(goal,(self.env.goal_dim,))
 
 class memoryBasedSampler(GoalSampler):
     def __init__(self, env_wrapper, memory):
@@ -215,7 +172,3 @@ class memoryBasedSampler(GoalSampler):
 #     bins = np.bincount(samples)
 #     plt.plot(range(bins.shape[0]), bins)
 #     plt.show()
-
-
-if __name__ == "__main__":
-    _demo()

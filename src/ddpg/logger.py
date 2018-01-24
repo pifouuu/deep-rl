@@ -69,7 +69,7 @@ class HumanOutputFormat(OutputFormat):
         self.file.flush()
 
     def _truncate(self, s):
-        return s[:20] + '...' if len(s) > 23 else s
+        return s[:100] + '...' if len(s) > 103 else s
 
     def writeseq(self, args):
         for arg in args:
