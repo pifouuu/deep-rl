@@ -55,7 +55,7 @@ def main(args):
     logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json'])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json'])
 
-
+    # Defining the networks input dimensions
     action_bounds = train_env.action_space.high
     obs_dim = train_env.observation_space.shape[0]
     action_dim = train_env.action_space.shape[0]
@@ -70,9 +70,8 @@ def main(args):
     else:
         raise Exception('No existing memory defined')
 
+    # Noise for the actor in vanilla ddpg
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma=float(args['sigma']))
-
-
 
     with tf.Session() as sess:
 

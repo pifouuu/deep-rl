@@ -11,7 +11,7 @@ import os
 import json_tricks
 from keras.layers.merge import concatenate
 
-
+# Generic deep rl network class with generic functionalities
 class Network(object):
     def __init__(self, sess, state_size, action_size, tau, learning_rate):
         self.sess = sess
@@ -21,7 +21,6 @@ class Network(object):
         self.learning_rate = learning_rate
         self.stat_ops = []
         self.stat_names = []
-
         K.set_session(sess)
         self.model = None
         self.target_model = None
@@ -70,6 +69,7 @@ class Network(object):
     def print_weights(self):
         print (self.model.get_weights())
 
+#
 class ActorNetwork(Network):
     def __init__(self, sess, state_size, action_size, tau, learning_rate, activation):
         super(ActorNetwork, self).__init__(sess, state_size, action_size, tau, learning_rate)
@@ -84,10 +84,20 @@ class ActorNetwork(Network):
         grads = zip(self.params_grad, self.weights)
         self.optimize = tf.train.AdamOptimizer(learning_rate).apply_gradients(grads)
 
+        # TODO: store more precise stats about the networks
         self.stat_ops += [tf.reduce_mean(self.out)]
         self.stat_names += ["mean_action"]
         self.stat_ops += [tf.reduce_mean(self.target_model.output)]
         self.stat_names += ["mean_target_action"]
+
+    def create_actor_network(self, state_size,action_dim):
+        S = Input(shape=[state_size])
+        h0 = Dense(64, activation="relu", kernel_initializer="he_uniform")(S)
+        h1 = Dense(64, activation="relu", kernel_initializer="he_uniform")(h0)
+        V = Dense(action_dim, activation=self.activation,
+                  kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h1)
+        model = Model(inputs=S,outputs=V)
+        return model, model.trainable_weights, S
 
     def train(self, states, action_grads):
         self.sess.run(self.optimize, feed_dict={
@@ -100,15 +110,6 @@ class ActorNetwork(Network):
 
     def predict(self, states):
         return self.model.predict_on_batch(states)
-
-    def create_actor_network(self, state_size,action_dim):
-        S = Input(shape=[state_size])
-        h0 = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
-        h1 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h0)
-        V = Dense(action_dim, activation=self.activation,
-                  kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h1)
-        model = Model(inputs=S,outputs=V)
-        return model, model.trainable_weights, S
 
     def get_stats(self, stats_sample):
         actor_values = self.sess.run(self.stat_ops, feed_dict={
@@ -131,7 +132,7 @@ class CriticNetwork(Network):
         self.model, self.action, self.state = self.create_critic_network(self.s_dim, self.a_dim)
         self.target_model, self.target_action, self.target_state = self.create_critic_network(self.s_dim, self.a_dim)
         self.out = self.model.output
-        self.action_grads = tf.gradients(self.out, self.action)  # GRADIENTS for policy update
+        self.action_grads = tf.gradients(self.out, self.action)
 
         # Setting up stats
         self.stat_ops += [tf.reduce_mean(self.out)]
@@ -160,9 +161,9 @@ class CriticNetwork(Network):
     def create_critic_network(self, state_size, action_dim):
         S = Input(shape=[state_size])
         A = Input(shape=[action_dim], name='action2')
-        w = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
+        w = Dense(64, activation="relu", kernel_initializer="he_uniform")(S)
         h = concatenate([w, A])
-        h3 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h)
+        h3 = Dense(64, activation="relu", kernel_initializer="he_uniform")(h)
         V = Dense(1, activation='linear',
                   kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h3)
         model = Model(inputs=[S, A], outputs=V)
@@ -214,9 +215,9 @@ class HuberLossCriticNetwork(CriticNetwork):
     def create_critic_network(self, state_size, action_dim):
         S = Input(shape=[state_size])
         A = Input(shape=[action_dim], name='action2')
-        w = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
+        w = Dense(64, activation="relu", kernel_initializer="he_uniform")(S)
         h = concatenate([w, A])
-        h3 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h)
+        h3 = Dense(64, activation="relu", kernel_initializer="he_uniform")(h)
         V = Dense(1, activation='linear',
                   kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h3)
         model = Model(inputs=[S, A], outputs=V)
