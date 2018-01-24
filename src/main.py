@@ -24,7 +24,7 @@ def load(name):
 # session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
 
 #TODO : Update doc on github on this code
-
+#TODO:
 
 def main(args):
 

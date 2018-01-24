@@ -13,6 +13,7 @@ class no_goal(Wrapper):
         return reward, terminal
 
     def get_random_goal(self):
+        #TODO
         return []
 
     def get_initial_goal(self):
