@@ -1,5 +1,6 @@
 import tensorflow as tf
 from gym import wrappers
+import pkg_resources
 
 
 def reduce_var(x, axis=None, keepdims=False):
@@ -19,4 +20,7 @@ def wrap_gym(env,render,dir):
         env = wrappers.Monitor(env, dir, force=True)
     return env
 
-
+def load(name):
+    entry_point = pkg_resources.EntryPoint.parse('x={}'.format(name))
+    result = entry_point.load(False)
+    return result

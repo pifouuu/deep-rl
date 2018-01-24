@@ -2,6 +2,7 @@ from .wrapper import goal_basic
 import numpy as np
 
 from mujoco_py.mjlib import mjlib
+from gym.spaces import Box
 
 class ReacherBenchmark(goal_basic):
     def __init__(self, env):
@@ -11,6 +12,7 @@ class ReacherBenchmark(goal_basic):
         self.state_to_goal = []
         self.state_to_obs = [0, 1, 2, 3, 6, 7, 8, 9, 10]
         self.obs_to_goal = []
+        self.goal_space = Box(np.array([-0.2, -0.2]), np.array([-0.2, 0.2]))
         self.start = np.array([0.2, 0])
         self.initial_goal = np.array([0, 0.1])
         self.reward_range = [-2.4, 0]
@@ -40,6 +42,7 @@ class ReacherBenchmark(goal_basic):
         return r, term
 
     def get_random_goal(self):
+        #TODO: consider the possibility that the agent does not know the limitation of its capabilities and thus can sample unreachable goals before realizing it.
         while True:
             goal = np.random.uniform(low=-.2, high=.2, size=2)
             if np.linalg.norm(goal) < .2 and np.linalg.norm(goal-self.start) > 0.05:

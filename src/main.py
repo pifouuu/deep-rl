@@ -5,40 +5,38 @@ import argparse
 import pprint as pp
 from ddpg.logger import Logger
 from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
-import pickle
-import time
 import datetime
-from ddpg.networks import ActorNetwork, CriticNetwork, HuberLossCriticNetwork
+from ddpg.networks import ActorNetwork, HuberLossCriticNetwork
 from ddpg.ddpgAgent import DDPG_agent
 from ddpg.noise import OrnsteinUhlenbeckActionNoise
 import random as rn
 import os
-os.environ['PYTHONHASHSEED'] = '0'
-import pkg_resources
-
-def load(name):
-    entry_point = pkg_resources.EntryPoint.parse('x={}'.format(name))
-    result = entry_point.load(False)
-    return result
-
-# session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
-
-#TODO : Update doc on github on this code
-#TODO:
+from ddpg.util import load
 
 def main(args):
 
+    # Despite following the directives of https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development, fully reproducible results could not be obtained. See here : https://github.com/keras-team/keras/issues/2280 for any improvements.
+    os.environ['PYTHONHASHSEED'] = '0'
     if args['random_seed'] is not None:
         np.random.seed(int(args['random_seed']))
         rn.seed(int(args['random_seed']))
+        tf.set_random_seed(int(args['random_seed']))
 
+    # Make calls EnvRegistry.make, which builds the environment from its specs defined in gym.envs.init end then builds a timeLimit wrapper around the environment to set the max amount of steps to run
     train_env = make(args['env'])
     test_env = make(args['env'])
+
+    # Wraps each environment in a goal_wrapper to override basic env methods and be able to access goal space properties, or modify the environment simulation according to sampled goals. The wrapper classes paths corresponding to each environment are defined in gym.envs.int
     if train_env.spec._goal_wrapper_entry_point is not None:
         wrapper_cls = load(train_env.spec._goal_wrapper_entry_point)
         train_env = wrapper_cls(train_env)
         test_env = wrapper_cls(test_env)
 
+    if args['random_seed'] is not None:
+        train_env.seed(int(args['random_seed']))
+        test_env.seed(int(args['random_seed']))
+
+    # Storing logger output in files with names corresponding to parameters used
     params = args['env'] +'_'+\
         args['memory'] +'_'+\
         args['strategy'] +'_'+\
@@ -49,38 +47,32 @@ def main(args):
         args['invert_grads'] +'_'+\
         args['target_clip'] +'_'+\
         args['sigma']
-
-    #TODO we should not have to call train_env.env...
-
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+
+    # Two loggers are defined to retrieve information by step or by episode. Only episodic information is displayed to stdout.
     final_dir = args['summary_dir']+params+'/'+now
     save_dir = args['save_dir']+params+'/'+now
-
     logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json'])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json'])
 
+
     action_bounds = train_env.action_space.high
-    obs_dim = train_env.observation_space.high.shape[0]
-    action_dim = action_bounds.shape[0]
-    goal_dim = len(train_env.state_to_goal)
+    obs_dim = train_env.observation_space.shape[0]
+    action_dim = train_env.action_space.shape[0]
+    goal_dim = train_env.goal_space.shape[0]
     state_dim = obs_dim+goal_dim
 
-    if args['random_seed'] is not None:
-        train_env.seed(int(args['random_seed']))
-        test_env.seed(int(args['random_seed']))
-
-    memory = None
+    #TODO integrate the choice of memory in environments specs in gym.env.init
     if args['memory'] == 'sarst':
         memory = SARSTMemory(train_env, limit=int(1e6))
     elif args['memory'] == 'hsarst':
         memory = EpisodicHerSARSTMemory(train_env, limit=int(1e6), strategy=args['strategy'])
     else:
-        print("Nooooooo")
+        raise Exception('No existing memory defined')
 
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma=float(args['sigma']))
 
-    if args['random_seed'] is not None:
-        tf.set_random_seed(int(args['random_seed']))
+
 
     with tf.Session() as sess:
 

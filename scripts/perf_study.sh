@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ENVTS=(MountainCarContinuousGoal-v0)
+ENVTS=(CMCPos-v0)
 MEMORIES=(sarst)
 STRATS=(future)
 SAMPLERS=(rnd)
