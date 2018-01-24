@@ -148,7 +148,7 @@ class DDPG_agent():
         target_q_vals = self.train_critic(experiences)
         q_vals = self.train_actor(experiences)
 
-        self.memory.update_priorities(batch_idxs, target_q_vals, q_vals, self.train_step)
+        # self.memory.update_priorities(batch_idxs, target_q_vals, q_vals, self.train_step)
 
         self.update_targets()
 
