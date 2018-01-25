@@ -17,8 +17,8 @@ do
     python3.4 src/main.py \
     --summary-dir $LOGDIR \
     --save-dir $SAVEDIR \
-    --max-steps 100000 \
-    --save-freq 1000000 \
+    --max-steps 200000 \
+    --save-freq 199000 \
     --memory ${MEMORY} \
     --strategy ${STRAT} \
     --sampler ${SAMPLER} \
@@ -28,7 +28,7 @@ do
     --activation ${ACTIVATION} \
     --invert-grads ${IVG} \
     --target-clip ${TCLIP} \
-    --env ${ENVT}
+    --env ${ENVT} \
     > ${LOGS}/${PERF_STUDY}_${TRIAL}.out \
     2> ${LOGS}/${PERF_STUDY}_${TRIAL}.err
   ) &

@@ -39,7 +39,6 @@ class Continuous_MountainCarEnv(gym.Env):
         self.max_reward = 100
         self.goal_position = 0.45 # was 0.5 in gym, 0.45 in Arnaud de Broissia's version
         self.power = 0.0015
-        self.goal_dim = 0
 
         self.low_state = np.array([self.min_position, -self.max_speed])
         self.high_state = np.array([self.max_position, self.max_speed])

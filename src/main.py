@@ -14,8 +14,8 @@ import os
 from ddpg.util import load
 
 def main(args):
+    """Despite following the directives of https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development, fully reproducible results could not be obtained. See here : https://github.com/keras-team/keras/issues/2280 for any improvements"""
 
-    # Despite following the directives of https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development, fully reproducible results could not be obtained. See here : https://github.com/keras-team/keras/issues/2280 for any improvements.
     os.environ['PYTHONHASHSEED'] = '0'
     if args['random_seed'] is not None:
         np.random.seed(int(args['random_seed']))
@@ -55,13 +55,6 @@ def main(args):
     logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json'])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json'])
 
-    # Defining the networks input dimensions
-    action_bounds = train_env.action_space.high
-    obs_dim = train_env.observation_space.shape[0]
-    action_dim = train_env.action_space.shape[0]
-    goal_dim = train_env.goal_space.shape[0]
-    state_dim = obs_dim+goal_dim
-
     #TODO integrate the choice of memory in environments specs in gym.env.init
     if args['memory'] == 'sarst':
         memory = SARSTMemory(train_env, limit=int(1e6))
@@ -71,20 +64,20 @@ def main(args):
         raise Exception('No existing memory defined')
 
     # Noise for the actor in vanilla ddpg
-    actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim), sigma=float(args['sigma']))
+    actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(train_env.action_dim), sigma=float(args['sigma']))
 
     with tf.Session() as sess:
 
         actor = ActorNetwork(sess,
-                             state_dim,
-                             action_dim,
+                             train_env.state_dim,
+                             train_env.action_dim,
                              float(args['tau']),
                              float(args['actor_lr']),
                              args['activation'])
 
         critic = HuberLossCriticNetwork(sess,
-                                        state_dim,
-                                        action_dim,
+                                        train_env.state_dim,
+                                        train_env.action_dim,
                                         float(args['delta']),
                                         float(args['gamma']),
                                         float(args['tau']),

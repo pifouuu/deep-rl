@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
-ENVTS=(CMCPos-v0)
+ENVTS=(ReacherBenchmark-v1 ReacherSparse-v1)
 MEMORIES=(sarst)
 STRATS=(future)
 SAMPLERS=(rnd)
 ALPHAS=(2)
 DELTAS=(inf)
-ACTIVATIONS=(linear)
-IVGS=(True)
-TCLIPS=(True)
-SIGMAS=(2)
+ACTIVATIONS=(tanh linear)
+IVGS=(True False)
+TCLIPS=(True False)
+SIGMAS=(0.3)
+
 
 for ENVT in ${ENVTS[*]}
 do

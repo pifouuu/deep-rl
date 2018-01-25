@@ -109,7 +109,7 @@ class PrioritizedBuffer(Buffer):
 
 class CompetenceProgressGoalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env, actor, critic):
-        self.contents_shape = {'goal_wrappers':(len(env.state_to_goal),)}
+        self.contents_shape = {'goal_wrappers':(env.goal_space.shape[0],)}
         super(CompetenceProgressGoalBuffer, self).__init__(limit, alpha, self.contents_shape, env)
         self.goals = env.goals
         self.competences = [0]*len(self.goals)
@@ -142,4 +142,4 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
         sample_idx, sample_dict = super(CompetenceProgressGoalBuffer, self).sample()
         goal = sample_dict['goal_wrappers']
         self.nb_sampled += 1
-        return np.reshape(goal,(self.env.goal_dim,))
+        return np.reshape(goal,(self.env.goal_space.shape[0],))

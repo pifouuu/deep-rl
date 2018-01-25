@@ -62,6 +62,10 @@ class ReacherBenchmark(goal_basic):
                                                            res['terminal'])
         return res
 
+    @property
+    def state_dim(self):
+        return self.env.observation_space.shape[0]
+
 
 class ReacherSparse(ReacherBenchmark):
     def __init__(self, env):

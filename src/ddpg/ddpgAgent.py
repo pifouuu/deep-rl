@@ -5,17 +5,6 @@ import numpy as np
 import tensorflow as tf
 from .goalSampler2 import RandomGoalSampler, CompetenceProgressGoalBuffer
 
-
-def gradient_inverter(gradient, p_min, p_max):
-    """Gradient inverting as described in https://arxiv.org/abs/1511.04143"""
-    delta = p_max - p_min
-    if delta <= 0:
-        raise(ValueError("p_max <= p_min"))
-
-    inverted_gradient = tf.where(gradient >= 0, (p_max - gradient) / delta, (gradient - p_min) / delta)
-
-    return(inverted_gradient)
-
 class DDPG_agent():
     def __init__(self,
                  sess,
@@ -62,12 +51,10 @@ class DDPG_agent():
         self.critic = critic
         self.train_env = train_env
         self.test_env = test_env
-
-        #portrait_actor(self.actor.target_model, self.test_env, save_figure=True, figure_file="saved_actor_const2.png")
         self.memory = memory
         self.alpha = alpha
 
-        if len(self.train_env.state_to_goal) == 0:
+        if not train_env.goal_parameterized:
             self.goal_sampler = RandomGoalSampler(self.train_env)
         else:
             if goal_sampler == 'rnd':
@@ -119,6 +106,7 @@ class DDPG_agent():
         a_outs = self.actor.predict(samples['state0'])
         q_vals, grads = self.critic.gradients(samples['state0'], a_outs)
         if self.invert_grads:
+            """Gradient inverting as described in https://arxiv.org/abs/1511.04143"""
             low = self.train_env.action_space.low
             high = self.train_env.action_space.high
             for d in range(grads[0].shape[0]):
@@ -193,7 +181,7 @@ class DDPG_agent():
             test_rewards.append(reward)
         self.step_stats['Test reward on initial goal'] = np.mean(test_rewards)
 
-        if len(self.test_env.state_to_goal) > 0:
+        if self.test_env.goal_parameterized:
             test_rewards = []
             for episode in range(self.eval_episodes):
                 test_goal = self.test_env.get_random_goal()

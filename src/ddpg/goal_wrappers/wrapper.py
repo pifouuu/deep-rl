@@ -22,6 +22,18 @@ class no_goal(Wrapper):
     def add_goal(self, state, goal):
         return state
 
+    @property
+    def state_dim(self):
+        return self.env.observation_space.shape[0]
+
+    @property
+    def action_dim(self):
+        return self.env.action_space.shape[0]
+
+    @property
+    def goal_parameterized(self):
+        return False
+
 class goal_basic(Wrapper):
     def __init__(self,env):
         super(goal_basic, self).__init__(env)
@@ -68,3 +80,15 @@ class goal_basic(Wrapper):
                                                            res['reward'],
                                                            res['terminal'])
         return res
+
+    @property
+    def state_dim(self):
+        return self.env.observation_space.shape[0]+self.goal_space.shape[0]
+
+    @property
+    def action_dim(self):
+        return self.env.action_space.shape[0]
+
+    @property
+    def goal_parameterized(self):
+        return True

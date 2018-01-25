@@ -86,11 +86,9 @@ class Memory(ReplayBuffer):
 
 class SARSTMemory(Memory):
     def __init__(self, env, limit):
-        state_dim = env.observation_space.high.shape[0]+len(env.state_to_goal)
-        action_dim = env.action_space.high.shape[0]
-        self.contents_shape = {'state0': (state_dim,),
-                        'action': (action_dim,),
-                        'state1': (state_dim,),
+        self.contents_shape = {'state0': (env.state_dim ,),
+                        'action': (env.action_dim,),
+                        'state1': (env.state_dim ,),
                         'reward': (1,),
                          'terminal': (1,)}
 
