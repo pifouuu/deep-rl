@@ -11,7 +11,7 @@ from ddpg.ddpgAgent import DDPG_agent
 from ddpg.noise import OrnsteinUhlenbeckActionNoise
 import random as rn
 import os
-from ddpg.util import load
+from ddpg.util import load, boolean_flag
 
 def main(args):
     """Despite following the directives of https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development, fully reproducible results could not be obtained. See here : https://github.com/keras-team/keras/issues/2280 for any improvements"""
@@ -102,7 +102,8 @@ def main(args):
                            int(args['log_freq']),
                            args['target_clip']=='True',
                            args['invert_grads']=='True',
-                           float(args['alpha']))
+                           float(args['alpha']),
+                           args['render_eval'])
         agent.run()
 
 if __name__ == '__main__':
@@ -134,11 +135,12 @@ if __name__ == '__main__':
                         default='/home/pierre/PycharmProjects/deep-rl/log/resultsLocal/')
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
                         default='/home/pierre/PycharmProjects/deep-rl/log/saveLocal/')
-    parser.add_argument('--eval-freq', help='evaluation frequency', default=1000)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=400)
-    parser.add_argument('--log-freq', help='saving models weights frequency', default=200)
+    parser.add_argument('--eval-freq', help='evaluation frequency', default=2000)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=100000)
+    parser.add_argument('--log-freq', help='saving models weights frequency', default=2000)
     parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
     parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)
+    boolean_flag(parser, 'render-eval', default=False)
 
 
     args = vars(parser.parse_args())

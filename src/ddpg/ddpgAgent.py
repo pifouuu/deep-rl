@@ -26,7 +26,8 @@ class DDPG_agent():
                  log_freq,
                  target_clip,
                  invert_grads,
-                 alpha):
+                 alpha,
+                 render_eval):
 
         #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
@@ -53,6 +54,7 @@ class DDPG_agent():
         self.test_env = test_env
         self.memory = memory
         self.alpha = alpha
+        self.render_eval = render_eval
 
         if not train_env.goal_parameterized:
             self.goal_sampler = RandomGoalSampler(self.train_env)
@@ -160,6 +162,8 @@ class DDPG_agent():
             action = np.clip(action, self.test_env.action_space.low, self.test_env.action_space.high)
 
             state_1, reward, terminal, info = self.test_env.step(action[0])
+            if self.render_eval:
+                self.test_env.render()
             agent_state_1 = self.train_env.add_goal(state_1, goal)
 
             agent_reward, agent_terminal = self.test_env.eval_exp(agent_state_0, action, agent_state_1, reward,
