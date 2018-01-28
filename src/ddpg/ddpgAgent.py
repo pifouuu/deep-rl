@@ -144,10 +144,10 @@ class DDPG_agent():
 
         actor_stats = self.actor.get_stats(experiences)
         for key in sorted(actor_stats.keys()):
-            self.step_stats['list/'+key].append(actor_stats[key])
+            self.step_stats[key] = actor_stats[key]
         critic_stats = self.critic.get_stats(experiences)
         for key in sorted(critic_stats.keys()):
-            self.step_stats['list/'+key].append(critic_stats[key])
+            self.step_stats[key] = critic_stats[key]
 
     def run_test_episode(self, goal):
         ep_test_reward = 0
@@ -219,6 +219,20 @@ class DDPG_agent():
         self.critic.save_archi(dir + 'critic_archi.json', overwrite=True)
         self.critic.save_target_archi(dir + 'target_critic_archi.json', overwrite=True)
 
+    def log(self, stats, logger):
+        for key in sorted(stats.keys()):
+            logger.logkv(key, stats[key])
+        logger.dumpkvs()
+
+        for key in sorted(self.step_stats.keys()):
+            if key.startswith('list'):
+                log_key = key.split('/')[1]
+                self.logger_step.logkv(log_key, np.mean(self.step_stats[key]))
+                self.step_stats[key] = []
+            else:
+                self.logger_step.logkv(key, self.step_stats[key])
+        self.logger_step.dumpkvs()
+
     def run(self):
 
         variables = tf.global_variables()
@@ -247,7 +261,6 @@ class DDPG_agent():
         agent_state_0 = self.train_env.add_goal(state_0, goal)
         episode_init = agent_state_0
 
-        # self.save_archi()
         start_time = time.time()
 
         while self.train_step < self.max_steps:
@@ -270,14 +283,14 @@ class DDPG_agent():
             self.train_step += 1
             self.episode_step += 1
 
-            if self.memory.nb_entries > 3*self.batch_size:
-                self.train()
+
 
             if terminal:
 
                 self.episode += 1
                 if not info['past_limit']:
                     self.nb_goals_reached += 1
+
                 self.episode_stats['Episode'] = self.episode
                 self.episode_stats['Start'] = episode_init[self.train_env.state_to_obs]
                 self.episode_stats['Goal'] = goal
@@ -286,40 +299,36 @@ class DDPG_agent():
                 self.episode_stats['Goal reached'] = self.nb_goals_reached
                 self.episode_stats['Duration'] = time.time() - start_time
                 self.episode_stats['Train step'] = self.train_step
+                self.episode_stats['competences'] = self.goal_sampler.competences
+                self.episode_stats['comp_progress'] = self.goal_sampler.progresses
+                self.log(self.episode_stats, self.logger_episode)
 
                 goal = self.goal_sampler.sample()
+
                 self.train_env.goal = goal
                 state_0 = self.train_env.reset()
                 agent_state_0 = self.train_env.add_goal(state_0, goal)
                 episode_init = agent_state_0
                 self.memory.end_episode(not info['past_limit'])
 
-                for key in sorted(self.episode_stats.keys()):
-                    self.logger_episode.logkv(key, self.episode_stats[key])
-                self.logger_episode.dumpkvs()
 
                 self.episode_step = 0
                 self.episode_reward = 0
 
-            if self.train_step % self.eval_freq == 0:
-                self.test()
+            if self.train_step % self.train_freq:
+                if self.memory.nb_entries > 3 * self.batch_size:
+                    self.train()
+                    self.test()
+                    if self.render_eval:
+                        self.viz_trajectory()
+                    self.step_stats['training_step'] = self.train_step
+                    self.log(self.step_stats, self.logger_step)
+
 
             if self.train_step % self.save_freq == 0:
                 self.save_models()
-                self.save_weights()
 
-            if self.train_step % self.log_freq == 0:
-                self.step_stats['training_step'] = self.train_step
-                for key, val in self.goal_sampler.stats.items():
-                    self.step_stats[key] = val
-                for key in sorted(self.step_stats.keys()):
-                    if key.startswith('list'):
-                        log_key = key.split('/')[1]
-                        self.logger_step.logkv(log_key, np.mean(self.step_stats[key]))
-                        self.step_stats[key] = []
-                    else:
-                        self.logger_step.logkv(key, self.step_stats[key])
-                self.logger_step.dumpkvs()
+
 
 
 

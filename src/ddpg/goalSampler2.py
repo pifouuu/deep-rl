@@ -130,16 +130,38 @@ class CompetenceProgressGoalBuffer(PrioritizedBuffer):
         return q_mean_outs
 
     def sample(self):
-        if self.nb_sampled % 10 == 0:
-            new_competences = self.update_competence()
-            self.progresses = [a - b for (a, b) in zip(new_competences, self.competences)]
-            for idx, progress in enumerate(self.progresses):
-                self.update_priority(idx, np.abs(progress))
-            self.competences = new_competences
-            self.stats['q_values'] = self.competences
-            self.stats['d_q_values'] = self.progresses
+        new_competences = self.update_competence()
+        self.progresses = [a - b for (a, b) in zip(new_competences, self.competences)]
+        for idx, progress in enumerate(self.progresses):
+            self.update_priority(idx, np.abs(progress))
+        self.competences = new_competences
+
 
         sample_idx, sample_dict = super(CompetenceProgressGoalBuffer, self).sample()
         goal = sample_dict['goal_wrappers']
         self.nb_sampled += 1
         return np.reshape(goal,(self.env.goal_space.shape[0],))
+
+def _demo():
+    buffer = PrioritizedGoalBuffer(11, 1)
+    samples = np.zeros((100000), dtype=int)
+    for i in range(15):
+        buffer_item = {'goal': i}
+        buffer.append(buffer_item, i)
+    for j in range(100000):
+        idx, sample = buffer.sample()
+        samples[j] = int(sample['goal'])
+    bins = np.bincount(samples)
+    plt.plot(range(bins.shape[0]), bins)
+    plt.show()
+    buffer.update_priority(6,100)
+    for j in range(100000):
+        idx, sample = buffer.sample()
+        samples[j] = int(sample['goal'])
+    bins = np.bincount(samples)
+    plt.plot(range(bins.shape[0]), bins)
+    plt.show()
+
+
+if __name__ == "__main__":
+    _demo()
