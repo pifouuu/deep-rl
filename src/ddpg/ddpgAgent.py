@@ -133,14 +133,15 @@ class DDPG_agent():
         # self.hard_update_target_models()
 
     def train(self):
-        batch_idxs, experiences = self.memory.sample(self.batch_size)
+        for train_iter in self.nb_train_iterations:
+            batch_idxs, experiences = self.memory.sample(self.batch_size)
 
-        target_q_vals = self.train_critic(experiences)
-        q_vals = self.train_actor(experiences)
+            target_q_vals = self.train_critic(experiences)
+            q_vals = self.train_actor(experiences)
 
-        # self.memory.update_priorities(batch_idxs, target_q_vals, q_vals, self.train_step)
+            # self.memory.update_priorities(batch_idxs, target_q_vals, q_vals, self.train_step)
 
-        self.update_targets()
+            self.update_targets()
 
         actor_stats = self.actor.get_stats(experiences)
         for key in sorted(actor_stats.keys()):

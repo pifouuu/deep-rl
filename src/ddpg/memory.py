@@ -1,5 +1,6 @@
 import numpy as np
 import random as rnd
+from matplotlib import pyplot as plt
 
 # added by Olivier Sigaud --------------------------------
 # import pickle
@@ -56,8 +57,8 @@ class ReplayBuffer(object):
             self.contents[content] = RingBuffer(limit, shape=shape)
 
     def append(self, buffer_item):
+        self.length += 1
         for name, value in self.contents.items():
-            self.length += 1
             value.append(buffer_item[name])
 
     def dump(self):
@@ -146,23 +147,30 @@ class EpisodicHerSARSTMemory(SARSTMemory):
         self.data = []
 
 def _demo():
-    buffer = PrioritizedGoalBuffer(11, 1)
-    samples = np.zeros((100000), dtype=int)
-    for i in range(15):
-        buffer_item = {'goal': i}
-        buffer.append(buffer_item, i)
-    for j in range(100000):
-        idx, sample = buffer.sample()
-        samples[j] = int(sample['goal'])
-    bins = np.bincount(samples)
-    plt.plot(range(bins.shape[0]), bins)
-    plt.show()
-    buffer.update_priority(6,100)
-    for j in range(100000):
-        idx, sample = buffer.sample()
-        samples[j] = int(sample['goal'])
-    bins = np.bincount(samples)
-    plt.plot(range(bins.shape[0]), bins)
+    buffer = Memory({'state0':(1,)}, 400)
+    data_y = []
+    data_x = []
+    for i in range(2000):
+        buffer.append({'state0' : i})
+        if i>64:
+            idx, samples = buffer.sample(64)
+            for sample in samples['state0']:
+                data_x.append(i)
+                data_y.append(sample)
+
+    fig, ax = plt.subplots(figsize=(10,10))
+
+
+    ax.scatter(data_x, data_y)
+    # bins = np.bincount(samples)
+    # plt.plot(range(bins.shape[0]), bins)
+    # plt.show()
+    # buffer.update_priority(6,100)
+    # for j in range(100000):
+    #     idx, sample = buffer.sample()
+    #     samples[j] = int(sample['goal'])
+    # bins = np.bincount(samples)
+    # plt.plot(range(bins.shape[0]), bins)
     plt.show()
 
 
