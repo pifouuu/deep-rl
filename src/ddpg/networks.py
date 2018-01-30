@@ -84,12 +84,6 @@ class ActorNetwork(Network):
         grads = zip(self.params_grad, self.weights)
         self.optimize = tf.train.AdamOptimizer(learning_rate).apply_gradients(grads)
 
-        # TODO: store more precise stats about the networks
-        self.stat_ops += [tf.reduce_mean(self.out)]
-        self.stat_names += ["mean_action"]
-        self.stat_ops += [tf.reduce_mean(self.target_model.output)]
-        self.stat_names += ["mean_target_action"]
-
     def create_actor_network(self, state_size,action_dim):
         S = Input(shape=[state_size])
         h0 = Dense(64, activation="relu", kernel_initializer="he_uniform")(S)
@@ -112,16 +106,12 @@ class ActorNetwork(Network):
         return self.model.predict_on_batch(states)
 
     def get_stats(self, stats_sample):
-        actor_values = self.sess.run(self.stat_ops, feed_dict={
+        actor_stats = self.sess.run(self.stat_ops, feed_dict={
             self.state: stats_sample['state0'],
             self.target_state: stats_sample['state0']
         })
 
-        names = self.stat_names[:]
-        assert len(names) == len(actor_values)
-        stats = dict(zip(names, actor_values))
-
-        return stats
+        return actor_stats
 
 class CriticNetwork(Network):
     def __init__(self, sess, state_size, action_size, gamma, tau, learning_rate):
@@ -137,10 +127,8 @@ class CriticNetwork(Network):
         # Setting up stats
         self.stat_ops += [tf.reduce_mean(self.out)]
         self.stat_names += ['mean_Q_values']
-        self.stat_ops += [tf.reduce_mean(self.target_model.output)]
-        self.stat_names += ['mean_target_Q_values']
         self.stat_ops += [tf.reduce_mean(self.action_grads)]
-        self.stat_names += ['reference_action_grads']
+        self.stat_names += ['action_grads']
 
     def gradients(self, states, actions):
         out, grads =  self.sess.run([self.out, self.action_grads], feed_dict={
@@ -156,7 +144,7 @@ class CriticNetwork(Network):
         return self.model.predict_on_batch([states, actions])
 
     def train(self, states, actions, targets):
-        return self.model.train_on_batch([states, actions], targets)
+        self.model.train_on_batch([states, actions], targets)
 
     def create_critic_network(self, state_size, action_dim):
         S = Input(shape=[state_size])
@@ -172,26 +160,14 @@ class CriticNetwork(Network):
         return model, A, S
 
     def get_stats(self, stats_sample):
-        critic_values = self.sess.run(self.stat_ops, feed_dict={
+        critic_stats = self.sess.run(self.stat_ops, feed_dict={
             self.state: stats_sample['state0'],
             self.action: stats_sample['action'],
             self.target_state: stats_sample['state0'],
             self.target_action: stats_sample['action'],
         })
 
-        names = self.stat_names[:]
-        assert len(names) == len(critic_values)
-        stats = dict(zip(names, critic_values))
-
-        # critic_with_actor_values = self.sess.run(self.stats_ops, feed_dict={
-        #     self.inputs: stats_sample[0],
-        #     self.action: stats_sample['action'],
-        # })
-        #
-        # for name, val in zip(names, critic_with_actor_values):
-        #     stats[name+'_actor'] = val
-
-        return stats
+        return critic_stats
 
 class HuberLossCriticNetwork(CriticNetwork):
     def __init__(self, sess, state_size, action_size, delta_clip, gamma, tau, learning_rate):

@@ -91,6 +91,8 @@ class GoalSampler():
     def __init__(self, env):
         self.env = env
         self.stats = {}
+        self.competences = []
+        self.progresses = []
 
 class RandomGoalSampler(GoalSampler):
     def __init__(self, env):

@@ -52,6 +52,7 @@ def main(args):
     # Two loggers are defined to retrieve information by step or by episode. Only episodic information is displayed to stdout.
     final_dir = args['summary_dir']+params+'/'+now
     save_dir = args['save_dir']+params+'/'+now
+    resume_dir = args['resume_dir']
     logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json'])
     logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json'])
 
@@ -94,16 +95,18 @@ def main(args):
                            logger_step,
                            logger_episode,
                            int(args['minibatch_size']),
-                           int(args['eval_episodes']),
+                           int(args['nb_test_steps']),
                            int(args['max_steps']),
-                           int(args['eval_freq']),
                            save_dir,
                            int(args['save_freq']),
-                           int(args['log_freq']),
                            args['target_clip']=='True',
                            args['invert_grads']=='True',
                            float(args['alpha']),
-                           args['render_eval'])
+                           args['render_test'],
+                           int(args['train_freq']),
+                           int(args['nb_train_iter']),
+                           resume_dir,
+                           args['resume_step'])
         agent.run()
 
 if __name__ == '__main__':
@@ -127,6 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('--invert-grads', help='Gradient inverting for bounded action spaces', default=False)
     parser.add_argument('--target-clip', help='Reproduce target clipping from her paper', default=False)
 
+
     # run parameters
     parser.add_argument('--env', help='choose the gym env', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
@@ -135,13 +139,15 @@ if __name__ == '__main__':
                         default='/home/pierre/PycharmProjects/deep-rl/log/resultsLocal/')
     parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
                         default='/home/pierre/PycharmProjects/deep-rl/log/saveLocal/')
-    parser.add_argument('--eval-freq', help='evaluation frequency', default=2000)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=100000)
-    parser.add_argument('--log-freq', help='saving models weights frequency', default=2000)
-    parser.add_argument('--eval-episodes', help='number of episodes to run during evaluation', default=10)
-    parser.add_argument('--eval-steps', help='number of steps in the environment during evaluation', default=200)
-    boolean_flag(parser, 'render-eval', default=False)
-
+    parser.add_argument('--resume-dir', help='directory to retrieve weights of actor and critic',
+                        default=None)
+    parser.add_argument('--resume-step', help='resume_step',
+                        default=None)
+    parser.add_argument('--train-freq', help='training frequency', default=100)
+    parser.add_argument('--nb-train-iter', help='training iteration number', default=50)
+    parser.add_argument('--nb-test-steps', help='number of steps in the environment during evaluation', default=1000)
+    boolean_flag(parser, 'render-test', default=False)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=1000)
 
     args = vars(parser.parse_args())
     
