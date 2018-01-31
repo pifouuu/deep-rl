@@ -12,9 +12,28 @@ from ddpg.noise import OrnsteinUhlenbeckActionNoise
 import random as rn
 import os
 from ddpg.util import load, boolean_flag
+from gym.wrappers import Monitor
 
 def main(args):
     """Despite following the directives of https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development, fully reproducible results could not be obtained. See here : https://github.com/keras-team/keras/issues/2280 for any improvements"""
+
+    # Storing logger output in files with names corresponding to parameters used
+    params = args['env'] + '_' + \
+             args['memory'] + '_' + \
+             args['strategy'] + '_' + \
+             args['sampler'] + '_' + \
+             args['alpha'] + '_' + \
+             args['delta'] + '_' + \
+             args['activation'] + '_' + \
+             args['invert_grads'] + '_' + \
+             args['target_clip'] + '_' + \
+             args['sigma']
+    now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+
+    # Two loggers are defined to retrieve information by step or by episode. Only episodic information is displayed to stdout.
+    log_dir = args['log_dir']+params+'/'+now
+    logger_step = Logger(dir=log_dir+'/log_steps', format_strs=['stdout', 'json'])
+    logger_episode = Logger(dir=log_dir+'/log_episodes', format_strs=['stdout', 'json'])
 
     os.environ['PYTHONHASHSEED'] = '0'
     if args['random_seed'] is not None:
@@ -25,6 +44,7 @@ def main(args):
     # Make calls EnvRegistry.make, which builds the environment from its specs defined in gym.envs.init end then builds a timeLimit wrapper around the environment to set the max amount of steps to run
     train_env = make(args['env'])
     test_env = make(args['env'])
+    # test_env = Monitor(test_env, directory=save_dir)
 
     # Wraps each environment in a goal_wrapper to override basic env methods and be able to access goal space properties, or modify the environment simulation according to sampled goals. The wrapper classes paths corresponding to each environment are defined in gym.envs.int
     if train_env.spec._goal_wrapper_entry_point is not None:
@@ -36,25 +56,9 @@ def main(args):
         train_env.seed(int(args['random_seed']))
         test_env.seed(int(args['random_seed']))
 
-    # Storing logger output in files with names corresponding to parameters used
-    params = args['env'] +'_'+\
-        args['memory'] +'_'+\
-        args['strategy'] +'_'+\
-        args['sampler'] +'_'+\
-        args['alpha'] +'_'+\
-        args['delta'] +'_'+\
-        args['activation'] +'_'+\
-        args['invert_grads'] +'_'+\
-        args['target_clip'] +'_'+\
-        args['sigma']
-    now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
-    # Two loggers are defined to retrieve information by step or by episode. Only episodic information is displayed to stdout.
-    final_dir = args['summary_dir']+params+'/'+now
-    save_dir = args['save_dir']+params+'/'+now
-    resume_dir = args['resume_dir']
-    logger_step = Logger(dir=final_dir+'/log_steps', format_strs=['json'])
-    logger_episode = Logger(dir=final_dir+'/log_episodes', format_strs=['stdout', 'json'])
+
+
 
     #TODO integrate the choice of memory in environments specs in gym.env.init
     if args['memory'] == 'sarst':
@@ -97,7 +101,7 @@ def main(args):
                            int(args['minibatch_size']),
                            int(args['nb_test_steps']),
                            int(args['max_steps']),
-                           save_dir,
+                           log_dir,
                            int(args['save_freq']),
                            args['target_clip']=='True',
                            args['invert_grads']=='True',
@@ -105,8 +109,8 @@ def main(args):
                            args['render_test'],
                            int(args['train_freq']),
                            int(args['nb_train_iter']),
-                           resume_dir,
-                           args['resume_step'])
+                           args['resume_step'],
+                           args['resume_timestamp'])
         agent.run()
 
 if __name__ == '__main__':
@@ -135,11 +139,9 @@ if __name__ == '__main__':
     parser.add_argument('--env', help='choose the gym env', default='MountainCarContinuous-v0')
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=200000)
-    parser.add_argument('--summary-dir', help='directory for storing tensorboard info',
-                        default='/home/pierre/PycharmProjects/deep-rl/log/resultsLocal/')
-    parser.add_argument('--save-dir', help='directory to store weights of actor and critic',
-                        default='/home/pierre/PycharmProjects/deep-rl/log/saveLocal/')
-    parser.add_argument('--resume-dir', help='directory to retrieve weights of actor and critic',
+    parser.add_argument('--log-dir', help='directory for storing run info',
+                        default='/home/pierre/PycharmProjects/deep-rl/log/local/')
+    parser.add_argument('--resume-timestamp', help='directory to retrieve weights of actor and critic',
                         default=None)
     parser.add_argument('--resume-step', help='resume_step',
                         default=None)

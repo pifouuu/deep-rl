@@ -4,6 +4,7 @@ import time
 import numpy as np
 import tensorflow as tf
 from .goalSampler2 import RandomGoalSampler, CompetenceProgressGoalBuffer
+from gym.monitoring import VideoRecorder
 
 class DDPG_agent():
     def __init__(self,
@@ -20,7 +21,7 @@ class DDPG_agent():
                  batch_size,
                  nb_test_steps,
                  max_steps,
-                 save_dir,
+                 log_dir,
                  save_freq,
                  target_clip,
                  invert_grads,
@@ -28,8 +29,8 @@ class DDPG_agent():
                  render_test,
                  train_freq,
                  nb_train_iter,
-                 resume_dir,
-                 resume_step):
+                 resume_step,
+                 resume_timestamp):
 
         #portrait_actor(actor.target_model, test_env, save_figure=True, figure_file="saved_actor_const.png")
         self.sess = sess
@@ -47,9 +48,9 @@ class DDPG_agent():
         self.nb_test_steps = nb_test_steps
 
         self.save_freq = save_freq
-        self.save_dir = save_dir
-        self.resume_dir = resume_dir
+        self.log_dir = log_dir
         self.resume_step = resume_step
+        self.resume_timestamp = resume_timestamp
 
         self.actor = actor
         self.actor_noise = actor_noise
@@ -129,17 +130,18 @@ class DDPG_agent():
         self.critic.target_train()
 
     def save_weights(self):
-        dir = self.save_dir+'/'
+        dir = self.log_dir+'/saves'
         os.makedirs(dir, exist_ok=True)
-        self.actor.save_weights(dir+'actor_weights_{}.h5'.format(self.train_step), overwrite=True)
-        self.actor.save_target_weights(dir + 'target_actor_weights_{}.h5'.format(self.train_step), overwrite=True)
-        self.critic.save_weights(dir + 'critic_weights_{}.h5'.format(self.train_step), overwrite=True)
-        self.critic.save_target_weights(dir + 'target_critic_weights_{}.h5'.format(self.train_step), overwrite=True)
+        self.actor.save_weights(dir+'/actor_weights_{}.h5'.format(self.train_step), overwrite=True)
+        self.actor.save_target_weights(dir + '/target_actor_weights_{}.h5'.format(self.train_step), overwrite=True)
+        self.critic.save_weights(dir + '/critic_weights_{}.h5'.format(self.train_step), overwrite=True)
+        self.critic.save_target_weights(dir + '/target_critic_weights_{}.h5'.format(self.train_step), overwrite=True)
 
-    def load_weights(self, resume_dir):
-        dir = self.save_dir.split('/')[:-1]
-        dir.append(resume_dir)
+    def load_weights(self):
+        dir = self.log_dir.split('/')[:-1]
+        dir.append(self.resume_timestamp)
         dir = '/'.join(dir)
+        dir = dir+'/saves'
         self.actor.load_weights(dir+'/actor_weights_{}.h5'.format(self.resume_step))
         self.critic.load_weights(dir + '/critic_weights_{}.h5'.format(self.resume_step))
         self.actor.load_target_weights(dir + '/target_actor_weights_{}.h5'.format(self.resume_step))
@@ -161,8 +163,8 @@ class DDPG_agent():
                 v._keras_initialized = True
         self.sess.run(tf.variables_initializer(uninitialized_variables))
 
-        if self.resume_dir is not None:
-            self.load_weights(self.resume_dir)
+        if self.resume_timestamp is not None:
+            self.load_weights()
             self.train_step = self.resume_step
             self.episode = 0
             self.nb_goals_reached = 0
@@ -184,6 +186,7 @@ class DDPG_agent():
             self.episode_reward += reward
             self.train_step += 1
             self.episode_step += 1
+            prev_state = state
 
             if terminal:
                 self.episode += 1
@@ -194,7 +197,6 @@ class DDPG_agent():
 
                 self.train_env.goal = self.goal_sampler.sample()
                 state = self.train_env.reset_with_goal()
-                prev_state = state
 
                 self.memory.end_episode(not info['past_limit'])
 
@@ -219,8 +221,8 @@ class DDPG_agent():
         return action
 
     def log_step_stats(self):
-        critic_stats_mean = self.critic_stats.mean(axis=1)
-        actor_stats_mean = self.actor_stats.mean(axis=1)
+        critic_stats_mean = self.critic_stats.mean(axis=0)
+        actor_stats_mean = self.actor_stats.mean(axis=0)
         for name, stat in zip(self.critic.stat_names, critic_stats_mean):
             self.step_stats[name] = stat
         for name, stat in zip(self.actor.stat_names, actor_stats_mean):
@@ -258,20 +260,34 @@ class DDPG_agent():
 
 
     def test(self, type='random'):
+        vid_dir = self.log_dir+'/videos'
+        os.makedirs(vid_dir, exist_ok=True)
+        base_path = os.path.join(vid_dir, 'video_'+type+'_{:06}'.format(self.train_step))
+        rec = None
+        if self.train_step % self.save_freq == 0:
+            rec = VideoRecorder(self.test_env, base_path=base_path)
         state = self.test_env.reset_with_goal(type=type)
+        if rec is not None:
+            rec.capture_frame()
         ep_test_rewards = []
         ep_test_reward = 0
         for _ in range(self.nb_test_steps):
             action = self.act(state, noise=False)
             state, reward, terminal, info = self.test_env.step(action[0])
+            if rec is not None:
+                rec.capture_frame()
             terminal = terminal or info['past_limit']
             if self.render_test:
                 self.test_env.render()
             ep_test_reward += reward
             if terminal:
                 state = self.test_env.reset_with_goal(type=type)
+                if rec is not None:
+                    rec.capture_frame()
                 ep_test_rewards.append(ep_test_reward)
                 ep_test_reward = 0
+        if rec is not None:
+            rec.close()
         return ep_test_rewards
 
 
