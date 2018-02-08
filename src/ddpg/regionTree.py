@@ -28,10 +28,6 @@ class Region(Box):
         self.sum_CP = 0
         self.dim_split = None
         self.val_split = None
-        self.is_defined = False
-
-    def full(self):
-        return len(self.points) == self.maxlen
 
     def split(self, dim, split_val):
         low_right = np.copy(self.low)
@@ -42,10 +38,16 @@ class Region(Box):
         right = Region(low_right, self.high, maxlen=self.maxlen, n_cp = self.n_cp)
         left.CP = self.CP
         right.CP = self.CP
+        left.append(self.points)
+        right.append(self.points)
+        left.update_CP()
+        right.update_CP()
         return left, right
 
-    def append(self, point):
-        self.points.append(point)
+    def append(self, points):
+        for point in points:
+            if self.contains(point.pos):
+                self.points.append(point)
         self.update_CP()
 
     def update_CP(self):
@@ -57,11 +59,22 @@ class Region(Box):
             for p in rev[self.n_cp:2 * self.n_cp]:
                 CP -= p.val
             self.CP = 1/2+CP / (2 * self.n_cp)
+        self.max_CP = self.CP
+        self.sum_CP = self.CP
+        self.min_CP = self.CP
         assert self.CP >= 0
 
     @property
     def size(self):
         return len(self.points)
+
+    @property
+    def is_leaf(self):
+        return (self.dim_split is None)
+
+    @property
+    def full(self):
+        return len(self.points) == self.maxlen
 
     # @property
     # def low(self):
@@ -99,29 +112,23 @@ class RegionTree():
 
     def init_tree(self, region):
         self.region_array[1] = region
-        self.region_array[1].is_defined = True
         self.update_CP_tree(1)
         self.active_regions += 1
 
     def insert_point(self, point):
-        self._insert_point(point, 1)
+        root = self.region_array[1]
+        self._insert_point(point, root)
         self.total_points += 1
-        # assert self.total_points == self.points_in_leaves()
 
-    def _insert_point(self, point, idx):
-        region = self.region_array[idx]
-        if not region.contains(point.pos):
-            print('point ', point.pos[0], point.pos[1], ' not in region')
-            pass
+    def _insert_point(self, point, region):
         if idx >= self.capacity:
-            region.append(point)
+            region.append([point])
             self.update_CP_tree(idx)
-            self.discarded += 1
         else:
-            if region.full() and self.is_leaf(idx):
+            if region.full and region.is_leaf:
                 self.split(idx)
-            region.append(point)
-            if not self.is_leaf(idx):
+            region.append([point])
+            if not region.is_leaf:
                 left = self.region_array[2*idx]
                 right = self.region_array[2*idx + 1]
                 if left.contains(point.pos):
@@ -130,14 +137,6 @@ class RegionTree():
                     self._insert_point(point, 2*idx + 1)
             else:
                 self.update_CP_tree(idx)
-
-    def is_leaf(self, idx):
-        try:
-            left = self.region_array[2 * idx].is_defined
-            right = self.region_array[2 * idx + 1].is_defined
-        except IndexError:
-            return True
-        return not (left or right)
 
     def update_CP_tree(self, idx):
         region = self.region_array[idx]
@@ -150,7 +149,7 @@ class RegionTree():
             region_left = self.region_array[2*idx]
             region_right = self.region_array[2*idx + 1]
             split_eval = self.split_eval_1(region_left, region_right)
-            to_merge = self.is_leaf(2*idx) and self.is_leaf(2*idx+1) and split_eval < self.split_min
+            to_merge = region_left.is_leaf and region_right.is_leaf and split_eval < self.split_min
             if to_merge:
                 self.region_array[2 * idx + 1] = Region()
                 self.region_array[2 * idx] = Region()
@@ -173,70 +172,29 @@ class RegionTree():
         return -np.abs(left.size-right.size)
 
     def split(self, idx):
-        best_split_left = None
-        best_split_right = None
-        best_split_eval = -np.inf
-        best_dim = None
-        best_val = None
-        split = False
         region = self.region_array[idx]
-        eval_splits = []
+        eval_splits_1 = []
+        eval_splits_2 = []
         for dim in range(region.shape[0]):
             for num_split, split_val in enumerate(np.linspace(region.low[dim], region.high[dim], self.n_split+2)[1:-1]):
                 temp_left, temp_right = region.split(dim, split_val)
-                for point in region.points:
-                    if temp_left.contains(point.pos):
-                        temp_left.points.append(point)
-                    elif temp_right.contains(point.pos):
-                        temp_right.points.append(point)
-                    else:
-                        print("Point not in split regions")
-                        raise(RuntimeError)
-                temp_left.update_CP()
-                temp_right.update_CP()
-                split_eval_1 = self.split_eval_1(temp_left, temp_right)
-                split_eval_2 = self.split_eval_2(temp_left, temp_right)
-                eval_splits.append((dim, split_val, split_eval_1, split_eval_2))
-
-                if split_eval_1 > self.split_min and split_eval_1 > best_split_eval:
-                    best_split_eval = split_eval_1
-                    best_split_right = temp_right
-                    best_split_left = temp_left
-                    best_dim = dim
-                    best_val = split_val
-                    split = True
-        if split:
-            best_split_left.is_defined = True
-            best_split_left.max_CP = best_split_left.CP
-            best_split_left.sum_CP = best_split_left.CP
-            best_split_left.min_CP = best_split_left.CP
+                eval_splits_1.append(self.split_eval_1(temp_left, temp_right))
+                eval_splits_2.append(self.split_eval_2(temp_left, temp_right))
+        eval_splits_1_norm = [(a-np.min(eval_splits_1))/(np.max(eval_splits_1)-np.min(eval_splits_1)) for a in
+                              eval_splits_1]
+        eval_splits_2_norm = [(a - np.min(eval_splits_2)) / (np.max(eval_splits_2) - np.min(eval_splits_2)) for
+                              a in eval_splits_2]
+        eval_splits = [self.lambd*x + (1-self.lambd)*y for (x,y) in zip(eval_splits_1_norm, eval_splits_2_norm)]
+        best_split_idx = np.argmax(eval_splits)
+        if eval_splits[best_split_idx[0]] > self.split_min:
+            best_dim = best_split_idx // self.n_split
+            best_val = np.linspace(region.low[best_dim], region.high[best_dim], self.n_split+2)[best_split_idx % self.n_split+1]
+            best_split_left, best_split_right = region.split(best_dim, best_val)
             self.region_array[2 * idx] = best_split_left
-
-            best_split_right.is_defined = True
-            best_split_right.max_CP = best_split_right.CP
-            best_split_right.sum_CP = best_split_right.CP
-            best_split_right.min_CP = best_split_right.CP
             self.region_array[2 * idx + 1] = best_split_right
-
-            self.active_regions += 2
-
             region.dim_split = best_dim
             region.val_split = best_val
             print('splint succeeded: dim=', best_dim, ' val=', best_val)
-        # else:
-            # print('no split')
-
-    def points_in_leaves(self):
-        return self._point_in_leaves(1)
-
-    def _point_in_leaves(self, idx):
-        res = 0
-        if idx >= self.capacity or self.is_leaf(idx) :
-            res += self.region_array[idx].size
-        else:
-            res += self._point_in_leaves(2*idx)
-            res += self._point_in_leaves(2*idx + 1)
-        return res
 
     def displayTree(self, dims):
         self.figure = plt.figure()
@@ -255,7 +213,7 @@ class RegionTree():
 
     def _compute_image(self, idx, dims, with_points=False):
         region = self.region_array[idx]
-        if region.dim_split is None:
+        if region.is_leaf:
             angle = (region.low[dims[0]], region.low[dims[1]])
             width = region.high[dims[0]] - region.low[dims[0]]
             height = region.high[dims[1]] - region.low[dims[1]]
@@ -293,7 +251,7 @@ class RegionTree():
         """
         assert 0 <= sum <= self.sum_CP + 1e-5
         idx = 1
-        while not self.is_leaf(idx):
+        while not self.region_array[idx].is_leaf:
             if self.region_array[2 * idx].sum_CP > sum:
                 idx = 2 * idx
             else:
@@ -336,8 +294,8 @@ class RegionTree():
 
 class demo():
     def __init__(self):
-        self.tree = RegionTree(n_regions=6, n_split=10, split_min=1e-6)
-        init_region = Region(np.array([-1.2, -0.07]), np.array([0.6, 0.07]), maxlen = 200, n_cp = 50)
+        self.tree = RegionTree(n_regions=50, n_split=10, split_min=1e-6)
+        init_region = Region(np.array([-1.2, -0.07]), np.array([0.6, 0.07]), maxlen = 300, n_cp = 30)
         self.tree.init_tree(init_region)
 
         zone1 = Region(np.array([-1.2, -0.07]), np.array([-0.6, 0]))
