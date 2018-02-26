@@ -334,6 +334,13 @@ register(
     max_episode_steps=1000,
 )
 
+register(
+    id='Manipulator-v0',
+    entry_point='gym.envs.mujoco:ManipulatorTargetBallEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    max_episode_steps=1000,
+)
+
 # Atari
 # ----------------------------------------
 

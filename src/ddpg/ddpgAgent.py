@@ -278,7 +278,7 @@ class DDPG_agent():
                 rec.capture_frame()
             terminal = terminal or info['past_limit']
             if self.render_test:
-                self.test_env.render()
+                self.test_env.render(mode='human')
             ep_test_reward += reward
             if terminal:
                 state = self.test_env.reset_with_goal(type=type)

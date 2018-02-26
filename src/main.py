@@ -56,10 +56,6 @@ def main(args):
         train_env.seed(int(args['random_seed']))
         test_env.seed(int(args['random_seed']))
 
-
-
-
-
     #TODO integrate the choice of memory in environments specs in gym.env.init
     if args['memory'] == 'sarst':
         memory = SARSTMemory(train_env, limit=int(1e6))
@@ -148,8 +144,8 @@ if __name__ == '__main__':
     parser.add_argument('--train-freq', help='training frequency', default=100)
     parser.add_argument('--nb-train-iter', help='training iteration number', default=50)
     parser.add_argument('--nb-test-steps', help='number of steps in the environment during evaluation', default=1000)
-    boolean_flag(parser, 'render-test', default=False)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=1000)
+    boolean_flag(parser, 'render-test', default=True)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=50)
 
     args = vars(parser.parse_args())
     

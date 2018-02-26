@@ -110,9 +110,13 @@ class MujocoEnv(gym.Env):
         if mode == 'rgb_array':
             self._get_viewer().render()
             data, width, height = self._get_viewer().get_image()
-            return np.fromstring(data, dtype='uint8').reshape(height, width, 3)[::-1, :, :]
+            image = np.fromstring(data, dtype='uint8').reshape(height, width, 3)[::-1, :, :]
+            return image
         elif mode == 'human':
             self._get_viewer().loop_once()
+
+    def set_view(self, cam_id):
+        self.viewer.cam.fixedcamid = cam_id
 
     def _get_viewer(self):
         if self.viewer is None:

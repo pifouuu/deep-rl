@@ -50,7 +50,7 @@ SUITE = containers.TaggedTasks()
 
 def make_model(use_peg, insert):
   """Returns a tuple containing the model XML string and a dict of assets."""
-  xml_string = common.read_model('manipulator.xml')
+  xml_string = common.read_model('manipulator_target_ball.xml')
   parser = etree.XMLParser(remove_blank_text=True)
   mjcf = etree.XML(xml_string, parser)
 

@@ -3,9 +3,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
-from .goalSampler2 import RandomGoalSampler, CompetenceProgressGoalBuffer
-from gym.monitoring import VideoRecorder
-from dqn.networks import CriticNetwork
+import matplotlib.pyplot as plt
 
 
 class DQN_Agent():
@@ -15,7 +13,6 @@ class DQN_Agent():
                  train_env,
                  test_env,
                  memory,
-                 goal_sampler,
                  logger_step,
                  logger_episode,
                  batch_size,
@@ -30,7 +27,8 @@ class DQN_Agent():
                  nb_train_iter,
                  resume_step,
                  resume_timestamp,
-                 epsilon):
+                 start_epsilon,
+                 end_epsilon):
 
         self.sess = sess
         self.batch_size = batch_size
@@ -56,20 +54,9 @@ class DQN_Agent():
         self.memory = memory
         self.alpha = alpha
         self.render_test = render_test
-        self.epsilon = epsilon
-
-        if not train_env.goal_parameterized:
-            self.goal_sampler = RandomGoalSampler(self.train_env)
-        else:
-            if goal_sampler == 'rnd':
-                self.goal_sampler = RandomGoalSampler(self.train_env)
-            elif goal_sampler == 'comp':
-                self.goal_sampler = CompetenceProgressGoalBuffer(int(1e3), self.alpha,
-                                                                 self.train_env,
-                                                                 self.critic)
-            else:
-                print("no matching sampler")
-                raise RuntimeError
+        self.start_epsilon = start_epsilon
+        self.end_epsilon = end_epsilon
+        self.epsilon = 1
 
         self.train_step = 0
         self.episode = 0
@@ -140,16 +127,15 @@ class DQN_Agent():
         else:
             self.update_targets()
 
-        self.train_env.goal = self.goal_sampler.sample()
-        state = self.train_env.reset_with_goal()
+        state = self.train_env.reset()
         prev_state = state
         self.start_time = time.time()
         while self.train_step < self.max_steps:
-
             action = self.act(state, noise=True)
-            state, reward, terminal, info = self.train_env.step(action[0])
+            state, reward, terminal = self.train_env.step(action)
             experience = self.memory.build_exp(prev_state, action, state, reward, terminal)
-            terminal = terminal or info['past_limit']
+            past_limit = self.episode_step > 200
+            terminal = terminal or past_limit
             self.memory.append(experience)
 
             self.episode_reward += reward
@@ -159,102 +145,95 @@ class DQN_Agent():
 
             if terminal:
                 self.episode += 1
-                if not info['past_limit']:
+                if not past_limit:
                     self.nb_goals_reached += 1
 
                 self.log_episode_stats()
 
-                self.train_env.goal = self.goal_sampler.sample()
-                state = self.train_env.reset_with_goal()
+                state = self.train_env.reset()
 
-                self.memory.end_episode(not info['past_limit'])
+                self.memory.end_episode(not past_limit)
 
                 self.episode_step = 0
                 self.episode_reward = 0
 
-            if self.train_step % self.train_freq == 0:
-                self.critic_stats, self.actor_stats = self.train()
-                self.eval_rewards_random = self.test(type='random')
-                if self.test_env.goal_parameterized:
-                    self.eval_reward_init = self.test(type='init')
-                self.log_step_stats()
+            if self.train_step > 10000:
 
-            if self.train_step % self.save_freq == 0:
-                self.save_weights()
+                if self.epsilon > self.end_epsilon:
+                    self.epsilon -= (self.start_epsilon - self.end_epsilon)/10000
+
+                if self.train_step % self.train_freq == 0:
+                    self.train()
+                    self.eval_rewards_random = self.test()
+                    self.log_step_stats()
+
+                if self.train_step % self.save_freq == 0:
+                    self.save_weights()
 
     def act(self, state, noise=False):
         if noise and np.random.rand(1) < self.epsilon:
-            action = np.random.randint(0, self.num_actions)
+            action = np.random.randint(0, self.train_env.actions)
         else:
-            action = self.critic.select_actions(state)
+            action = self.critic.select_actions(np.reshape(state, (-1, 84, 84, 3)))[0]
         return action
 
     def log_step_stats(self):
-        critic_stats_mean = self.critic_stats.mean(axis=0)
-        actor_stats_mean = self.actor_stats.mean(axis=0)
-        for name, stat in zip(self.critic.stat_names, critic_stats_mean):
-            self.step_stats[name] = stat
-        for name, stat in zip(self.actor.stat_names, actor_stats_mean):
-            self.step_stats[name] = stat
         self.step_stats['training_step'] = self.train_step
         self.step_stats['Test reward on random goal'] = np.mean(self.eval_rewards_random)
-        if self.test_env.goal_parameterized:
-            self.step_stats['Test reward on initial goal'] = np.mean(self.eval_reward_init)
         self.log(self.step_stats, self.logger_step)
 
     def log_episode_stats(self):
         self.episode_stats['Episode'] = self.episode
-        self.episode_stats['Goal'] = self.train_env.goal
         self.episode_stats['Train reward'] = self.episode_reward
         self.episode_stats['Episode steps'] = self.episode_step
         self.episode_stats['Goal reached'] = self.nb_goals_reached
         self.episode_stats['Duration'] = time.time() - self.start_time
         self.episode_stats['Train step'] = self.train_step
-        self.episode_stats['competences'] = self.goal_sampler.competences
-        self.episode_stats['comp_progress'] = self.goal_sampler.progresses
         self.log(self.episode_stats, self.logger_episode)
 
     def train(self):
-        critic_stats = []
-        actor_stats = []
         for _ in range(self.nb_train_iter):
             batch_idxs, experiences = self.memory.sample(self.batch_size)
-            target_q_vals, critic_stat = self.train_critic(experiences)
-            q_vals, actor_stat = self.train_actor(experiences)
-            # self.memory.update_priorities(batch_idxs, target_q_vals, q_vals, self.train_step)
+            self.train_critic(experiences)
             self.update_targets()
-            critic_stats.append(critic_stat)
-            actor_stats.append(actor_stat)
-        return np.array(critic_stats), np.array(actor_stats)
 
+    def test(self):
 
-    def test(self, type='random'):
-        vid_dir = self.log_dir+'/videos'
-        os.makedirs(vid_dir, exist_ok=True)
-        base_path = os.path.join(vid_dir, 'video_'+type+'_{:06}'.format(self.train_step))
-        rec = None
-        if self.train_step % self.save_freq == 0:
-            rec = VideoRecorder(self.test_env, base_path=base_path)
-        state = self.test_env.reset_with_goal(type=type)
-        if rec is not None:
-            rec.capture_frame()
+        width = 84
+        height = 84
+        video = np.zeros((self.nb_test_steps, height, width, 3), dtype=np.uint8)
+
+        state = self.test_env.reset()
         ep_test_rewards = []
         ep_test_reward = 0
-        for _ in range(self.nb_test_steps):
+        step = 0
+        for i in range(self.nb_test_steps):
             action = self.act(state, noise=False)
-            state, reward, terminal, info = self.test_env.step(action[0])
-            if rec is not None:
-                rec.capture_frame()
-            terminal = terminal or info['past_limit']
-            if self.render_test:
-                self.test_env.render()
+            state, reward, terminal = self.test_env.step(action)
+            step += 1
+            past_limit = step > 200
+            terminal = terminal or past_limit
+            video[i] = state
             ep_test_reward += reward
             if terminal:
-                state = self.test_env.reset_with_goal(type=type)
-                if rec is not None:
-                    rec.capture_frame()
+                state = self.test_env.reset()
+                step = 0
                 ep_test_rewards.append(ep_test_reward)
                 ep_test_reward = 0
-        if rec is not None:
-            rec.close()
+
+        if self.render_test:
+            tic = time.time()
+            for i in range(self.nb_test_steps):
+                if i == 0:
+                    img = plt.imshow(video[i])
+                else:
+                    img.set_data(video[i])
+                toc = time.time()
+                clock_dt = toc - tic
+                tic = time.time()
+                # Real-time playback not always possible as clock_dt > .03
+                plt.pause(max(0.01, 0.03 - clock_dt))  # Need min display time > 0.0.
+                plt.draw()
+            # plt.waitforbuttonpress()
+
         return ep_test_rewards

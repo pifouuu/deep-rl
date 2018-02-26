@@ -3,7 +3,8 @@ import math
 from keras.initializers import RandomUniform
 from keras.models import model_from_json
 from keras.models import Sequential, Model
-from keras.layers import Dense, Input, Multiply, Add, Subtract
+from keras.layers import *
+# from keras.layers import Dense, Input, Multiply, Add, Subtract, Conv2D, Lambda, Flatten, RepeatVector
 from keras.optimizers import Adam
 import tensorflow as tf
 import keras.backend as K
@@ -23,29 +24,29 @@ class Network(object):
         self.stat_names = []
         K.set_session(sess)
         self.model = None
-        self.target_model = None
+        self.t_model = None
 
     def target_train(self):
         weights = self.model.get_weights()
-        target_weights = self.target_model.get_weights()
+        target_weights = self.t_model.get_weights()
         for i in range(len(weights)):
             target_weights[i] = self.tau * weights[i] + (1 - self.tau)* target_weights[i]
-        self.target_model.set_weights(target_weights)
+        self.t_model.set_weights(target_weights)
 
     def hard_target_update(self):
-        self.target_model.set_weights(self.model.get_weights())
+        self.t_model.set_weights(self.model.get_weights())
 
     def save_weights(self, filepath, overwrite=False):
         self.model.save_weights(filepath, overwrite=overwrite)
 
     def save_target_weights(self, filepath, overwrite=False):
-        self.target_model.save_weights(filepath, overwrite=overwrite)
+        self.t_model.save_weights(filepath, overwrite=overwrite)
 
     def save_model(self, filepath, overwrite=False):
         self.model.save(filepath, overwrite=overwrite)
 
     def save_target_model(self, filepath, overwrite=False):
-        self.target_model.save(filepath, overwrite=overwrite)
+        self.t_model.save(filepath, overwrite=overwrite)
 
     def save_archi(self, filepath, overwrite=False):
         model_json = self.model.to_json()
@@ -53,7 +54,7 @@ class Network(object):
             json_file.write(json_tricks.dumps(json_tricks.loads(model_json), indent=4))
 
     def save_target_archi(self, filepath, overwrite=False):
-        target_model_json = self.target_model.to_json()
+        target_model_json = self.t_model.to_json()
         with open(filepath, "w") as json_file:
             json_file.write(json_tricks.dumps(json_tricks.loads(target_model_json), indent=4))
 
@@ -61,10 +62,10 @@ class Network(object):
         self.model.load_weights(filepath)
 
     def load_target_weights(self, filepath):
-        self.target_model.load_weights(filepath)
+        self.t_model.load_weights(filepath)
 
     def print_target_weights(self):
-        print (self.target_model.get_weights())
+        print (self.t_model.get_weights())
 
     def print_weights(self):
         print (self.model.get_weights())
@@ -75,75 +76,49 @@ class CriticNetwork(Network):
         self.gamma = gamma
         self.h_dim = h_dim
 
-        self.action = Input(shape=[action_size])
-        self.model, self.state = self.create_critic_network(self.s_dim)
-        self.target_model, self.target_state = self.create_critic_network(self.s_dim)
-        self.out = self.model.output
-        self.target_out = self.target_model.output
-        self.action_one_hot = K.one_hot(self.action, self.a_dim)
-        self.mul = Multiply()([self.out, self.action_one_hot])
-        self.q_values = K.sum(self.mul, axis=1)
-        self.select_action = K.argmax(self.out, axis=1)
-        # Setting up stats
-        self.stat_ops += [tf.reduce_mean(self.out)]
-        self.stat_names += ['mean_Q_values']
+        self.model, self.states, self.actions, self.q_values = self.create_critic_network()
+        self.t_model, self.t_states, self.t_actions, self.t_q_values = self.create_critic_network()
 
-    def create_critic_network(self, state_size):
-        S = Input(shape=[state_size])
-        x = Dense(64, activation="relu", kernel_initializer="he_uniform")(S)
-        x = Dense(64, activation="relu", kernel_initializer="he_uniform")(x)
-        x = Dense(self.h_dim, activation='linear',
-                  kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(x)
-        adv, val = [x[:self.h_dim / 2], x[self.h_dim / 2:]]
+        self.select_action = K.argmax(self.q_values, axis=1)
+
+    def create_critic_network(self):
+
+        input_state = Input(shape=self.s_dim)
+        conv1 = Conv2D(32, kernel_size=(8,8), strides=(4,4), activation="relu")(input_state)
+        conv2 = Conv2D(64, kernel_size=(4,4), strides=(2,2), activation="relu")(conv1)
+        conv3 = Conv2D(64, kernel_size=(3, 3), strides=(1, 1), activation="relu")(conv2)
+        x = Conv2D(self.h_dim, kernel_size=(7, 7), strides=(1, 1), activation="relu")(conv3)
+        adv = Lambda(lambda x: x[:,:,:,:int(self.h_dim / 2)])(x)
+        val = Lambda(lambda x: x[:, :, :,int(self.h_dim / 2):])(x)
+        adv = Flatten()(adv)
+        val = Flatten()(val)
         adv = Dense(self.a_dim, activation='linear',
                     kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(adv)
-        mean = K.mean(adv, axis=1, keepdims=True)
+        mean = Lambda(lambda x: K.mean(x, axis=1, keepdims=True))(adv)
+        mean = RepeatVector(self.a_dim)(mean)
+        mean = Flatten()(mean)
         sub = Subtract()([adv, mean])
-        val = Dense(1, activation='linear',
-                    kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(val)
-        self.out = Add()([val, sub])
-        model = Model(inputs=self.state, outputs=self.out)
-        adam = Adam(lr=self.learning_rate)
-        model.compile(loss='mse', optimizer=adam)
-        return model, S
+        val = Dense(1, activation='relu')(val)
+        val = RepeatVector(self.a_dim)(val)
+        val = Flatten()(val)
+        q_values = Add()([val, sub])
+
+        input_action = Input(shape=[1], dtype='int32')
+        action_one_hot = Lambda(lambda x: K.one_hot(x, self.a_dim), output_shape=lambda s: (s[0], self.a_dim))(input_action)
+        mul = Multiply()([q_values, action_one_hot])
+        output = Lambda(lambda x: K.sum(x, axis=1), output_shape=lambda s: (s[0],1))(mul)
+
+        model = Model(inputs=[input_state, input_action], outputs=output)
+        model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
+        return model, input_state, input_action, q_values
 
     def predict_target_action_values(self, states):
-        return self.target_model.predict_on_batch([states])
+        return self.sess.run(self.t_q_values, feed_dict={self.t_states: states})
 
     def select_actions(self, states):
-        return self.sess.run(self.select_action, feed_dict={self.state:states})
+        return self.sess.run(self.select_action, feed_dict={self.states: states})
 
     def train(self, states, actions, targets):
         self.model.train_on_batch([states, actions], targets)
 
-class HuberLossCriticNetwork(CriticNetwork):
-    def __init__(self, sess, state_size, action_size, delta_clip, gamma, tau, learning_rate):
-        self.delta_clip = delta_clip
-        super(HuberLossCriticNetwork,self).__init__(sess, state_size, action_size, gamma, tau, learning_rate)
 
-    def huber_loss(self, y_true, y_pred):
-        err = y_true - y_pred
-        L2 = 0.5 * K.square(err)
-
-        # Deal separately with infinite delta (=no clipping)
-        if np.isinf(self.delta_clip):
-            return K.mean(L2)
-
-        cond = K.abs(err) < self.delta_clip
-        L1 = self.delta_clip * (K.abs(err) - 0.5 * self.delta_clip)
-        loss = tf.where(cond, L2, L1)
-
-        return K.mean(loss)
-
-    def create_critic_network(self, state_size, action_dim):
-        S = Input(shape=[state_size])
-        A = Input(shape=[action_dim], name='action2')
-        w = Dense(64, activation="relu", kernel_initializer="he_uniform")(S)
-        h = concatenate([w, A])
-        h3 = Dense(64, activation="relu", kernel_initializer="he_uniform")(h)
-        V = Dense(1, activation='linear',
-                  kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h3)
-        model = Model(inputs=[S, A], outputs=V)
-        adam = Adam(lr=self.learning_rate)
-        model.compile(loss=self.huber_loss, optimizer=adam)
-        return model, A, S
