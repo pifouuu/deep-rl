@@ -72,7 +72,7 @@ class goal_basic(Wrapper):
         goal_reached = agent_state_1[self.obs_to_goal]
         goal = agent_state_1[self.state_to_goal]
         vec = goal - goal_reached
-        term = np.linalg.norm(vec) < 0.05
+        term = np.linalg.norm(vec) < 0.1
         if term:
             r += 100
         r -= 0.1 * np.square(action).sum()
@@ -81,7 +81,7 @@ class goal_basic(Wrapper):
     def get_random_goal(self):
         while True:
             goal = self.goal_space.sample()
-            if np.linalg.norm(goal - self.start) > 0.05:
+            if np.linalg.norm(goal - self.start) > 0.1:
                 break
         return goal
 

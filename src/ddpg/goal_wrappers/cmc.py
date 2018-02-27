@@ -14,6 +14,9 @@ class CmcPos(goal_basic):
         self.initial_goal = np.array([0.45])
         self.reward_range = [-0.1, 100]
 
+    def get_initial_goal(self):
+        return np.random.uniform([0.449], [0.451], (1,))
+
 
 class CmcFull(goal_basic):
     def __init__(self, env):
