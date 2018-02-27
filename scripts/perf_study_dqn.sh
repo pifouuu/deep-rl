@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
-ENVTS=(CMCPos-v0)
+ENVTS=(Gridworld4x4)
 MEMORIES=(sarst)
 STRATS=(final)
 SAMPLERS=(rnd)
 ALPHAS=(2)
 DELTAS=(inf)
 ACTIVATIONS=(tanh)
-IVGS=(True)
-TCLIPS=(True)
+IVGS=(False)
+TCLIPS=(False)
 SIGMAS=(2)
 
 
@@ -49,7 +49,7 @@ do
                                             export SIGMA
                                             export PERF_STUDY="perf_${ENVT}_${MEMORY}_${STRAT}_${SAMPLER}_${ALPHA}_${DELTA}_${ACTIVATION}_${IVG}_${TCLIP}_${SIGMA}"
                                             rm -f ${PERF_STUDY}.e*
-                                            qsub -N ${PERF_STUDY} -o "$LOGS/${PERF_STUDY}.out" -b "$LOGS/${PERF_STUDY}.err" -d $HOME/deep-rl perf_submit.sh
+                                            qsub -N ${PERF_STUDY} -o "$LOGS/${PERF_STUDY}.out" -b "$LOGS/${PERF_STUDY}.err" -d $HOME/deep-rl perf_submit_dqn.sh
                                         )
                                     done
                                 done

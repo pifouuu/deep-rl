@@ -86,8 +86,8 @@ class ActorNetwork(Network):
 
     def create_actor_network(self, state_size,action_dim):
         S = Input(shape=[state_size])
-        h0 = Dense(64, activation="relu", kernel_initializer="he_uniform")(S)
-        h1 = Dense(64, activation="relu", kernel_initializer="he_uniform")(h0)
+        h0 = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
+        h1 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h0)
         V = Dense(action_dim, activation=self.activation,
                   kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h1)
         model = Model(inputs=S,outputs=V)
@@ -149,9 +149,9 @@ class CriticNetwork(Network):
     def create_critic_network(self, state_size, action_dim):
         S = Input(shape=[state_size])
         A = Input(shape=[action_dim], name='action2')
-        w = Dense(64, activation="relu", kernel_initializer="he_uniform")(S)
+        w = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
         h = concatenate([w, A])
-        h3 = Dense(64, activation="relu", kernel_initializer="he_uniform")(h)
+        h3 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h)
         V = Dense(1, activation='linear',
                   kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h3)
         model = Model(inputs=[S, A], outputs=V)
@@ -191,9 +191,9 @@ class HuberLossCriticNetwork(CriticNetwork):
     def create_critic_network(self, state_size, action_dim):
         S = Input(shape=[state_size])
         A = Input(shape=[action_dim], name='action2')
-        w = Dense(64, activation="relu", kernel_initializer="he_uniform")(S)
+        w = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
         h = concatenate([w, A])
-        h3 = Dense(64, activation="relu", kernel_initializer="he_uniform")(h)
+        h3 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h)
         V = Dense(1, activation='linear',
                   kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h3)
         model = Model(inputs=[S, A], outputs=V)

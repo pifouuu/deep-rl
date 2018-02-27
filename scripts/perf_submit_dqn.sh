@@ -13,10 +13,10 @@ do
   (
     echo "Running experiment $TRIAL"
     export TRIAL
-    python3.4 src/main.py \
+    python3.4 src/dqn/dqnMain.py \
     --log-dir $LOGDIR \
-    --max-steps 200000 \
-    --save-freq 199000 \
+    --max-steps 500000 \
+    --save-freq 400000 \
     --memory ${MEMORY} \
     --strategy ${STRAT} \
     --sampler ${SAMPLER} \
@@ -27,9 +27,8 @@ do
     --invert-grads ${IVG} \
     --target-clip ${TCLIP} \
     --env ${ENVT} \
-    --train-freq 1 \
+    --train-freq 4 \
     --nb-train-iter 1 \
-    --eval-freq 1000 \
     --no-render-test \
     > ${LOGS}/${PERF_STUDY}_${TRIAL}.out \
     2> ${LOGS}/${PERF_STUDY}_${TRIAL}.err

@@ -15,12 +15,11 @@ import random as rn
 import os
 from ddpg.util import load, boolean_flag
 
+
 import gym
-import numpy as np
 import random
-import tensorflow as tf
 import tensorflow.contrib.slim as slim
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import scipy.misc
 import os
 from dqn.networks import CriticNetwork
@@ -52,19 +51,23 @@ def main(args):
         rn.seed(int(args['random_seed']))
         tf.set_random_seed(int(args['random_seed']))
 
-    train_env = gameEnv(partial=False,size=84)
-    test_env = gameEnv(partial=False,size=84)
+    train_env = gameEnv(partial=False,size=4)
+    test_env = gameEnv(partial=False,size=4)
 
-    memory = SARSTMemory(train_env, limit=int(1e4))
+    memory = SARSTMemory(train_env, limit=int(5e4))
 
     with tf.Session() as sess:
         critic = CriticNetwork(sess,
-                               [train_env.sizeX, train_env.sizeY, 3],
+                               train_env.state_dim,
                                4,
                                .99,
                                0.001,
                                0.0001,
-                               512)
+                               depths=[32,64,64,128],
+                               kernels=[8,4,3,7],
+                               strides=[4,2,1,1])
+
+        # plot_model(critic.model, to_file=log_dir + '/model.png', show_shapes=True)
 
         agent = DQN_Agent(sess,
                           critic,
@@ -78,6 +81,7 @@ def main(args):
                           int(args['max_steps']),
                           log_dir,
                           int(args['save_freq']),
+                          int(args['eval_freq']),
                           args['target_clip'] == 'True',
                           float(args['alpha']),
                           args['render_test'],
@@ -93,12 +97,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='provide arguments for DDPG agent')
 
     # agent parameters
-    parser.add_argument('--actor-lr', help='actor network learning rate', default=0.0001)
     parser.add_argument('--critic-lr', help='critic network learning rate', default=0.001)
     parser.add_argument('--gamma', help='discount factor for critic updates', default=0.99)
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
-    parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
+    parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=32)
 
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
@@ -120,11 +123,13 @@ if __name__ == '__main__':
                         default=None)
     parser.add_argument('--resume-step', help='resume_step',
                         default=None)
-    parser.add_argument('--train-freq', help='training frequency', default=100)
-    parser.add_argument('--nb-train-iter', help='training iteration number', default=50)
-    parser.add_argument('--nb-test-steps', help='number of steps in the environment during evaluation', default=201)
+    parser.add_argument('--train-freq', help='training frequency', default=4)
+    parser.add_argument('--nb-train-iter', help='training iteration number', default=1)
+    parser.add_argument('--nb-test-steps', help='number of steps in the environment during evaluation', default=50)
     boolean_flag(parser, 'render-test', default=False)
     parser.add_argument('--save-freq', help='saving models weights frequency', default=50)
+    parser.add_argument('--eval-freq', help='evaluating every n training steps', default=200)
+
 
     args = vars(parser.parse_args())
 

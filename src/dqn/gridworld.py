@@ -2,7 +2,7 @@ import numpy as np
 import random
 import itertools
 import scipy.misc
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 class gameOb():
@@ -19,13 +19,13 @@ class gameEnv():
     def __init__(self,partial,size):
         self.sizeX = size
         self.sizeY = size
-        self.state_dim = (size, size, 3,)
+        self.state_dim = (84, 84, 3)
         self.action_dim = (1,)
         self.actions = 4
         self.objects = []
         self.partial = partial
         a = self.reset()
-        plt.imshow(a,interpolation="nearest")
+        # plt.imshow(a,interpolation="nearest")
         
         
     def reset(self):

@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 class DQN_Agent():
@@ -20,6 +20,7 @@ class DQN_Agent():
                  max_steps,
                  log_dir,
                  save_freq,
+                 eval_freq,
                  target_clip,
                  alpha,
                  render_test,
@@ -44,6 +45,8 @@ class DQN_Agent():
         self.nb_test_steps = nb_test_steps
 
         self.save_freq = save_freq
+        self.eval_freq = eval_freq
+
         self.log_dir = log_dir
         self.resume_step = resume_step
         self.resume_timestamp = resume_timestamp
@@ -133,15 +136,16 @@ class DQN_Agent():
         while self.train_step < self.max_steps:
             action = self.act(state, noise=True)
             state, reward, terminal = self.train_env.step(action)
-            experience = self.memory.build_exp(prev_state, action, state, reward, terminal)
-            past_limit = self.episode_step > 200
-            terminal = terminal or past_limit
-            self.memory.append(experience)
-
             self.episode_reward += reward
             self.train_step += 1
             self.episode_step += 1
             prev_state = state
+            experience = self.memory.build_exp(prev_state, action, state, reward, terminal)
+            past_limit = self.episode_step >= 50
+            terminal = terminal or past_limit
+            self.memory.append(experience)
+
+
 
             if terminal:
                 self.episode += 1
@@ -164,8 +168,8 @@ class DQN_Agent():
 
                 if self.train_step % self.train_freq == 0:
                     self.train()
-                    self.eval_rewards_random = self.test()
-                    self.log_step_stats()
+                    # self.eval_rewards_random = self.test()
+                    # self.log_step_stats()
 
                 if self.train_step % self.save_freq == 0:
                     self.save_weights()
@@ -174,13 +178,13 @@ class DQN_Agent():
         if noise and np.random.rand(1) < self.epsilon:
             action = np.random.randint(0, self.train_env.actions)
         else:
-            action = self.critic.select_actions(np.reshape(state, (-1, 84, 84, 3)))[0]
+            action = self.critic.select_actions(np.reshape(state, (-1,)+self.train_env.state_dim))[0]
         return action
 
-    def log_step_stats(self):
-        self.step_stats['training_step'] = self.train_step
-        self.step_stats['Test reward on random goal'] = np.mean(self.eval_rewards_random)
-        self.log(self.step_stats, self.logger_step)
+    # def log_step_stats(self):
+    #     self.step_stats['training_step'] = self.train_step
+    #     self.step_stats['Test reward on random goal'] = np.mean(self.eval_rewards_random)
+    #     self.log(self.step_stats, self.logger_step)
 
     def log_episode_stats(self):
         self.episode_stats['Episode'] = self.episode
@@ -199,9 +203,7 @@ class DQN_Agent():
 
     def test(self):
 
-        width = 84
-        height = 84
-        video = np.zeros((self.nb_test_steps, height, width, 3), dtype=np.uint8)
+        video = np.zeros((self.nb_test_steps,)+self.test_env.state_dim, dtype=np.uint8)
 
         state = self.test_env.reset()
         ep_test_rewards = []
@@ -211,7 +213,7 @@ class DQN_Agent():
             action = self.act(state, noise=False)
             state, reward, terminal = self.test_env.step(action)
             step += 1
-            past_limit = step > 200
+            past_limit = step >= 50
             terminal = terminal or past_limit
             video[i] = state
             ep_test_reward += reward
@@ -221,19 +223,19 @@ class DQN_Agent():
                 ep_test_rewards.append(ep_test_reward)
                 ep_test_reward = 0
 
-        if self.render_test:
-            tic = time.time()
-            for i in range(self.nb_test_steps):
-                if i == 0:
-                    img = plt.imshow(video[i])
-                else:
-                    img.set_data(video[i])
-                toc = time.time()
-                clock_dt = toc - tic
-                tic = time.time()
-                # Real-time playback not always possible as clock_dt > .03
-                plt.pause(max(0.01, 0.03 - clock_dt))  # Need min display time > 0.0.
-                plt.draw()
-            # plt.waitforbuttonpress()
+        # if self.render_test:
+        #     tic = time.time()
+        #     for i in range(self.nb_test_steps):
+        #         if i == 0:
+        #             img = plt.imshow(video[i])
+        #         else:
+        #             img.set_data(video[i])
+        #         toc = time.time()
+        #         clock_dt = toc - tic
+        #         tic = time.time()
+        #         # Real-time playback not always possible as clock_dt > .03
+        #         plt.pause(max(0.01, 0.03 - clock_dt))  # Need min display time > 0.0.
+        #         plt.draw()
+        #     plt.waitforbuttonpress()
 
         return ep_test_rewards

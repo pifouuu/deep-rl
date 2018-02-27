@@ -99,6 +99,7 @@ def main(args):
                            int(args['max_steps']),
                            log_dir,
                            int(args['save_freq']),
+                           int(args['eval_freq']),
                            args['target_clip']=='True',
                            args['invert_grads']=='True',
                            float(args['alpha']),
@@ -145,7 +146,8 @@ if __name__ == '__main__':
     parser.add_argument('--nb-train-iter', help='training iteration number', default=50)
     parser.add_argument('--nb-test-steps', help='number of steps in the environment during evaluation', default=1000)
     boolean_flag(parser, 'render-test', default=True)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=50)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
+    parser.add_argument('--eval-freq', help='evaluating every n training steps', default=200)
 
     args = vars(parser.parse_args())
     

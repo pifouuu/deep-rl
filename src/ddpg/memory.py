@@ -1,6 +1,6 @@
 import numpy as np
 import random as rnd
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 # added by Olivier Sigaud --------------------------------
 # import pickle
@@ -146,36 +146,35 @@ class EpisodicHerSARSTMemory(SARSTMemory):
             return
         self.data = []
 
-def _demo():
-    buffer = Memory({'state0':(1,)}, 400)
-    data_y = []
-    data_x = []
-    for i in range(2000):
-        buffer.append({'state0' : i})
-        if i>64:
-            idx, samples = buffer.sample(64)
-            for sample in samples['state0']:
-                data_x.append(i)
-                data_y.append(sample)
+# def _demo():
+#     buffer = Memory({'state0':(1,)}, 400)
+#     data_y = []
+#     data_x = []
+#     for i in range(2000):
+#         buffer.append({'state0' : i})
+#         if i>64:
+#             idx, samples = buffer.sample(64)
+#             for sample in samples['state0']:
+#                 data_x.append(i)
+#                 data_y.append(sample)
+#
+#     fig, ax = plt.subplots(figsize=(10,10))
+#
+#
+#     ax.scatter(data_x, data_y)
+#     # bins = np.bincount(samples)
+#     # plt.plot(range(bins.shape[0]), bins)
+#     # plt.show()
+#     # buffer.update_priority(6,100)
+#     # for j in range(100000):
+#     #     idx, sample = buffer.sample()
+#     #     samples[j] = int(sample['goal'])
+#     # bins = np.bincount(samples)
+#     # plt.plot(range(bins.shape[0]), bins)
 
-    fig, ax = plt.subplots(figsize=(10,10))
 
-
-    ax.scatter(data_x, data_y)
-    # bins = np.bincount(samples)
-    # plt.plot(range(bins.shape[0]), bins)
-    # plt.show()
-    # buffer.update_priority(6,100)
-    # for j in range(100000):
-    #     idx, sample = buffer.sample()
-    #     samples[j] = int(sample['goal'])
-    # bins = np.bincount(samples)
-    # plt.plot(range(bins.shape[0]), bins)
-    plt.show()
-
-
-if __name__ == "__main__":
-    _demo()
+# if __name__ == "__main__":
+#     _demo()
 
 
 

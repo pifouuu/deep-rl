@@ -23,6 +23,7 @@ class DDPG_agent():
                  max_steps,
                  log_dir,
                  save_freq,
+                 eval_freq,
                  target_clip,
                  invert_grads,
                  alpha,
@@ -48,6 +49,7 @@ class DDPG_agent():
         self.nb_test_steps = nb_test_steps
 
         self.save_freq = save_freq
+        self.eval_freq = eval_freq
         self.log_dir = log_dir
         self.resume_step = resume_step
         self.resume_timestamp = resume_timestamp
@@ -75,6 +77,7 @@ class DDPG_agent():
                 print("no matching sampler")
                 raise RuntimeError
 
+        self.env_step = 0
         self.train_step = 0
         self.episode = 0
         self.episode_step = 0
@@ -132,10 +135,10 @@ class DDPG_agent():
     def save_weights(self):
         dir = self.log_dir+'/saves'
         os.makedirs(dir, exist_ok=True)
-        self.actor.save_weights(dir+'/actor_weights_{}.h5'.format(self.train_step), overwrite=True)
-        self.actor.save_target_weights(dir + '/target_actor_weights_{}.h5'.format(self.train_step), overwrite=True)
-        self.critic.save_weights(dir + '/critic_weights_{}.h5'.format(self.train_step), overwrite=True)
-        self.critic.save_target_weights(dir + '/target_critic_weights_{}.h5'.format(self.train_step), overwrite=True)
+        self.actor.save_weights(dir+'/actor_weights_{}.h5'.format(self.env_step), overwrite=True)
+        self.actor.save_target_weights(dir + '/target_actor_weights_{}.h5'.format(self.env_step), overwrite=True)
+        self.critic.save_weights(dir + '/critic_weights_{}.h5'.format(self.env_step), overwrite=True)
+        self.critic.save_target_weights(dir + '/target_critic_weights_{}.h5'.format(self.env_step), overwrite=True)
 
     def load_weights(self):
         dir = self.log_dir.split('/')[:-1]
@@ -165,7 +168,7 @@ class DDPG_agent():
 
         if self.resume_timestamp is not None:
             self.load_weights()
-            self.train_step = self.resume_step
+            self.env_step = self.resume_step
             self.episode = 0
             self.nb_goals_reached = 0
         else:
@@ -175,7 +178,7 @@ class DDPG_agent():
         state = self.train_env.reset_with_goal()
         prev_state = state
         self.start_time = time.time()
-        while self.train_step < self.max_steps:
+        while self.env_step < self.max_steps:
 
             action = self.act(state, noise=True)
             state, reward, terminal, info = self.train_env.step(action[0])
@@ -184,7 +187,7 @@ class DDPG_agent():
             self.memory.append(experience)
 
             self.episode_reward += reward
-            self.train_step += 1
+            self.env_step += 1
             self.episode_step += 1
             prev_state = state
 
@@ -203,14 +206,15 @@ class DDPG_agent():
                 self.episode_step = 0
                 self.episode_reward = 0
 
-            if self.train_step % self.train_freq == 0:
+            if self.env_step % self.train_freq == 0 and self.env_step > 3*self.batch_size:
                 self.critic_stats, self.actor_stats = self.train()
-                self.eval_rewards_random = self.test(type='random')
-                if self.test_env.goal_parameterized:
-                    self.eval_reward_init = self.test(type='init')
-                self.log_step_stats()
+                if self.train_step % self.eval_freq == 0:
+                    self.eval_rewards_random = self.test(type='random')
+                    if self.test_env.goal_parameterized:
+                        self.eval_reward_init = self.test(type='init')
+                    self.log_step_stats()
 
-            if self.train_step % self.save_freq == 0:
+            if self.env_step % self.save_freq == 0:
                 self.save_weights()
 
     def act(self, state, noise=False):
@@ -227,7 +231,7 @@ class DDPG_agent():
             self.step_stats[name] = stat
         for name, stat in zip(self.actor.stat_names, actor_stats_mean):
             self.step_stats[name] = stat
-        self.step_stats['training_step'] = self.train_step
+        self.step_stats['training_step'] = self.env_step
         self.step_stats['Test reward on random goal'] = np.mean(self.eval_rewards_random)
         if self.test_env.goal_parameterized:
             self.step_stats['Test reward on initial goal'] = np.mean(self.eval_reward_init)
@@ -240,7 +244,7 @@ class DDPG_agent():
         self.episode_stats['Episode steps'] = self.episode_step
         self.episode_stats['Goal reached'] = self.nb_goals_reached
         self.episode_stats['Duration'] = time.time() - self.start_time
-        self.episode_stats['Train step'] = self.train_step
+        self.episode_stats['Train step'] = self.env_step
         self.episode_stats['competences'] = self.goal_sampler.competences
         self.episode_stats['comp_progress'] = self.goal_sampler.progresses
         self.log(self.episode_stats, self.logger_episode)
@@ -252,19 +256,20 @@ class DDPG_agent():
             batch_idxs, experiences = self.memory.sample(self.batch_size)
             target_q_vals, critic_stat = self.train_critic(experiences)
             q_vals, actor_stat = self.train_actor(experiences)
-            # self.memory.update_priorities(batch_idxs, target_q_vals, q_vals, self.train_step)
+            # self.memory.update_priorities(batch_idxs, target_q_vals, q_vals, self.env_step)
             self.update_targets()
             critic_stats.append(critic_stat)
             actor_stats.append(actor_stat)
+        self.train_step += self.nb_train_iter
         return np.array(critic_stats), np.array(actor_stats)
 
 
     def test(self, type='random'):
         vid_dir = self.log_dir+'/videos'
         os.makedirs(vid_dir, exist_ok=True)
-        base_path = os.path.join(vid_dir, 'video_'+type+'_{:06}'.format(self.train_step))
+        base_path = os.path.join(vid_dir, 'video_'+type+'_{:06}'.format(self.env_step))
         rec = None
-        if self.train_step % self.save_freq == 0:
+        if self.env_step % self.save_freq == 0:
             rec = VideoRecorder(self.test_env, base_path=base_path)
         state = self.test_env.reset_with_goal(type=type)
         if rec is not None:
