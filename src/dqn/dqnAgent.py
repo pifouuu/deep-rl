@@ -143,6 +143,7 @@ class DQN_Agent():
             past_limit = self.episode_step >= 50
             terminal = terminal or past_limit
             self.memory.append(experience)
+            prev_state = state
 
             if terminal:
                 self.episode += 1
