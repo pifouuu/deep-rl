@@ -35,11 +35,11 @@ def main(args):
     logger_step = Logger(dir=log_dir+'/log_steps', format_strs=['stdout', 'json'])
     logger_episode = Logger(dir=log_dir+'/log_episodes', format_strs=['stdout', 'json'])
 
-    os.environ['PYTHONHASHSEED'] = '0'
-    if args['random_seed'] is not None:
-        np.random.seed(int(args['random_seed']))
-        rn.seed(int(args['random_seed']))
-        tf.set_random_seed(int(args['random_seed']))
+    # os.environ['PYTHONHASHSEED'] = '0'
+    # if args['random_seed'] is not None:
+    #     np.random.seed(int(args['random_seed']))
+    #     rn.seed(int(args['random_seed']))
+    #     tf.set_random_seed(int(args['random_seed']))
 
     # Make calls EnvRegistry.make, which builds the environment from its specs defined in gym.envs.init end then builds a timeLimit wrapper around the environment to set the max amount of steps to run
     train_env = make(args['env'])
@@ -51,10 +51,6 @@ def main(args):
         wrapper_cls = load(train_env.spec._goal_wrapper_entry_point)
         train_env = wrapper_cls(train_env)
         test_env = wrapper_cls(test_env)
-
-    if args['random_seed'] is not None:
-        train_env.seed(int(args['random_seed']))
-        test_env.seed(int(args['random_seed']))
 
     #TODO integrate the choice of memory in environments specs in gym.env.init
     if args['memory'] == 'sarst':
@@ -68,6 +64,12 @@ def main(args):
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(train_env.action_dim), sigma=float(args['sigma']))
 
     with tf.Session() as sess:
+
+        if args['random_seed'] is not None:
+            np.random.seed(int(args['random_seed']))
+            tf.set_random_seed(int(args['random_seed']))
+            train_env.seed(int(args['random_seed']))
+            test_env.seed(int(args['random_seed']))
 
         actor = ActorNetwork(sess,
                              train_env.state_dim,

@@ -29,7 +29,8 @@ from dqn.gridworld import gameEnv
 
 def main(args):
     # Storing logger output in files with names corresponding to parameters used
-    params = args['memory'] + '_' + \
+    params = 'Gridworld4x4' + '_' + \
+             args['memory'] + '_' + \
              args['strategy'] + '_' + \
              args['sampler'] + '_' + \
              args['alpha'] + '_' + \
@@ -45,18 +46,19 @@ def main(args):
     logger_step = Logger(dir=log_dir + '/log_steps', format_strs=['stdout', 'json'])
     logger_episode = Logger(dir=log_dir + '/log_episodes', format_strs=['stdout', 'json'])
 
-    os.environ['PYTHONHASHSEED'] = '0'
-    if args['random_seed'] is not None:
-        np.random.seed(int(args['random_seed']))
-        rn.seed(int(args['random_seed']))
-        tf.set_random_seed(int(args['random_seed']))
-
     train_env = gameEnv(partial=False,size=4)
     test_env = gameEnv(partial=False,size=4)
 
     memory = SARSTMemory(train_env, limit=int(5e4))
 
     with tf.Session() as sess:
+
+        if args['random_seed'] is not None:
+            np.random.seed(int(args['random_seed']))
+            tf.set_random_seed(int(args['random_seed']))
+            # train_env.seed(int(args['random_seed']))
+            # test_env.seed(int(args['random_seed']))
+
         critic = CriticNetwork(sess,
                                train_env.state_dim,
                                4,

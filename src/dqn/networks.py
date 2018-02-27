@@ -96,8 +96,8 @@ class CriticNetwork(Network):
         # conv2 = Conv2D(64, kernel_size=(4,4), strides=(2,2), activation="relu")(conv1)
         # conv3 = Conv2D(64, kernel_size=(3, 3), strides=(1, 1), activation="relu")(conv2)
         # x = Conv2D(h_dim, kernel_size=(7, 7), strides=(1, 1), activation="relu")(conv3)
-        adv = Lambda(lambda x: x[:,:,:,:int(self.depths[-1] / 2)], name='First half')(conv)
-        val = Lambda(lambda x: x[:, :, :,int(self.depths[-1] / 2):], name='Second half')(conv)
+        adv = Lambda(lambda x: x[:,:,:,:int(self.depths[-1] / 2)], name='First_half')(conv)
+        val = Lambda(lambda x: x[:, :, :,int(self.depths[-1] / 2):], name='Second_half')(conv)
         adv = Flatten()(adv)
         val = Flatten()(val)
         adv = Dense(self.a_dim, activation='linear',
@@ -112,7 +112,7 @@ class CriticNetwork(Network):
         q_values = Add()([val, sub])
 
         input_action = Input(shape=[1], dtype='int32')
-        action_one_hot = Lambda(lambda x: K.one_hot(x, self.a_dim), output_shape=lambda s: (s[0], self.a_dim), name='One hot')(input_action)
+        action_one_hot = Lambda(lambda x: K.one_hot(x, self.a_dim), output_shape=lambda s: (s[0], self.a_dim), name='One_hot')(input_action)
         mul = Multiply()([q_values, action_one_hot])
         output = Lambda(lambda x: K.sum(x, axis=1), output_shape=lambda s: (s[0],1), name='Sum')(mul)
 
