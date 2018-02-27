@@ -41,11 +41,11 @@ class no_goal(Wrapper):
 
     @property
     def state_dim(self):
-        return (self.env.observation_space.shape[0])
+        return (self.env.observation_space.shape[0],)
 
     @property
     def action_dim(self):
-        return (self.env.action_space.shape[0])
+        return (self.env.action_space.shape[0],)
 
     @property
     def goal_parameterized(self):
@@ -119,11 +119,11 @@ class goal_basic(Wrapper):
 
     @property
     def state_dim(self):
-        return (self.env.observation_space.shape[0]+self.goal_space.shape[0])
+        return (self.env.observation_space.shape[0]+self.goal_space.shape[0],)
 
     @property
     def action_dim(self):
-        return (self.env.action_space.shape[0])
+        return (self.env.action_space.shape[0],)
 
     @property
     def goal_parameterized(self):

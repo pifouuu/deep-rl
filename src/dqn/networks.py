@@ -16,11 +16,11 @@ from keras.utils import plot_model
 
 # Generic deep rl network class with generic functionalities
 class Network(object):
-    def __init__(self, sess, state_size, action_size, tau, learning_rate):
+    def __init__(self, sess, state_dim, action_dim, tau, learning_rate):
         self.sess = sess
         self.tau = tau
-        self.s_dim = state_size
-        self.a_dim = action_size
+        self.s_dim = state_dim
+        self.a_dim = action_dim
         self.learning_rate = learning_rate
         self.stat_ops = []
         self.stat_names = []
@@ -100,19 +100,19 @@ class CriticNetwork(Network):
         val = Lambda(lambda x: x[:, :, :,int(self.depths[-1] / 2):], name='Second_half')(conv)
         adv = Flatten()(adv)
         val = Flatten()(val)
-        adv = Dense(self.a_dim, activation='linear',
+        adv = Dense(self.a_dim[0], activation='linear',
                     kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(adv)
         mean = Lambda(lambda x: K.mean(x, axis=1, keepdims=True), name='Mean')(adv)
-        mean = RepeatVector(self.a_dim)(mean)
+        mean = RepeatVector(self.a_dim[0])(mean)
         mean = Flatten()(mean)
         sub = Subtract()([adv, mean])
         val = Dense(1, activation='relu')(val)
-        val = RepeatVector(self.a_dim)(val)
+        val = RepeatVector(self.a_dim[0])(val)
         val = Flatten()(val)
         q_values = Add()([val, sub])
 
-        input_action = Input(shape=[1], dtype='int32')
-        action_one_hot = Lambda(lambda x: K.one_hot(x, self.a_dim), output_shape=lambda s: (s[0], self.a_dim), name='One_hot')(input_action)
+        input_action = Input(shape=self.a_dim, dtype='int32')
+        action_one_hot = Lambda(lambda x: K.one_hot(x, self.a_dim[0]), output_shape=lambda s: (s[0], self.a_dim[0]), name='One_hot')(input_action)
         mul = Multiply()([q_values, action_one_hot])
         output = Lambda(lambda x: K.sum(x, axis=1), output_shape=lambda s: (s[0],1), name='Sum')(mul)
 

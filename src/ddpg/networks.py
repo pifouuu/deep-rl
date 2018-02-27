@@ -13,11 +13,11 @@ from keras.layers.merge import concatenate
 
 # Generic deep rl network class with generic functionalities
 class Network(object):
-    def __init__(self, sess, state_size, action_size, tau, learning_rate):
+    def __init__(self, sess, state_dim, action_dim, tau, learning_rate):
         self.sess = sess
         self.tau = tau
-        self.s_dim = state_size
-        self.a_dim = action_size
+        self.s_dim = state_dim
+        self.a_dim = action_dim
         self.learning_rate = learning_rate
         self.stat_ops = []
         self.stat_names = []
@@ -78,17 +78,17 @@ class ActorNetwork(Network):
         #Now create the model
         self.model , self.weights, self.state = self.create_actor_network(self.s_dim, self.a_dim)
         self.target_model, self.target_weights, self.target_state = self.create_actor_network(self.s_dim, self.a_dim)
-        self.action_gradient = tf.placeholder(tf.float32,[None, self.a_dim])
+        self.action_gradient = tf.placeholder(tf.float32,[None, self.a_dim[0]])
         self.out = self.model.output
         self.params_grad = tf.gradients(self.out, self.weights, -self.action_gradient)
         grads = zip(self.params_grad, self.weights)
         self.optimize = tf.train.AdamOptimizer(learning_rate).apply_gradients(grads)
 
-    def create_actor_network(self, state_size,action_dim):
-        S = Input(shape=[state_size])
+    def create_actor_network(self, state_size, action_dim):
+        S = Input(shape=state_size)
         h0 = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
         h1 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h0)
-        V = Dense(action_dim, activation=self.activation,
+        V = Dense(action_dim[0], activation=self.activation,
                   kernel_initializer=RandomUniform(minval=-3e-3, maxval=3e-3, seed=None))(h1)
         model = Model(inputs=S,outputs=V)
         return model, model.trainable_weights, S
@@ -147,8 +147,8 @@ class CriticNetwork(Network):
         self.model.train_on_batch([states, actions], targets)
 
     def create_critic_network(self, state_size, action_dim):
-        S = Input(shape=[state_size])
-        A = Input(shape=[action_dim], name='action2')
+        S = Input(shape=state_size)
+        A = Input(shape=action_dim, name='action2')
         w = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
         h = concatenate([w, A])
         h3 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h)
@@ -189,8 +189,8 @@ class HuberLossCriticNetwork(CriticNetwork):
         return K.mean(loss)
 
     def create_critic_network(self, state_size, action_dim):
-        S = Input(shape=[state_size])
-        A = Input(shape=[action_dim], name='action2')
+        S = Input(shape=state_size)
+        A = Input(shape=action_dim, name='action2')
         w = Dense(400, activation="relu", kernel_initializer="he_uniform")(S)
         h = concatenate([w, A])
         h3 = Dense(300, activation="relu", kernel_initializer="he_uniform")(h)

@@ -61,7 +61,7 @@ def main(args):
 
         critic = CriticNetwork(sess,
                                train_env.state_dim,
-                               4,
+                               train_env.action_dim,
                                .99,
                                0.001,
                                0.0001,

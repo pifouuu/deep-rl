@@ -218,7 +218,7 @@ class DDPG_agent():
                 self.save_weights()
 
     def act(self, state, noise=False):
-        action = self.actor.model.predict(np.reshape(state, (1, self.actor.s_dim)))
+        action = self.actor.model.predict(np.reshape(state, (1, self.actor.s_dim[0])))
         if noise:
             action += self.actor_noise()
         action = np.clip(action, self.train_env.action_space.low, self.train_env.action_space.high)
