@@ -139,13 +139,10 @@ class DQN_Agent():
             self.episode_reward += reward
             self.train_step += 1
             self.episode_step += 1
-            prev_state = state
             experience = self.memory.build_exp(prev_state, action, state, reward, terminal)
             past_limit = self.episode_step >= 50
             terminal = terminal or past_limit
             self.memory.append(experience)
-
-
 
             if terminal:
                 self.episode += 1
