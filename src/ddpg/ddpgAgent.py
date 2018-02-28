@@ -209,9 +209,9 @@ class DDPG_agent():
             if self.env_step % self.train_freq == 0 and self.env_step > 3*self.batch_size:
                 self.critic_stats, self.actor_stats = self.train()
                 if self.train_step % self.eval_freq == 0:
-                    self.eval_rewards_random = self.test(type='random')
+                    # self.eval_rewards_random = self.test2(type='random')
                     if self.test_env.goal_parameterized:
-                        self.eval_reward_init = self.test(type='init')
+                        self.eval_reward_init = self.test2(type='init')
                     self.log_step_stats()
 
             if self.env_step % self.save_freq == 0:
@@ -232,7 +232,7 @@ class DDPG_agent():
         for name, stat in zip(self.actor.stat_names, actor_stats_mean):
             self.step_stats[name] = stat
         self.step_stats['training_step'] = self.env_step
-        self.step_stats['Test reward on random goal'] = np.mean(self.eval_rewards_random)
+        # self.step_stats['Test reward on random goal'] = np.mean(self.eval_rewards_random)
         if self.test_env.goal_parameterized:
             self.step_stats['Test reward on initial goal'] = np.mean(self.eval_reward_init)
         self.log(self.step_stats, self.logger_step)
@@ -294,6 +294,27 @@ class DDPG_agent():
         if rec is not None:
             rec.close()
         return ep_test_rewards
+
+    def run_test_episode(self, type):
+        ep_test_reward = 0
+        state = self.test_env.reset_with_goal(type=type)
+        for k in range(self.nb_test_steps):
+            action = self.act(state, noise=False)
+            state, reward, terminal, info = self.test_env.step(action[0])
+            terminal = terminal or info['past_limit']
+            ep_test_reward += reward
+            if terminal:
+                break
+        return ep_test_reward
+
+    def test2(self, type='random'):
+        test_rewards = []
+        for episode in range(10):
+            reward = self.run_test_episode(type)
+            test_rewards.append(reward)
+        return test_rewards
+
+
 
 
 

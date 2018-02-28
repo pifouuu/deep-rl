@@ -2,7 +2,7 @@ import numpy as np
 import random
 import itertools
 import scipy.misc
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from gym import core, spaces
 
 class gameOb():
@@ -15,6 +15,11 @@ class gameOb():
         self.reward = reward
         self.name = name
 
+class gridEnv(core.Env):
+
+
+
+        
 class gameEnv():
     def __init__(self,partial,size):
         self.sizeX = size
@@ -25,7 +30,7 @@ class gameEnv():
         self.objects = []
         self.partial = partial
         a = self.reset()
-        plt.imshow(a,interpolation="nearest")
+        # plt.imshow(a,interpolation="nearest")
         
         
     def reset(self):

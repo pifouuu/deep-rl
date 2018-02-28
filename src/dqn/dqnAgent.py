@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 class DQN_Agent():
@@ -166,7 +166,7 @@ class DQN_Agent():
 
                 if self.train_step % self.train_freq == 0:
                     self.train()
-                    # self.eval_rewards_random = self.test()
+                    self.eval_rewards_random = self.test()
                     # self.log_step_stats()
 
                 if self.train_step % self.save_freq == 0:
@@ -221,19 +221,19 @@ class DQN_Agent():
                 ep_test_rewards.append(ep_test_reward)
                 ep_test_reward = 0
 
-        # if self.render_test:
-        #     tic = time.time()
-        #     for i in range(self.nb_test_steps):
-        #         if i == 0:
-        #             img = plt.imshow(video[i])
-        #         else:
-        #             img.set_data(video[i])
-        #         toc = time.time()
-        #         clock_dt = toc - tic
-        #         tic = time.time()
-        #         # Real-time playback not always possible as clock_dt > .03
-        #         plt.pause(max(0.01, 0.03 - clock_dt))  # Need min display time > 0.0.
-        #         plt.draw()
-        #     plt.waitforbuttonpress()
+        if self.render_test:
+            tic = time.time()
+            for i in range(self.nb_test_steps):
+                if i == 0:
+                    img = plt.imshow(video[i])
+                else:
+                    img.set_data(video[i])
+                toc = time.time()
+                clock_dt = toc - tic
+                tic = time.time()
+                # Real-time playback not always possible as clock_dt > .03
+                plt.pause(max(0.1, 0.03 - clock_dt))  # Need min display time > 0.0.
+                plt.draw()
+            # plt.waitforbuttonpress()
 
         return ep_test_rewards

@@ -107,6 +107,17 @@ register(
     max_episode_steps=500,
 )
 
+# Gridworlds
+# ----------------------------------------
+register(
+    id='Gridworld-v0',
+    entry_point='gym.envs.gridworlds:gridEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    max_episode_steps=50,
+    reward_threshold=5.0,
+)
+
+
 # Box2d
 # ----------------------------------------
 

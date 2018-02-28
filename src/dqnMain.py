@@ -49,7 +49,7 @@ def main(args):
     train_env = gameEnv(partial=False,size=4)
     test_env = gameEnv(partial=False,size=4)
 
-    memory = SARSTMemory(train_env, limit=int(5e4))
+    memory = SARSTMemory(train_env, limit=int(1e4))
 
     with tf.Session() as sess:
 
