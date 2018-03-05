@@ -96,10 +96,26 @@ class RegionTree():
         self.lambd = lambd
         self.n_leaves = 0
 
-    def init_tree(self, low, high):
+    def init_root(self, low, high):
         self.root = Region(low, high, maxlen=self.maxlen, n_cp = self.n_cp)
         self.update_CP_tree(self.root)
         self.n_leaves += 1
+
+    def init_grid_1D(self, n):
+        assert n & (n-1) == 0 #n must be a power of 2
+        self._init_grid_1D(self.root, n)
+
+    def _init_grid_1D(self, region ,n):
+        if n > 1:
+            low = region.low[0]
+            high = region.high[0]
+            val_split = (high+low)/2
+            left, right = region.split(0, val_split)
+            region.dim_split = 0
+            region.val_split = val_split
+            self.n_leaves += 1
+            self._init_grid_1D(left, n/2)
+            self._init_grid_1D(right, n/2)
 
     def insert_point(self, point):
         self._insert_point(point, self.root)
@@ -335,8 +351,9 @@ class zones3(zones):
 
 class demo():
     def __init__(self):
-        self.tree = RegionTree(max_regions=40, n_split=10, split_min=1e-8, lambd = 1, maxlen = 300, n_cp = 30)
-        self.tree.init_tree(np.array([-1.2]), np.array([0.6]))
+        self.tree = RegionTree(max_regions=64, n_split=10, split_min=0, lambd = 1, maxlen = 300, n_cp = 30)
+        self.tree.init_root(np.array([-1.2]), np.array([0.6]))
+        self.tree.init_grid_1D(64)
         self.zones = zones3()
         self.iteration = 0
         self.dims = [0]

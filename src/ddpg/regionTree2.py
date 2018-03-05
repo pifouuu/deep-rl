@@ -93,10 +93,27 @@ class RegionTree():
         self.lambd = lambd
         self.n_leaves = 0
 
-    def init_tree(self, low, high):
+    def init_root(self, low, high):
         self.region_array[1] = Region(low, high, maxlen=self.maxlen, n_cp = self.n_cp)
         self.update_CP_tree(1)
         self.n_leaves += 1
+
+    def init_grid_1D(self, n):
+        assert n & (n-1) == 0 #n must be a power of 2
+        self._init_grid_1D(1, n)
+
+    def _init_grid_1D(self, idx ,n):
+        if n > 1:
+            region = self.region_array[idx]
+            low = region.low[0]
+            high = region.high[0]
+            val_split = (high+low)/2
+            self.region_array[2 * idx], self.region_array[2 * idx + 1] = region.split(0, val_split)
+            region.dim_split = 0
+            region.val_split = val_split
+            self.n_leaves += 1
+            self._init_grid_1D(2 * idx, n/2)
+            self._init_grid_1D(2 * idx + 1, n/2)
 
     def insert_point(self, point):
         self._insert_point(point, 1)
@@ -180,7 +197,10 @@ class RegionTree():
         self.figure = plt.figure()
         self.ax = plt.axes()
         self.ax.set_xlim(self.root.low[dims[0]], self.root.high[dims[0]])
-        self.ax.set_ylim(self.root.low[dims[1]], self.root.high[dims[1]])
+        if len(dims)>1:
+            self.ax.set_ylim(self.root.low[dims[1]], self.root.high[dims[1]])
+        else:
+            self.ax.set_ylim(0, 1)
 
     def compute_image(self, dims, with_points=False):
         self.lines.clear()
@@ -192,10 +212,17 @@ class RegionTree():
 
     def _compute_image(self, idx, dims, with_points=False):
         region = self.region_array[idx]
+        if len(dims) > 1:
+            low1 = region.low[dims[1]]
+            high1 = region.high[dims[1]]
+        else:
+            low1 = 0
+            high1 = 1
+
         if region.is_leaf:
-            angle = (region.low[dims[0]], region.low[dims[1]])
+            angle = (region.low[dims[0]], low1)
             width = region.high[dims[0]] - region.low[dims[0]]
-            height = region.high[dims[1]] - region.low[dims[1]]
+            height = high1 - low1
             # print('region: ', region.low, ': ', region.CP)
             if self.max_CP == 0:
                 color = 0
@@ -214,9 +241,9 @@ class RegionTree():
         else:
             if region.dim_split == dims[0]:
                 line1_xs = 2 * [region.val_split]
-                line1_ys = [region.low[dims[1]], region.high[dims[1]]]
+                line1_ys = [low1, high1]
                 self.lines.append(lines.Line2D(line1_xs, line1_ys, linewidth=2, color='blue'))
-            elif region.dim_split == dims[1]:
+            elif len(dims)>1 and region.dim_split == dims[1]:
                 line1_ys = 2 * [region.val_split]
                 line1_xs = [region.low[dims[0]], region.high[dims[0]]]
                 self.lines.append(lines.Line2D(line1_xs, line1_ys, linewidth=2, color='blue'))
@@ -321,12 +348,24 @@ class zones2(zones):
         self.comp_per_zone = [0]
         self.zone_difficulties = [200]
 
+class zones3(zones):
+    def __init__(self):
+        super(zones3, self).__init__()
+        zone1 = Region(np.array([-1.2]), np.array([0]))
+        zone2 = Region(np.array([0]), np.array([0.6]))
+        self.zones = [zone1, zone2]
+        self.samples_per_zone = 2*[0]
+        self.comp_per_zone = 2*[0]
+        self.zone_difficulties = [200, 500]
+
 class demo():
     def __init__(self):
-        self.tree = RegionTree(max_regions=40, n_split=10, split_min=1e-8, lambd=0.4, maxlen=300, n_cp=30)
-        self.tree.init_tree(np.array([-1.2, -0.07]), np.array([0.6, 0.07]))
-        self.zones = zones1()
+        self.tree = RegionTree(max_regions=64, n_split=10, split_min=0, lambd = 1, maxlen = 300, n_cp = 30)
+        self.tree.init_root(np.array([-1.2]), np.array([0.6]))
+        self.tree.init_grid_1D(64)
+        self.zones = zones3()
         self.iteration = 0
+        self.dims = [0]
         np.random.seed(None)
 
     def iter(self):
@@ -342,7 +381,7 @@ class demo():
         for _ in range(100):
             self.iter()
         print(self.iteration)
-        self.tree.compute_image(dims=[0,1], with_points=with_points)
+        self.tree.compute_image(dims=self.dims, with_points=with_points)
         for line in self.tree.lines:
             self.tree.ax.add_line(line)
         for patch in self.tree.patches:
@@ -354,7 +393,7 @@ class demo():
         return self.tree.ax,
 
     def run(self):
-        self.tree.displayTree(dims=[0,1])
+        self.tree.displayTree(dims=self.dims)
         ani = animation.FuncAnimation(self.tree.figure, self.updatefig, frames=100, interval=200, blit=True)
         plt.show()
 

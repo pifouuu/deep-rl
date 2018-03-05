@@ -101,21 +101,6 @@ class RandomGoalSampler(GoalSampler):
     def sample(self):
         return self.env.get_random_goal()
 
-# class PrioritizedGoalBuffer(PrioritizedBuffer):
-#     def __init__(self, limit, alpha, env):
-#         self.contents_shape = {'goal_wrappers':(self.env.goal_dim,)}
-#         super(PrioritizedGoalBuffer,self).__init__(limit, alpha, self.contents_shape, env)
-#         self.goals = env.goals()
-#         self.priorities = env.difficulties()
-#         for goal_wrappers, priority in zip(self.goals, self.priorities):
-#             buffer_item = {'goal_wrappers': goal_wrappers}
-#             self.append(buffer_item, priority)
-#
-#     def sample(self):
-#         sample_idx, sample_dict = super().sample()
-#         goal_wrappers = sample_dict['goal_wrappers']
-#         return np.reshape(goal_wrappers, (self.env.goal_dim,))
-
 class CompetenceProgressGoalBuffer(PrioritizedBuffer):
     def __init__(self, limit, alpha, env, actor, critic):
         self.contents_shape = {'goal_wrappers':(env.goal_space.shape[0],)}
