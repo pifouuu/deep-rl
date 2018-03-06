@@ -10,10 +10,10 @@ _ARM_JOINTS = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
 _P_IN_HAND = .1  # Probabillity of object-in-hand initial state
 _P_IN_TARGET = .1  # Probabillity of object-in-target initial state
 
-class ManipulatorTargetBallEnv(mujoco_env.MujocoEnv, utils.EzPickle):
+class ManipulatorCupBallEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self):
         utils.EzPickle.__init__(self)
-        mujoco_env.MujocoEnv.__init__(self, 'manipulator_cup_ball.xml', 2)
+        mujoco_env.MujocoEnv.__init__(self, 'manipulator_target_ball.xml', 2)
 
     def _step(self, a):
         self.do_simulation(a, self.frame_skip)
