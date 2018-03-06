@@ -5,6 +5,8 @@ import numpy as np
 import tensorflow as tf
 from .goalSampler2 import RandomGoalSampler, CompetenceProgressGoalBuffer
 from gym.monitoring import VideoRecorder
+import matplotlib.pyplot as plt
+
 
 class DDPG_agent():
     def __init__(self,
@@ -83,6 +85,7 @@ class DDPG_agent():
         self.episode_step = 0
         self.episode_reward = 0
         self.nb_goals_reached = 0
+        self.video = []
 
     def train_critic(self, experiences):
 
@@ -174,6 +177,8 @@ class DDPG_agent():
         else:
             self.update_targets()
 
+        fig = 0
+
         self.train_env.goal = self.memory.sample_goal()
         state = self.train_env.reset_with_goal()
         prev_state = state
@@ -214,9 +219,18 @@ class DDPG_agent():
                     if self.test_env.goal_parameterized:
                         self.eval_reward_init = self.test2(type='init')
                     self.log_step_stats()
+                    # lines, patches = self.memory.compute_image(0)
+                    # self.video.append((lines, patches))
+                    if fig == 0:
+                        self.memory.displayTree([0])
+                        fig=1
+                    self.memory.compute_image([0])
+
 
             if self.env_step % self.save_freq == 0:
                 self.save_weights()
+
+
 
     def act(self, state, noise=False):
         action = self.actor.model.predict(np.reshape(state, (1, self.actor.s_dim[0])))

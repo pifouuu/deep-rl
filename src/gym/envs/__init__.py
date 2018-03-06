@@ -83,7 +83,7 @@ register(
     id='CMCPos-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcPos',
-    max_episode_steps=999,
+    max_episode_steps=50,
     reward_threshold=90.0,
 )
 

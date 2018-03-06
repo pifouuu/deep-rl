@@ -239,6 +239,9 @@ class TreeMemory():
             self.ax.set_ylim(self.root.low[dims[1]], self.root.high[dims[1]])
         else:
             self.ax.set_ylim(0, 1)
+        plt.ion()
+        plt.show()
+
 
     def compute_image(self, dims, with_points=False):
         self.lines.clear()
@@ -247,6 +250,17 @@ class TreeMemory():
         self._compute_image(1, dims, with_points)
         print('max_cp: ', self.max_CP)
         print('min_cp', self.min_CP)
+        if True:
+            for line in self.lines:
+                self.ax.add_line(line)
+            for patch in self.patches:
+                self.ax.add_patch(patch)
+            if with_points:
+                x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
+                sizes = [0.01 + ze for ze in z]
+                self.ax.scatter(x, y, s=sizes, c='red')
+            plt.draw()
+            plt.pause(0.001)
 
     def _compute_image(self, idx, dims, with_points=False):
         region = self.region_array[idx]
@@ -288,6 +302,8 @@ class TreeMemory():
 
             self._compute_image(2 * idx, dims)
             self._compute_image(2 * idx + 1, dims)
+
+        return self.lines, self.patches
 
     def find_prop_region(self, sum):
         """Find the highest index `i` in the array such that
@@ -414,8 +430,6 @@ class demo():
         self.iteration += 1
 
     def updatefig(self, i, with_points=False):
-        self.tree.ax.lines.clear()
-        self.tree.ax.patches.clear()
         for _ in range(100):
             self.iter()
         print(self.iteration)
