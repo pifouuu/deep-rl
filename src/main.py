@@ -5,6 +5,7 @@ import argparse
 import pprint as pp
 from ddpg.logger import Logger
 from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
+from ddpg.regionTree2 import TreeMemory
 import datetime
 from ddpg.networks import ActorNetwork, HuberLossCriticNetwork
 from ddpg.ddpgAgent import DDPG_agent
@@ -59,6 +60,10 @@ def main(args):
         memory = EpisodicHerSARSTMemory(train_env, limit=int(1e6), strategy=args['strategy'])
     else:
         raise Exception('No existing memory defined')
+
+    memory = TreeMemory(memory, max_regions=64, n_split=10, split_min=0, lambd = 1, maxlen = 300, n_cp = 30)
+    memory.init_root(np.array([-1.2]), np.array([0.6]))
+    memory.init_grid_1D(64)
 
     # Noise for the actor in vanilla ddpg
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(train_env.action_dim), sigma=float(args['sigma']))

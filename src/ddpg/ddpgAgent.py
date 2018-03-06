@@ -174,7 +174,7 @@ class DDPG_agent():
         else:
             self.update_targets()
 
-        self.train_env.goal = self.goal_sampler.sample()
+        self.train_env.goal = self.memory.sample_goal()
         state = self.train_env.reset_with_goal()
         prev_state = state
         self.start_time = time.time()
@@ -198,7 +198,8 @@ class DDPG_agent():
 
                 self.log_episode_stats()
 
-                self.train_env.goal = self.goal_sampler.sample()
+                # self.train_env.goal = self.goal_sampler.sample()
+                self.train_env.goal = self.memory.sample_goal()
                 state = self.train_env.reset_with_goal()
 
                 self.memory.end_episode(not info['past_limit'])
@@ -245,9 +246,9 @@ class DDPG_agent():
         self.episode_stats['Goal reached'] = self.nb_goals_reached
         self.episode_stats['Duration'] = time.time() - self.start_time
         self.episode_stats['Train step'] = self.env_step
-        self.episode_stats['competences'] = self.goal_sampler.competences
+        # self.episode_stats['competences'] = self.goal_sampler.competences
         self.episode_stats['comp_progress'] = self.goal_sampler.progresses
-        self.log(self.episode_stats, self.logger_episode)
+        # self.log(self.episode_stats, self.logger_episode)
 
     def train(self):
         critic_stats = []
@@ -256,7 +257,7 @@ class DDPG_agent():
             batch_idxs, experiences = self.memory.sample(self.batch_size)
             target_q_vals, critic_stat = self.train_critic(experiences)
             q_vals, actor_stat = self.train_actor(experiences)
-            # self.memory.update_priorities(batch_idxs, target_q_vals, q_vals, self.env_step)
+            self.memory.update(batch_idxs, q_vals)
             self.update_targets()
             critic_stats.append(critic_stat)
             actor_stats.append(actor_stat)

@@ -35,7 +35,9 @@ class RingBuffer(object):
         else:
             # This should never happen.
             raise RuntimeError()
-        self.data[(self.start + self.length - 1) % self.maxlen] = v
+        idx = (self.start + self.length - 1) % self.maxlen
+        self.data[idx] = v
+        # return idx
 
     def dump(self):
         """Get all of the data in a single array"""
@@ -57,9 +59,9 @@ class ReplayBuffer(object):
             self.contents[content] = RingBuffer(limit, shape=shape)
 
     def append(self, buffer_item):
-        self.length += 1
         for name, value in self.contents.items():
             value.append(buffer_item[name])
+        # return idx
 
     def dump(self):
         """Get all of the data in a single array"""
@@ -94,6 +96,7 @@ class SARSTMemory(Memory):
                          'terminal': (1,)}
 
         super(SARSTMemory, self).__init__(self.contents_shape, limit)
+        self.env = env
 
     def build_exp(self, state, action, next_state, reward, terminal):
         dict = {'state0': state,
@@ -113,7 +116,6 @@ class EpisodicHerSARSTMemory(SARSTMemory):
 
         self.strategy = strategy
         self.data = []
-        self.env = env
 
     def append(self, buffer_item):
         super(EpisodicHerSARSTMemory, self).append(buffer_item)

@@ -7,12 +7,14 @@ import matplotlib.patches as patches
 from matplotlib import animation
 import itertools
 
+from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
+
 
 Blues = plt.get_cmap('Blues')
 
 class Point(object):
-    def __init__(self, pos, val):
-        self.pos = pos
+    def __init__(self, state, val):
+        self.state = state
         self.val = val
 
 class Region(Box):
@@ -29,6 +31,9 @@ class Region(Box):
         self.dim_split = None
         self.val_split = None
 
+    def contains(self, point):
+        return super(Region,self).contains(point.state)
+
     def split(self, dim, split_val):
         low_right = np.copy(self.low)
         low_right[dim] = split_val
@@ -38,22 +43,29 @@ class Region(Box):
         right = Region(low_right, self.high, maxlen=self.maxlen, n_cp = self.n_cp)
         left.CP = self.CP
         right.CP = self.CP
-        left.append(self.points)
-        right.append(self.points)
+        left_points = []
+        right_points = []
+        for point in self.points:
+            if left.contains(point):
+                left_points.append(point)
+            else:
+                right_points.append(point)
+        left.add(left_points)
+        right.add(right_points)
         left.update_CP()
         right.update_CP()
         return left, right
 
-    def append(self, points):
-        for point in reversed(points):
-            if self.contains(point.pos):
-                self.points.appendleft(point)
+    def add(self, points):
+        for point in points:
+            self.points.append(point)
         self.update_CP()
 
     def update_CP(self):
         if self.size > 2*self.n_cp:
-            q1 = [pt.val for pt in list(itertools.islice(self.points, 0, self.n_cp))]
-            q2 = [pt.val for pt in list(itertools.islice(self.points, self.n_cp, 2*self.n_cp))]
+            len = self.size
+            q1 = [pt.val for pt in list(itertools.islice(self.points, len-self.n_cp, len))]
+            q2 = [pt.val for pt in list(itertools.islice(self.points, len-2*self.n_cp, len-self.n_cp))]
             self.CP = 1/2 + (np.sum(q1)-np.sum(q2))/(2*self.n_cp)
         self.max_CP = self.CP
         self.sum_CP = self.CP
@@ -72,8 +84,8 @@ class Region(Box):
     def full(self):
         return self.size == self.maxlen
 
-class RegionTree():
-    def __init__(self, max_regions, n_split, split_min, lambd, maxlen, n_cp):
+class TreeMemory():
+    def __init__(self, buffer, max_regions, n_split, split_min, lambd, maxlen, n_cp):
         self.n_split = n_split
         self.split_min = split_min
         self.maxlen = maxlen
@@ -84,6 +96,7 @@ class RegionTree():
             capacity *= 2
         self.capacity = capacity
         self.region_array = [Region() for _ in range(2 * self.capacity)]
+        self.buffer = buffer
         self.total_points = 0
         self.ax = None
         self.figure = None
@@ -92,6 +105,26 @@ class RegionTree():
         self.points = []
         self.lambd = lambd
         self.n_leaves = 0
+
+    def end_episode(self, goal_reached):
+        self.buffer.end_episode(goal_reached)
+
+    def sample(self, batch_size):
+        return self.buffer.sample(batch_size)
+
+    def append(self, buffer_item):
+        self.buffer.append(buffer_item)
+
+    def build_exp(self, state, action, next_state, reward, terminal):
+        return self.buffer.build_exp(state, action, next_state, reward, terminal)
+
+    def update(self, indices, vals):
+        stg = self.buffer.env.state_to_goal
+        minval = self.buffer.env.reward_range[0] / (1 - 0.99)
+        maxval = self.buffer.env.reward_range[1]
+        states0 = [self.buffer.contents['state0'][idx][stg] for idx in indices]
+        corr_vals = [(val-minval)/(maxval-minval) for val in vals]
+        self.insert([Point(state,val) for state,val in zip(states0,corr_vals)])
 
     def init_root(self, low, high):
         self.region_array[1] = Region(low, high, maxlen=self.maxlen, n_cp = self.n_cp)
@@ -115,20 +148,25 @@ class RegionTree():
             self._init_grid_1D(2 * idx, n/2)
             self._init_grid_1D(2 * idx + 1, n/2)
 
-    def insert_point(self, point):
-        self._insert_point(point, 1)
-        self.total_points += 1
+    def insert(self, points):
+        self._insert(points, 1)
+        self.total_points += len(points)
 
-    def _insert_point(self, point, idx):
+    def _insert(self, points, idx):
         region = self.region_array[idx]
-        region.append([point])
+        region.add(points)
+
         if not region.is_leaf:
             left = self.region_array[2 * idx]
-            right = self.region_array[2 * idx + 1]
-            if left.contains(point.pos):
-                self._insert_point(point, 2 * idx)
-            elif right.contains(point.pos):
-                self._insert_point(point, 2 * idx + 1)
+            left_points = []
+            right_points = []
+            for point in points:
+                if left.contains(point):
+                    left_points.append(point)
+                else:
+                    right_points.append(point)
+            self._insert(left_points, 2 * idx)
+            self._insert(right_points, 2 * idx + 1)
         else:
             if region.full and idx < self.capacity:
                 self.split(idx)
@@ -277,7 +315,7 @@ class RegionTree():
         sample = self.root.sample()
         return sample
 
-    def sample(self, prop_rnd=1):
+    def sample_goal(self, prop_rnd=1):
         p = np.random.random()
         if p<prop_rnd:
             return self.sample_random()
