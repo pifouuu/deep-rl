@@ -261,8 +261,8 @@ class DDPG_agent():
         self.episode_stats['Duration'] = time.time() - self.start_time
         self.episode_stats['Train step'] = self.env_step
         # self.episode_stats['competences'] = self.goal_sampler.competences
-        self.episode_stats['comp_progress'] = self.goal_sampler.progresses
-        # self.log(self.episode_stats, self.logger_episode)
+        # self.episode_stats['comp_progress'] = self.goal_sampler.progresses
+        self.log(self.episode_stats, self.logger_episode)
 
     def train(self):
         critic_stats = []
