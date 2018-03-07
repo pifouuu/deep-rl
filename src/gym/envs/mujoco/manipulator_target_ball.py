@@ -13,7 +13,7 @@ _P_IN_TARGET = .1  # Probabillity of object-in-target initial state
 class ManipulatorTargetBallEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self):
         utils.EzPickle.__init__(self)
-        mujoco_env.MujocoEnv.__init__(self, 'manipulator_cup_ball.xml', 2)
+        mujoco_env.MujocoEnv.__init__(self, 'manipulator_target_ball.xml', 2)
 
     def _step(self, a):
         self.do_simulation(a, self.frame_skip)
@@ -127,11 +127,24 @@ class ManipulatorTargetBallEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         return np.hstack((body_position, body_orientation))
 
     def _get_obs(self):
-        position = self.bounded_position()
-        hand = self.body_location('hand')
-        target = self.body_location('target_ball')
-        velocity = self.model.data.qvel[:]
-        touch = self.touch()
+        """
+        position:
+        sin(armroot), cos(armroot), arm_shoulder, arm_elbow, arm_wrist, thumb, thumb_tip, finger, finger_tip
+        ball_x
+        ball_z
+        sin(ball_y)
+        cos(ball_y)
+
+        touch:
+        palm, finger, thumb, fingertip, thumbtip
+
+        full size : 37
+        """
+        position = self.bounded_position() # size 13 (9 limited joints + 2*2 unlimited hinge joints)
+        hand = self.body_location('hand') # size 4
+        target = self.body_location('target_ball') # size 4
+        velocity = self.model.data.qvel[:] # size 11 (11 joints)
+        touch = self.touch() # size 5 (5 sensors)
         observations = [position, hand, target, velocity, touch]
         observation_arrays = [observation.ravel() for observation in observations]
         obs = np.concatenate(observation_arrays)

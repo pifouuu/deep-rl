@@ -10,7 +10,7 @@ class ReacherBenchmark(goal_basic):
         self.goal = None
         self.goals = []
         self.state_to_goal = []
-        self.state_to_obs = [0, 1, 2, 3, 6, 7, 8, 9, 10]
+        self.state_to_obs = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         self.obs_to_goal = []
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([-0.2, 0.2]))
         self.start = np.array([0.2, 0])
@@ -34,7 +34,7 @@ class ReacherBenchmark(goal_basic):
         return state
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
-        vec = agent_state_1[[8,9,10]]
+        vec = agent_state_1[[9,10,11]] - agent_state_1[[6,7,8]]
         reward_dist = - np.linalg.norm(vec)
         reward_ctrl = - np.square(action).sum()
         r = reward_dist + reward_ctrl
@@ -51,10 +51,8 @@ class ReacherBenchmark(goal_basic):
 
     def change_goal(self, buffer_item, final_state):
         res = buffer_item
-        res['state0'][[8, 9, 10]] = 0
-        res['state0'][[4, 5]] = final_state[[8, 9]] + final_state[[4, 5]]
-        res['state1'][[8, 9, 10]] = 0
-        res['state1'][[4, 5]] = final_state[[8, 9]] + final_state[[4, 5]]
+        res['state0'][[9, 10, 11]] = final_state[[9, 10, 11]]
+        res['state1'][[9, 10, 11]] = final_state[[9, 10, 11]]
         res['reward'], res['terminal'] = self.eval_exp(res['state0'],
                                                            res['action'],
                                                            res['state1'],
@@ -74,7 +72,7 @@ class ReacherSparse(ReacherBenchmark):
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
         r = 0
-        vec = agent_state_1[[8, 9, 10]]
+        vec = agent_state_1[[9, 10, 11]] - agent_state_1[[6, 7, 8]]
         term = np.linalg.norm(vec) < 0.05
         if term:
             r += 100
