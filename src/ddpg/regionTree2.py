@@ -251,6 +251,8 @@ class TreeMemory():
         print('max_cp: ', self.max_CP)
         print('min_cp', self.min_CP)
         if True:
+            self.ax.lines.clear()
+            self.ax.patches.clear()
             for line in self.lines:
                 self.ax.add_line(line)
             for patch in self.patches:
@@ -275,7 +277,6 @@ class TreeMemory():
             angle = (region.low[dims[0]], low1)
             width = region.high[dims[0]] - region.low[dims[0]]
             height = high1 - low1
-            # print('region: ', region.low, ': ', region.CP)
             if self.max_CP == 0:
                 color = 0
             else:
@@ -302,8 +303,6 @@ class TreeMemory():
 
             self._compute_image(2 * idx, dims)
             self._compute_image(2 * idx + 1, dims)
-
-        return self.lines, self.patches
 
     def find_prop_region(self, sum):
         """Find the highest index `i` in the array such that

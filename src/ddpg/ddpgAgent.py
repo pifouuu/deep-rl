@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 from .goalSampler2 import RandomGoalSampler, CompetenceProgressGoalBuffer
 from gym.monitoring import VideoRecorder
-import matplotlib.pyplot as plt
+import pickle
 
 
 class DDPG_agent():
@@ -224,7 +224,16 @@ class DDPG_agent():
                     if fig == 0:
                         self.memory.displayTree([0])
                         fig=1
+                        pickle_dir = os.path.join(self.log_dir, 'pickle')
+                        os.makedirs(pickle_dir, exist_ok=True)
                     self.memory.compute_image([0])
+                    lines = [line.get_xydata() for line in self.memory.ax.lines]
+                    patches = [list(patch.get_xy())+[patch.get_height(),patch.get_width()]+list(patch._facecolor) for patch in self.memory.ax.patches]
+                    self.video.append([lines, patches])
+                    video_path = os.path.join(pickle_dir, 'video'+'_{:06}.pkl'.format(self.env_step))
+                    with open(video_path, 'wb') as f:
+                        pickle.dump(self.video, f)
+
 
 
             if self.env_step % self.save_freq == 0:
