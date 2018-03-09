@@ -33,18 +33,16 @@ class ReacherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         """
         position :
         cos(theta1), cos(theta2), sin(theta1), sin(theta2), theta1', theta2'
-        fingertip_x, fingertip_y, fingertip_z
-        target_x, target_y, target_z
+        fingertip_x, fingertip_y
 
-        total size : 12
+        total size : 8
         """
         theta = self.model.data.qpos.flat[:2]
         return np.concatenate([
             np.cos(theta),
             np.sin(theta),
             self.model.data.qvel.flat[:2],
-            self.get_body_com("fingertip"),
-            self.get_body_com("target")
+            self.get_body_com("fingertip")[:2],
         ])
 
 

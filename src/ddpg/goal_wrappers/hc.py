@@ -9,7 +9,7 @@ class HcRootx(goal_basic):
         self.goals = range(100)
         self.state_to_goal = [18]
         self.state_to_obs = range(18)
-        self.obs_to_goal = [0]
+        self.state_to_reached = [0]
         self.reward_range = [-0.6, 100]
         self.goal_space = Box(np.array([0]), np.array([100]))
         self.start = np.array([0])

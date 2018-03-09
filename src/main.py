@@ -10,8 +10,7 @@ import datetime
 from ddpg.networks import ActorNetwork, HuberLossCriticNetwork
 from ddpg.ddpgAgent import DDPG_agent
 from ddpg.noise import OrnsteinUhlenbeckActionNoise
-import random as rn
-import os
+from gym.spaces import Box
 from ddpg.util import load, boolean_flag
 from gym.wrappers import Monitor
 
@@ -61,9 +60,12 @@ def main(args):
     else:
         raise Exception('No existing memory defined')
 
-    memory = TreeMemory(memory, max_regions=64, n_split=10, split_min=0, lambd = 1, maxlen = 300, n_cp = 30)
-    memory.init_root(np.array([-1.2]), np.array([0.6]))
-    memory.init_grid_1D(64)
+    low = np.concatenate([train_env.observation_space.low, train_env.goal_space.low])
+    high = np.concatenate([train_env.observation_space.high, train_env.goal_space.high])
+    state_space = Box(low, high)
+
+    memory = TreeMemory(state_space, train_env.state_to_goal, memory, max_regions=64, n_split=10, split_min=0, lambd = 1, maxlen = 300, n_cp = 30)
+    # memory.init_grid_1D(64)
 
     # Noise for the actor in vanilla ddpg
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(train_env.action_dim), sigma=float(args['sigma']))

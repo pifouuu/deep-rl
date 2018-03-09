@@ -180,6 +180,7 @@ class DDPG_agent():
         fig = 0
 
         self.train_env.goal = self.memory.sample_goal()
+        # TODO : sample_goal must fit goal space of the environment
         state = self.train_env.reset_with_goal()
         prev_state = state
         self.start_time = time.time()
@@ -222,11 +223,11 @@ class DDPG_agent():
                     # lines, patches = self.memory.compute_image(0)
                     # self.video.append((lines, patches))
                     if fig == 0:
-                        self.memory.displayTree([0])
+                        self.memory.displayTree(self.train_env.state_to_goal)
                         fig=1
                         pickle_dir = os.path.join(self.log_dir, 'pickle')
                         os.makedirs(pickle_dir, exist_ok=True)
-                    self.memory.compute_image([0])
+                    self.memory.compute_image(self.train_env.state_to_goal)
                     lines = [line.get_xydata() for line in self.memory.ax.lines]
                     patches = [list(patch.get_xy())+[patch.get_height(),patch.get_width()]+list(patch._facecolor) for patch in self.memory.ax.patches]
                     self.video.append([lines, patches])

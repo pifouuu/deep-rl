@@ -4,14 +4,14 @@ from gym import utils
 from gym.envs.mujoco import mujoco_env
 import six
 
-class ManipulatorBallEnv(Manipulator):
-    def __init__(self):
+class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
+    def __init__(self, file='manipulator.xml'):
         utils.EzPickle.__init__(self)
-        mujoco_env.MujocoEnv.__init__(self, 'manipulator_target_ball.xml', 2)
-        self.target = 'target_ball'
-        self.objects = ['ball']
+        mujoco_env.MujocoEnv.__init__(self, file, 2)
+        self.target = 'target'
+        self.objects = []
         self.receptacles = []
-        self.sites = ['ball']
+        self.sites = []
         self.arm_joints = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
                'finger', 'fingertip', 'thumb', 'thumbtip']
 
@@ -155,3 +155,49 @@ class ManipulatorBallEnv(Manipulator):
         observation_arrays = [observation.ravel() for observation in observations]
         obs = np.concatenate(observation_arrays)
         return obs
+
+class ManipulatorBallEnv(ManipulatorEnv):
+    def __init__(self):
+        super(ManipulatorBallEnv, self).__init__('manipulator_target_ball.xml')
+        self.target = 'target_ball'
+        self.objects = ['ball']
+        self.receptacles = []
+        self.sites = ['ball']
+
+
+class ManipulatorBallCupEnv(ManipulatorEnv):
+    def __init__(self):
+        super(ManipulatorBallCupEnv, self).__init__('manipulator_cup_ball.xml')
+        self.target = 'target_ball'
+        self.objects = ['ball']
+        self.receptacles = ['cup']
+        self.sites = ['ball']
+
+
+class ManipulatorPegEnv(ManipulatorEnv):
+    def __init__(self):
+        super(ManipulatorPegEnv, self).__init__('manipulator_target_peg.xml')
+        self.target = 'target_peg'
+        self.objects = ['peg']
+        self.receptacles = []
+        self.sites = ['peg_grasp', 'grasp', 'peg_pinch', 'pinch', 'peg', 'target_peg', 'target_peg_tip',
+                                                         'peg_tip']
+
+
+class ManipulatorPegSlotEnv(ManipulatorEnv):
+    def __init__(self):
+        super(ManipulatorPegSlotEnv, self).__init__('manipulator_slot_peg.xml')
+        self.target = 'target_peg'
+        self.objects = ['peg']
+        self.receptacles = ['slot']
+        self.sites = ['peg_grasp', 'grasp', 'peg_pinch', 'pinch', 'peg', 'target_peg', 'target_peg_tip',
+                                                         'peg_tip']
+
+
+class ManipulatorBoxesEnv(ManipulatorEnv):
+    def __init__(self):
+        super(ManipulatorBoxesEnv, self).__init__('manipulator_boxes.xml')
+        self.target = 'target_box'
+        self.objects = ['box1', 'box2', 'box3']
+        self.receptacles = []
+        self.sites = ['box1', 'box2', 'box3']

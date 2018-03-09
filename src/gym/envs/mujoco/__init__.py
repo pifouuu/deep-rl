@@ -14,6 +14,5 @@ from gym.envs.mujoco.humanoidstandup import HumanoidStandupEnv
 from gym.envs.mujoco.pusher import PusherEnv
 from gym.envs.mujoco.thrower import ThrowerEnv
 from gym.envs.mujoco.striker import StrikerEnv
-from gym.envs.mujoco.manipulator_target_ball import ManipulatorTargetBallEnv
+from gym.envs.mujoco.manipulator import ManipulatorPegEnv, ManipulatorEnv, ManipulatorBallCupEnv, ManipulatorBallEnv,ManipulatorBoxesEnv, ManipulatorPegSlotEnv
 from gym.envs.mujoco.reach import FetchReachEnv
-from gym.envs.mujoco.manipulator_cup_ball import ManipulatorCupBallEnv

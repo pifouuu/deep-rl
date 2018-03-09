@@ -153,9 +153,9 @@
 
 
     <!-- targets -->
-    <body name="target" pos="0 .001 .022" childclass="ghost">
-      <geom  name="target" type="box" size=".022 .022 .022" />
-      <site  name="target" type="sphere"/>
+    <body name="target_box" pos="0 .001 .022" childclass="ghost">
+      <geom  name="target_box" type="box" size=".022 .022 .022" />
+      <site  name="target_box" type="sphere"/>
     </body>
   </worldbody>
 

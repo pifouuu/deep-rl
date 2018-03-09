@@ -1,6 +1,7 @@
 from gym import Wrapper
 import numpy as np
 import math
+from gym.spaces import Box
 
 class no_goal(Wrapper):
     def __init__(self, env):
@@ -8,6 +9,7 @@ class no_goal(Wrapper):
         self.goal = None
         self.state_to_goal = []
         self.state_to_obs = range(env.observation_space.high.shape[0])
+        self.goal_space = Box(np.array([]), np.array([]))
 
     def eval_exp(self, previous_state_goal, action, state_goal, reward, terminal):
         return reward, terminal
@@ -56,7 +58,7 @@ class goal_basic(Wrapper):
         super(goal_basic, self).__init__(env)
         self.goal = []
         self.state_to_goal = []
-        self.obs_to_goal = []
+        self.state_to_reached = []
         self.state_to_obs = []
         self.goal_space = None
         self.start = np.array([])
@@ -69,7 +71,7 @@ class goal_basic(Wrapper):
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
         r = 0
-        goal_reached = agent_state_1[self.obs_to_goal]
+        goal_reached = agent_state_1[self.state_to_reached]
         goal = agent_state_1[self.state_to_goal]
         vec = goal - goal_reached
         term = np.linalg.norm(vec) < 0.1
@@ -90,8 +92,8 @@ class goal_basic(Wrapper):
 
     def change_goal(self, buffer_item, final_state):
         res = buffer_item
-        res['state0'][self.state_to_goal] = final_state[self.state_to_obs][self.obs_to_goal]
-        res['state1'][self.state_to_goal] = final_state[self.state_to_obs][self.obs_to_goal]
+        res['state0'][self.state_to_goal] = final_state[self.state_to_reached]
+        res['state1'][self.state_to_goal] = final_state[self.state_to_reached]
         res['reward'], res['terminal'] = self.eval_exp(res['state0'],
                                                            res['action'],
                                                            res['state1'],

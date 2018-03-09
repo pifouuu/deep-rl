@@ -118,6 +118,12 @@
       </body>
     </body>
 
+        <!-- targets -->
+    <body name="target" pos=".4 .001 .4" childclass="ghost">
+      <geom  name="target" type="sphere" size=".022" />
+      <site  name="target" type="sphere"/>
+    </body>
+
   </worldbody>
 
   <tendon>

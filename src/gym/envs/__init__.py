@@ -83,7 +83,7 @@ register(
     id='CMCPos-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcPos',
-    max_episode_steps=200,
+    max_episode_steps=50,
     reward_threshold=90.0,
 )
 
@@ -370,14 +370,6 @@ register(
 )
 
 register(
-    id='ReacherBenchmark-v1',
-    entry_point='gym.envs.mujoco:ReacherEnv',
-    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherBenchmark',
-    max_episode_steps=50,
-    reward_threshold=-3.75,
-)
-
-register(
     id='ReacherSparse-v1',
     entry_point='gym.envs.mujoco:ReacherEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherSparse',
@@ -477,7 +469,42 @@ register(
 
 register(
     id='Manipulator-v0',
-    entry_point='gym.envs.mujoco:ManipulatorTargetBallEnv',
+    entry_point='gym.envs.mujoco:ManipulatorEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    max_episode_steps=1000,
+)
+
+register(
+    id='ManipulatorBall-v0',
+    entry_point='gym.envs.mujoco:ManipulatorBallEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    max_episode_steps=1000,
+)
+
+register(
+    id='ManipulatorPeg-v0',
+    entry_point='gym.envs.mujoco:ManipulatorPegEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    max_episode_steps=1000,
+)
+
+register(
+    id='ManipulatorBallCup-v0',
+    entry_point='gym.envs.mujoco:ManipulatorBallCupEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    max_episode_steps=1000,
+)
+
+register(
+    id='ManipulatorPegSlot-v0',
+    entry_point='gym.envs.mujoco:ManipulatorPegSlotEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    max_episode_steps=1000,
+)
+
+register(
+    id='ManipulatorBoxes-v0',
+    entry_point='gym.envs.mujoco:ManipulatorBoxesEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
     max_episode_steps=1000,
 )

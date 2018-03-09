@@ -85,26 +85,32 @@ class Region(Box):
         return self.size == self.maxlen
 
 class TreeMemory():
-    def __init__(self, buffer, max_regions, n_split, split_min, lambd, maxlen, n_cp):
+    def __init__(self, space, dims, buffer, max_regions, n_split, split_min, lambd, maxlen, n_cp):
         self.n_split = n_split
         self.split_min = split_min
         self.maxlen = maxlen
         self.n_cp = n_cp
         self.max_regions = max_regions
-        capacity = 1
-        while capacity < max_regions:
-            capacity *= 2
-        self.capacity = capacity
-        self.region_array = [Region() for _ in range(2 * self.capacity)]
+        self.lambd = lambd
+        self.dims = dims
+
+
         self.buffer = buffer
-        self.total_points = 0
+
         self.ax = None
         self.figure = None
         self.lines = []
         self.patches = []
         self.points = []
-        self.lambd = lambd
-        self.n_leaves = 0
+
+        capacity = 1
+        while capacity < max_regions:
+            capacity *= 2
+        self.capacity = capacity
+        self.region_array = [Region() for _ in range(2 * self.capacity)]
+        self.region_array[1] = Region(space.low, space.high, maxlen=self.maxlen, n_cp=self.n_cp)
+        self.update_CP_tree(1)
+        self.n_leaves = 1
 
     def end_episode(self, goal_reached):
         self.buffer.end_episode(goal_reached)
@@ -126,23 +132,19 @@ class TreeMemory():
         corr_vals = [(val-minval)/(maxval-minval) for val in vals]
         self.insert([Point(state,val) for state,val in zip(states0,corr_vals)])
 
-    def init_root(self, low, high):
-        self.region_array[1] = Region(low, high, maxlen=self.maxlen, n_cp = self.n_cp)
-        self.update_CP_tree(1)
-        self.n_leaves += 1
-
     def init_grid_1D(self, n):
         assert n & (n-1) == 0 #n must be a power of 2
+        assert len(self.dims) == 1
         self._init_grid_1D(1, n)
 
     def _init_grid_1D(self, idx ,n):
         if n > 1:
             region = self.region_array[idx]
-            low = region.low[0]
-            high = region.high[0]
+            low = region.low[self.dims[0]]
+            high = region.high[self.dims[0]]
             val_split = (high+low)/2
-            self.region_array[2 * idx], self.region_array[2 * idx + 1] = region.split(0, val_split)
-            region.dim_split = 0
+            self.region_array[2 * idx], self.region_array[2 * idx + 1] = region.split(self.dims[0], val_split)
+            region.dim_split = self.dims[0]
             region.val_split = val_split
             self.n_leaves += 1
             self._init_grid_1D(2 * idx, n/2)
@@ -150,7 +152,6 @@ class TreeMemory():
 
     def insert(self, points):
         self._insert(points, 1)
-        self.total_points += len(points)
 
     def _insert(self, points, idx):
         region = self.region_array[idx]
@@ -212,7 +213,7 @@ class TreeMemory():
         eval_splits_2 = []
         if self.n_leaves < self.max_regions:
             region = self.region_array[idx]
-            for dim in range(region.shape[0]):
+            for dim in self.dims:
                 for num_split, split_val in enumerate(np.linspace(region.low[dim], region.high[dim], self.n_split+2)[1:-1]):
                     temp_left, temp_right = region.split(dim, split_val)
                     eval_splits_1.append(self.split_eval_1(temp_left, temp_right))
@@ -225,7 +226,7 @@ class TreeMemory():
                 eval_splits = [self.lambd*x + (1-self.lambd)*y for (x,y) in zip(eval_splits_1_norm, eval_splits_2_norm)]
                 split_idx = np.argmax(eval_splits)
                 if eval_splits_1[split_idx] > self.split_min:
-                    region.dim_split = split_idx // self.n_split
+                    region.dim_split = self.dims[split_idx // self.n_split]
                     region.val_split = np.linspace(region.low[region.dim_split], region.high[region.dim_split], self.n_split+2)[split_idx % self.n_split+1]
                     self.region_array[2 * idx], self.region_array[2 * idx + 1] = region.split(region.dim_split, region.val_split)
                     print('splint succeeded: dim=', region.dim_split, ' val=', region.val_split)
@@ -324,11 +325,11 @@ class TreeMemory():
         mass = np.random.random() * sum
         region = self.find_prop_region(mass)
         sample = region.sample()
-        return sample
+        return sample[self.dims]
 
     def sample_random(self):
         sample = self.root.sample()
-        return sample
+        return sample[self.dims]
 
     def sample_goal(self, prop_rnd=1):
         p = np.random.random()
