@@ -61,7 +61,6 @@ class goal_basic(Wrapper):
         self.state_to_reached = []
         self.state_to_obs = []
         self.goal_space = None
-        self.start = np.array([])
         self.initial_goal = np.array([])
         self.reward_range = [0, 0]
         self.prev_state = None
@@ -81,10 +80,7 @@ class goal_basic(Wrapper):
         return r, term
 
     def get_random_goal(self):
-        while True:
-            goal = self.goal_space.sample()
-            if np.linalg.norm(goal - self.start) > 0.1:
-                break
+        goal = self.goal_space.sample()
         return goal
 
     def get_initial_goal(self):

@@ -26,8 +26,10 @@ class Box(gym.Space):
             assert np.isscalar(low) and np.isscalar(high)
             self.low = low + np.zeros(shape)
             self.high = high + np.zeros(shape)
+
     def sample(self):
         return prng.np_random.uniform(low=self.low, high=self.high, size=self.low.shape)
+
     def contains(self, x):
         return x.shape == self.shape and (x >= self.low).all() and (x <= self.high).all()
 

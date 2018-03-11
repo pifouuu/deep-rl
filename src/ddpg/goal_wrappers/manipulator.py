@@ -14,7 +14,6 @@ class Manipulator(goal_basic):
         self.state_to_obs = range(33)
         self.state_to_reached = [6,7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([-0.2, 0.2]))
-        self.start = np.array([0.2, 0])
         self.initial_goal = np.array([0, 0.1])
         self.reward_range = [-0.2, 100]
 

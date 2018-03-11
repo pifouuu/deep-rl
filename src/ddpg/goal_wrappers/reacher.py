@@ -11,7 +11,6 @@ class ReacherSparse(goal_basic):
         self.state_to_obs = [0, 1, 2, 3, 4, 5, 6, 7]
         self.state_to_reached = [6,7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
-        self.start = np.array([0.2, 0])
         self.initial_goal = np.array([0, 0.1])
         self.reward_range = [-0.2, 100]
         for _ in range(100):
@@ -28,13 +27,6 @@ class ReacherSparse(goal_basic):
         self.unwrapped.set_state(qpos, qvel)
         return self.unwrapped._get_obs()
 
-    def get_random_goal(self):
-        #TODO: consider the possibility that the agent does not know the limitation of its capabilities and thus can sample unreachable goals before realizing it.
-        while True:
-            goal = np.random.uniform(low=-.2, high=.2, size=2)
-            if np.linalg.norm(goal) < .2 and np.linalg.norm(goal-self.start) > 0.05:
-                break
-        return goal
 
 
 

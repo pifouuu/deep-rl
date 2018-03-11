@@ -31,8 +31,18 @@ class Region(Box):
         self.dim_split = None
         self.val_split = None
 
-    def contains(self, point):
-        return super(Region,self).contains(point.state)
+    def sample(self, dims=None):
+        if dims is not None:
+            return np.random.uniform(low=self.low[dims], high=self.high[dims], size=self.low[dims].shape)
+        else:
+            return super(Region, self).sample()
+
+    def contains(self, point, dims=None):
+        x = point.state
+        if dims is not None:
+            return x.shape == self.shape and (x >= self.low[dims]).all() and (x <= self.high[dims]).all()
+        else:
+            return super(Region,self).contains(x)
 
     def split(self, dim, split_val):
         low_right = np.copy(self.low)
@@ -324,12 +334,12 @@ class TreeMemory():
         sum = self.sum_CP
         mass = np.random.random() * sum
         region = self.find_prop_region(mass)
-        sample = region.sample()
-        return sample[self.dims]
+        sample = region.sample(self.dims)
+        return sample
 
     def sample_random(self):
-        sample = self.root.sample()
-        return sample[self.dims]
+        sample = self.root.sample(self.dims)
+        return sample
 
     def sample_goal(self, prop_rnd=1):
         p = np.random.random()

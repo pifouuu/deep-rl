@@ -10,7 +10,6 @@ class CmcPos(goal_basic):
         self.state_to_obs = range(2)
         self.state_to_reached = [0]
         self.goal_space = Box(np.array([-1.2]), np.array([0.6]))
-        self.start = np.array([-0.5])
         self.initial_goal = np.array([0.45])
         self.reward_range = [-0.1, 100]
 
@@ -27,7 +26,6 @@ class CmcFull(goal_basic):
         self.state_to_obs = range(2)
         self.state_to_reached = [0,1]
         self.goal_space = Box(np.array([-1.2, -0.07]), np.array([0.6, 0.07]))
-        self.start = np.array([-0.5,0])
         self.initial_goal = np.array([0.45, 0])
         self.reward_range = [-0.1, 100]
 
