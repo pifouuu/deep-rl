@@ -154,7 +154,7 @@ if __name__ == '__main__':
     parser.add_argument('--train-freq', help='training frequency', default=100)
     parser.add_argument('--nb-train-iter', help='training iteration number', default=50)
     parser.add_argument('--nb-test-steps', help='number of steps in the environment during evaluation', default=1000)
-    boolean_flag(parser, 'render-test', default=True)
+    boolean_flag(parser, 'render-test', default=False)
     parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
     parser.add_argument('--eval-freq', help='evaluating every n training steps', default=200)
 

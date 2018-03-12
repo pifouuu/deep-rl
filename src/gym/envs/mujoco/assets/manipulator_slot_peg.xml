@@ -143,6 +143,17 @@
       <site name="slot_end" type="box" pos="0 0 -.05"/>
     </body>
 
+    <!-- targets -->
+    <body name="target_peg" pos="-.2 .001 .4" childclass="ghost">
+      <geom name="target_blade" type="capsule" size=".005" fromto="0 0 -.013 0 0 -.113"/>
+      <geom name="target_guard" type="capsule" size=".005" fromto="-.017 0 -.043 .017 0 -.043"/>
+      <geom name="target_pommel" type="sphere" size=".009" pos="0 0 -.013"/>
+      <site name="target_peg" type="box" pos="0 0 -.063"/>
+      <site name="target_peg_pinch" type="box" pos="0 0 -.025"/>
+      <site name="target_peg_grasp" type="box" pos="0 0 0"/>
+      <site name="target_peg_tip"   type="box" pos="0 0 -.113"/>
+    </body>
+
   </worldbody>
 
   <tendon>

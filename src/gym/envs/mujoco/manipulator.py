@@ -6,14 +6,18 @@ import six
 
 class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self, file='manipulator.xml'):
+        self.init_env()
         utils.EzPickle.__init__(self)
         mujoco_env.MujocoEnv.__init__(self, file, 2)
+
+    def init_env(self):
         self.target = 'target'
         self.objects = []
-        self.receptacles = []
+        self.fixed_objects = []
         self.sites = []
         self.arm_joints = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
-               'finger', 'fingertip', 'thumb', 'thumbtip']
+                           'finger', 'fingertip', 'thumb', 'thumbtip']
+        self.arm_bodies = ['hand']
 
     def _step(self, a):
         self.do_simulation(a, self.frame_skip)
@@ -44,7 +48,6 @@ class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         body_quat = self.model.body_quat.copy()
 
         while penetrating:
-
             # Randomise angles of arm joints.
             indices = [self.model.joint_names.index(six.b(name)) for name in self.arm_joints]
             is_limited = self.model.jnt_limited[indices].astype(np.bool)
@@ -71,14 +74,14 @@ class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 qpos[self.model.joint_names.index(six.b(object+'_z'))] = object_z
                 qpos[self.model.joint_names.index(six.b(object+'_y'))] = object_angle
 
-            # Randomise receptacles locations
-            for receptacle in self.receptacles:
-                receptacle_idx = self.model.body_names.index(six.b(receptacle))
-                receptacle_x = np.random.uniform(-.4, .4)
-                receptacle_z = np.random.uniform(.1, .4)
-                receptacle_angle = np.random.uniform(-np.pi, np.pi)
-                body_pos[receptacle_idx, [0, 2]] = receptacle_x, receptacle_z
-                body_quat[receptacle_idx, [0, 2]] = [np.cos(receptacle_angle / 2), np.sin(receptacle_angle / 2)]
+            # Randomise fixed objects locations
+            for fixed in self.fixed_objects:
+                fixed_idx = self.model.body_names.index(six.b(fixed))
+                fixed_x = np.random.uniform(-.4, .4)
+                fixed_z = np.random.uniform(.1, .4)
+                fixed_angle = np.random.uniform(-np.pi/3, np.pi/3)
+                body_pos[fixed_idx, [0, 2]] = fixed_x, fixed_z
+                body_quat[fixed_idx, [0, 2]] = [np.cos(fixed_angle / 2), np.sin(fixed_angle / 2)]
 
             # Fixed target location ; randomized target in goal wrapper
             target_x = 0.
@@ -88,11 +91,12 @@ class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             body_pos[target_idx, [0, 2]] = target_x, target_z
             body_quat[target_idx, [0, 2]] = [np.cos(target_angle / 2), np.sin(target_angle / 2)]
 
-            self.set_state(qpos, qvel)
             self.model.body_pos = body_pos
             self.model.body_quat = body_quat
+            self.set_state(qpos, qvel)
 
             # Check for collisions.
+            # self.render(mode='human')
             penetrating = self.model.data.ncon > 0
 
         return self._get_obs()
@@ -119,7 +123,10 @@ class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         body_idx = self.model.body_names.index(six.b(body))
         body_position = self.model.body_pos[body_idx, [0, 2]]
         body_orientation = self.model.body_quat[body_idx, [0, 2]]
-        return np.hstack((body_position, body_orientation))
+        angle = np.arccos(body_orientation[0])
+        if np.arcsin(body_orientation[1]) < 0:
+            angle = -angle
+        return np.hstack((body_position, np.array([2*angle])))
 
 
     def _get_obs(self):
@@ -139,19 +146,23 @@ class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # Sensors
         proprioception = self.proprioception() # size 9+8 = 17
         touch = self.touch() # size 5 (5 sensors)
-
+        observations = [proprioception, touch]
         # TODO: make sure site_xpos is sufficient to describe the state. site_xmat ?
 
         # Objects sites for reward computation
-        site_idx = [self.model.site_names.index(six.b(site)) for site in self.sites]
-        site_positions = [self.model.data.site_xpos[idx] for idx in site_idx]
-        sites = np.hstack(site_positions) # size 3*n_sites
+        if self.sites:
+            site_idx = [self.model.site_names.index(six.b(site)) for site in self.sites]
+            site_positions = [self.model.data.site_xpos[idx][0, 2] for idx in site_idx]
+            sites = np.hstack(site_positions) # size 2*n_sites
+            observations.append(sites)
 
         # Objects body locations for state description
-        body_locations = [self.body_location(body) for body in self.receptacles+self.objects]
-        bodies = np.hstack(body_locations) # size 4*(n_receptacles+n_objects)
+        bodies = self.fixed_objects+self.objects+self.arm_bodies
+        if bodies:
+            body_locations = [self.body_location(body) for body in self.fixed_objects+self.objects+self.arm_bodies]
+            bodies = np.hstack(body_locations) # size 3*(n_fixed_objects+n_objects)
+            observations.append(bodies)
 
-        observations = [proprioception, touch, sites, bodies]
         observation_arrays = [observation.ravel() for observation in observations]
         obs = np.concatenate(observation_arrays)
         return obs
@@ -159,45 +170,88 @@ class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 class ManipulatorBallEnv(ManipulatorEnv):
     def __init__(self):
         super(ManipulatorBallEnv, self).__init__('manipulator_target_ball.xml')
+
+    def init_env(self):
         self.target = 'target_ball'
         self.objects = ['ball']
-        self.receptacles = []
-        self.sites = ['ball']
-
+        self.fixed_objects = []
+        self.sites = []
+        self.arm_bodies = []
+        self.arm_joints = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
+                           'finger', 'fingertip', 'thumb', 'thumbtip']
 
 class ManipulatorBallCupEnv(ManipulatorEnv):
     def __init__(self):
+
         super(ManipulatorBallCupEnv, self).__init__('manipulator_cup_ball.xml')
+
+    def init_env(self):
         self.target = 'target_ball'
         self.objects = ['ball']
-        self.receptacles = ['cup']
-        self.sites = ['ball']
-
+        self.fixed_objects = ['cup']
+        self.sites = []
+        self.arm_bodies = []
+        self.arm_joints = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
+                           'finger', 'fingertip', 'thumb', 'thumbtip']
 
 class ManipulatorPegEnv(ManipulatorEnv):
     def __init__(self):
+
         super(ManipulatorPegEnv, self).__init__('manipulator_target_peg.xml')
+
+    def init_env(self):
         self.target = 'target_peg'
         self.objects = ['peg']
-        self.receptacles = []
-        self.sites = ['peg_grasp', 'grasp', 'peg_pinch', 'pinch', 'peg', 'target_peg', 'target_peg_tip',
-                                                         'peg_tip']
-
+        self.fixed_objects = []
+        # self.sites = ['peg_grasp', 'grasp', 'peg_pinch', 'pinch', 'peg', 'target_peg', 'target_peg_tip',
+        #                                                  'peg_tip']
+        self.sites = []
+        self.arm_bodies = []
+        self.arm_joints = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
+                           'finger', 'fingertip', 'thumb', 'thumbtip']
 
 class ManipulatorPegSlotEnv(ManipulatorEnv):
     def __init__(self):
+
         super(ManipulatorPegSlotEnv, self).__init__('manipulator_slot_peg.xml')
+
+    def init_env(self):
         self.target = 'target_peg'
         self.objects = ['peg']
-        self.receptacles = ['slot']
-        self.sites = ['peg_grasp', 'grasp', 'peg_pinch', 'pinch', 'peg', 'target_peg', 'target_peg_tip',
-                                                         'peg_tip']
-
+        self.fixed_objects = ['slot']
+        # self.sites = ['peg_grasp', 'grasp', 'peg_pinch', 'pinch', 'peg', 'target_peg', 'target_peg_tip',
+        #                                                  'peg_tip']
+        self.sites = []
+        self.arm_bodies = []
+        self.arm_joints = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
+                           'finger', 'fingertip', 'thumb', 'thumbtip']
 
 class ManipulatorBoxesEnv(ManipulatorEnv):
     def __init__(self):
+
         super(ManipulatorBoxesEnv, self).__init__('manipulator_boxes.xml')
+
+    def init_env(self):
         self.target = 'target_box'
-        self.objects = ['box1', 'box2', 'box3']
-        self.receptacles = []
-        self.sites = ['box1', 'box2', 'box3']
+        self.objects = ['box0', 'box1', 'box2', 'box3']
+        self.fixed_objects = []
+        # self.sites = ['box1', 'box2', 'box3']
+        self.sites = []
+        self.arm_bodies = []
+        self.arm_joints = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
+                           'finger', 'fingertip', 'thumb', 'thumbtip']
+
+class PlayroomEnv(ManipulatorEnv):
+    def __init__(self):
+
+        super(PlayroomEnv, self).__init__('playroom.xml')
+
+    def init_env(self):
+        self.target = 'target_box'
+        self.objects = ['ball', 'peg', 'box0', 'box1', 'box2', 'box3']
+        self.fixed_objects = ['slot', 'cup']
+        # self.sites = ['box1', 'box2', 'box3']
+        self.sites = []
+        self.arm_bodies = []
+        self.arm_joints = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
+                           'finger', 'fingertip', 'thumb', 'thumbtip']

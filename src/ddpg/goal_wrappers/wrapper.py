@@ -9,7 +9,9 @@ class no_goal(Wrapper):
         self.goal = None
         self.state_to_goal = []
         self.state_to_obs = range(env.observation_space.high.shape[0])
+        self.state_to_reached = []
         self.goal_space = Box(np.array([]), np.array([]))
+        self.reward_range = [-self.action_dim[0] * 0.1, 100]
 
     def eval_exp(self, previous_state_goal, action, state_goal, reward, terminal):
         return reward, terminal
@@ -23,17 +25,13 @@ class no_goal(Wrapper):
     def add_goal(self, state, goal):
         return state
 
-    def reset_with_goal(self, type=None):
-        if type == 'random':
-            self.goal = self.get_random_goal()
-        elif type == 'init':
-            self.goal = self.get_initial_goal()
-        obs = self.reset()
+    def _reset(self):
+        obs = self.env.reset()
         state = self.add_goal(obs, self.goal)
         self.prev_state = state
         return state
 
-    def step(self,action):
+    def _step(self,action):
         obs, env_reward, env_terminal, info = self.env.step(action)
         state = self.add_goal(obs, self.goal)
         reward, terminal = self.eval_exp(self.prev_state, action, state, env_reward,
@@ -62,7 +60,7 @@ class goal_basic(Wrapper):
         self.state_to_obs = []
         self.goal_space = None
         self.initial_goal = np.array([])
-        self.reward_range = [0, 0]
+        self.reward_range = [-self.action_dim[0]*0.1, 100]
         self.prev_state = None
 
     def add_goal(self, state, goal):
@@ -97,7 +95,7 @@ class goal_basic(Wrapper):
                                                            res['terminal'])
         return res
 
-    def step(self,action):
+    def _step(self,action):
         obs, env_reward, env_terminal, info = self.env.step(action)
         state = self.add_goal(obs, self.goal)
         reward, terminal = self.eval_exp(self.prev_state, action, state, env_reward,
@@ -105,12 +103,8 @@ class goal_basic(Wrapper):
         self.prev_state = state
         return state, reward, terminal, info
 
-    def reset_with_goal(self, type=None):
-        if type == 'random':
-            self.goal = self.get_random_goal()
-        elif type == 'init':
-            self.goal = self.get_initial_goal()
-        obs = self.reset()
+    def _reset(self):
+        obs = self.env.reset()
         state = self.add_goal(obs, self.goal)
         self.prev_state = state
         return state

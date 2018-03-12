@@ -181,10 +181,12 @@ class DDPG_agent():
 
         self.train_env.goal = self.memory.sample_goal()
         # TODO : sample_goal must fit goal space of the environment
-        state = self.train_env.reset_with_goal()
+        state = self.train_env.reset()
+        self.start = state[self.train_env.state_to_reached]
         prev_state = state
         self.start_time = time.time()
         while self.env_step < self.max_steps:
+            self.train_env.render(mode='human')
 
             action = self.act(state, noise=True)
             state, reward, terminal, info = self.train_env.step(action[0])
@@ -206,8 +208,8 @@ class DDPG_agent():
 
                 # self.train_env.goal = self.goal_sampler.sample()
                 self.train_env.goal = self.memory.sample_goal()
-                state = self.train_env.reset_with_goal()
-
+                state = self.train_env.reset()
+                self.start = state[self.train_env.state_to_reached]
                 self.memory.end_episode(not info['past_limit'])
 
                 self.episode_step = 0
@@ -218,22 +220,24 @@ class DDPG_agent():
                 if self.train_step % self.eval_freq == 0:
                     # self.eval_rewards_random = self.test2(type='random')
                     if self.test_env.goal_parameterized:
-                        self.eval_reward_init = self.test2(type='init')
+                        self.eval_reward_random = self.test('random')
+                        self.eval_reward_init = self.test('init')
+                    #     self.eval_reward_init = self.test2(type='init')
                     self.log_step_stats()
-                    # lines, patches = self.memory.compute_image(0)
-                    # self.video.append((lines, patches))
-                    if fig == 0:
-                        self.memory.displayTree(self.train_env.state_to_goal)
-                        fig=1
-                        pickle_dir = os.path.join(self.log_dir, 'pickle')
-                        os.makedirs(pickle_dir, exist_ok=True)
-                    self.memory.compute_image(self.train_env.state_to_goal)
-                    lines = [line.get_xydata() for line in self.memory.ax.lines]
-                    patches = [list(patch.get_xy())+[patch.get_height(),patch.get_width()]+list(patch._facecolor) for patch in self.memory.ax.patches]
-                    self.video.append([lines, patches])
-                    video_path = os.path.join(pickle_dir, 'video'+'_{:06}.pkl'.format(self.env_step))
-                    with open(video_path, 'wb') as f:
-                        pickle.dump(self.video, f)
+
+                    if self.train_env.goal_parameterized:
+                        if fig == 0:
+                            self.memory.displayTree(self.train_env.state_to_goal)
+                            fig=1
+                            pickle_dir = os.path.join(self.log_dir, 'pickle')
+                            os.makedirs(pickle_dir, exist_ok=True)
+                        self.memory.compute_image(self.train_env.state_to_goal)
+                        lines = [line.get_xydata() for line in self.memory.ax.lines]
+                        patches = [list(patch.get_xy())+[patch.get_height(),patch.get_width()]+list(patch._facecolor) for patch in self.memory.ax.patches]
+                        self.video.append([lines, patches])
+                        video_path = os.path.join(pickle_dir, 'video'+'_{:06}.pkl'.format(self.env_step))
+                        with open(video_path, 'wb') as f:
+                            pickle.dump(self.video, f)
 
 
 
@@ -265,6 +269,7 @@ class DDPG_agent():
     def log_episode_stats(self):
         self.episode_stats['Episode'] = self.episode
         self.episode_stats['Goal'] = self.train_env.goal
+        self.episode_stats['Start'] = self.start
         self.episode_stats['Train reward'] = self.episode_reward
         self.episode_stats['Episode steps'] = self.episode_step
         self.episode_stats['Goal reached'] = self.nb_goals_reached
@@ -281,22 +286,33 @@ class DDPG_agent():
             batch_idxs, experiences = self.memory.sample(self.batch_size)
             target_q_vals, critic_stat = self.train_critic(experiences)
             q_vals, actor_stat = self.train_actor(experiences)
-            self.memory.update(batch_idxs, q_vals)
+            if self.train_env.goal_parameterized:
+                self.memory.update(batch_idxs, q_vals)
             self.update_targets()
             critic_stats.append(critic_stat)
             actor_stats.append(actor_stat)
         self.train_step += self.nb_train_iter
         return np.array(critic_stats), np.array(actor_stats)
 
-
-    def test(self, type='random'):
-        vid_dir = self.log_dir+'/videos'
+    def get_rec(self, type):
+        vid_dir = self.log_dir + '/videos'
         os.makedirs(vid_dir, exist_ok=True)
-        base_path = os.path.join(vid_dir, 'video_'+type+'_{:06}'.format(self.env_step))
+        base_path = os.path.join(vid_dir, 'video_' + type + '_{:06}'.format(self.env_step))
         rec = None
         if self.env_step % self.save_freq == 0:
             rec = VideoRecorder(self.test_env, base_path=base_path)
-        state = self.test_env.reset_with_goal(type=type)
+        return rec
+
+    def test(self, type='random'):
+        #TODO: place rec in after_step/after_reset
+        rec = self.get_rec(type)
+
+        if type == 'random':
+            self.test_env.goal = self.test_env.get_random_goal()
+        elif type == 'init':
+            self.test_env.goal = self.test_env.get_initial_goal()
+
+        state = self.test_env.reset()
         if rec is not None:
             rec.capture_frame()
         ep_test_rewards = []
@@ -311,7 +327,7 @@ class DDPG_agent():
                 self.test_env.render(mode='human')
             ep_test_reward += reward
             if terminal:
-                state = self.test_env.reset_with_goal(type=type)
+                state = self.test_env.reset()
                 if rec is not None:
                     rec.capture_frame()
                 ep_test_rewards.append(ep_test_reward)
@@ -320,24 +336,24 @@ class DDPG_agent():
             rec.close()
         return ep_test_rewards
 
-    def run_test_episode(self, type):
-        ep_test_reward = 0
-        state = self.test_env.reset_with_goal(type=type)
-        for k in range(self.nb_test_steps):
-            action = self.act(state, noise=False)
-            state, reward, terminal, info = self.test_env.step(action[0])
-            terminal = terminal or info['past_limit']
-            ep_test_reward += reward
-            if terminal:
-                break
-        return ep_test_reward
-
-    def test2(self, type='random'):
-        test_rewards = []
-        for episode in range(10):
-            reward = self.run_test_episode(type)
-            test_rewards.append(reward)
-        return test_rewards
+    # def run_test_episode(self, type):
+    #     ep_test_reward = 0
+    #     state = self.test_env.reset(type=type)
+    #     for k in range(self.nb_test_steps):
+    #         action = self.act(state, noise=False)
+    #         state, reward, terminal, info = self.test_env.step(action[0])
+    #         terminal = terminal or info['past_limit']
+    #         ep_test_reward += reward
+    #         if terminal:
+    #             break
+    #     return ep_test_reward
+    #
+    # def test2(self, type='random'):
+    #     test_rewards = []
+    #     for episode in range(10):
+    #         reward = self.run_test_episode(type)
+    #         test_rewards.append(reward)
+    #     return test_rewards
 
 
 
