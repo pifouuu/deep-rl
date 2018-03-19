@@ -124,7 +124,7 @@ class DDPG_agent():
         self.critic.target_train()
 
     def save_weights(self):
-        dir = os.path.join(dir, 'saves')
+        dir = os.path.join(self.log_dir, 'saves')
         os.makedirs(dir, exist_ok=True)
         self.actor.save_weights(os.path.join(dir, 'actor_weights_{}.h5'.format(self.env_step)), overwrite=True)
         self.actor.save_target_weights(os.path.join(dir, 'target_actor_weights_{}.h5'.format(self.env_step)), overwrite=True)

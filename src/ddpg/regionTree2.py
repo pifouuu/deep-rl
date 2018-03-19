@@ -17,7 +17,7 @@ class Point(object):
 
 class Region(Box):
 
-    def __init__(self, low = np.array([-np.inf]), high=np.array([np.inf]), maxlen=0, n_cp=0):
+    def __init__(self, low = np.array([-np.inf]), high=np.array([np.inf]), maxlen=0, n_cp=0, dims=None):
         super(Region, self).__init__(low, high)
         self.maxlen = maxlen
         self.points = deque(maxlen=self.maxlen)
@@ -28,27 +28,22 @@ class Region(Box):
         self.sum_CP = 0
         self.dim_split = None
         self.val_split = None
+        self.dims = dims
 
-    def sample(self, dims=None):
-        if dims is not None:
-            return np.random.uniform(low=self.low[dims], high=self.high[dims], size=self.low[dims].shape)
-        else:
-            return super(Region, self).sample()
+    def sample(self):
+        return np.random.uniform(low=self.low[self.dims], high=self.high[self.dims], size=self.low[self.dims].shape)
 
-    def contains(self, point, dims=None):
+    def contains(self, point):
         x = point.state
-        if dims is not None:
-            return x.shape == self.shape and (x >= self.low[dims]).all() and (x <= self.high[dims]).all()
-        else:
-            return super(Region,self).contains(x)
+        return x.shape == self.low[self.dims].shape and (x >= self.low[self.dims]).all() and (x <= self.high[self.dims]).all()
 
     def split(self, dim, split_val):
         low_right = np.copy(self.low)
         low_right[dim] = split_val
         high_left = np.copy(self.high)
         high_left[dim] = split_val
-        left = Region(self.low, high_left, maxlen=self.maxlen, n_cp = self.n_cp)
-        right = Region(low_right, self.high, maxlen=self.maxlen, n_cp = self.n_cp)
+        left = Region(self.low, high_left, maxlen=self.maxlen, n_cp = self.n_cp, dims=self.dims)
+        right = Region(low_right, self.high, maxlen=self.maxlen, n_cp = self.n_cp, dims=self.dims)
         left.CP = self.CP
         right.CP = self.CP
         left_points = []
@@ -116,7 +111,7 @@ class TreeMemory():
             capacity *= 2
         self.capacity = capacity
         self.region_array = [Region() for _ in range(2 * self.capacity)]
-        self.region_array[1] = Region(space.low, space.high, maxlen=self.maxlen, n_cp=self.n_cp)
+        self.region_array[1] = Region(space.low, space.high, maxlen=self.maxlen, n_cp=self.n_cp, dims=dims)
         self.update_CP_tree(1)
         self.n_leaves = 1
 
@@ -340,11 +335,11 @@ class TreeMemory():
         sum = self.sum_CP
         mass = np.random.random() * sum
         region = self.find_prop_region(mass)
-        sample = region.sample(self.dims)
+        sample = region.sample()
         return sample
 
     def sample_random(self):
-        sample = self.root.sample(self.dims)
+        sample = self.root.sample()
         return sample
 
     def sample_goal(self, prop_rnd=1):
