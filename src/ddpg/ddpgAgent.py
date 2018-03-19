@@ -75,6 +75,7 @@ class DDPG_agent():
         self.episode_reward = 0
         self.nb_goals_reached = 0
         self.video = []
+        self.episode_noise_ratio = []
 
     def train_critic(self, experiences):
 
@@ -176,23 +177,22 @@ class DDPG_agent():
 
         self.start_time = time.time()
 
-        state = self.reset_train()
-        prev_state = state
+        state0 = self.reset_train()
 
         while self.env_step < self.max_steps:
 
             if self.render_train:
                 self.train_env.render(mode='human')
 
-            action = self.act(state, noise=True)
-            state, reward, terminal, info = self.train_env.step(action[0])
-            experience = self.memory.build_exp(prev_state, action, state, reward, terminal)
+            action = self.act(state0, noise=True)
+            state1, reward, terminal, info = self.train_env.step(action[0])
+            experience = self.memory.build_exp(state0, action, state1, reward, terminal)
             self.memory.append(experience)
 
             self.episode_reward += reward
             self.env_step += 1
             self.episode_step += 1
-            prev_state = state
+            state0 = state1
 
             if (terminal or info['past_limit']):
 
@@ -202,10 +202,10 @@ class DDPG_agent():
                 self.memory.end_episode(terminal)
                 self.log_episode_stats()
 
-                state = self.reset_train()
-                prev_state = state
+                state0 = self.reset_train()
                 self.episode_step = 0
                 self.episode_reward = 0
+                self.episode_noise_ratio = []
 
             if self.env_step % self.train_freq == 0 and self.env_step > 3*self.batch_size:
 
@@ -244,7 +244,9 @@ class DDPG_agent():
     def act(self, state, noise=False):
         action = self.actor.model.predict(np.reshape(state, (1, self.actor.s_dim[0])))
         if noise:
-            action += self.actor_noise()
+            val_noise = self.actor_noise()
+            self.episode_noise_ratio.append(np.abs(val_noise))
+            action += val_noise
         action = np.clip(action, self.train_env.action_space.low, self.train_env.action_space.high)
         return action
 
@@ -276,6 +278,7 @@ class DDPG_agent():
         self.episode_stats['Duration'] = time.time() - self.start_time
         self.episode_stats['Train_step'] = self.train_step
         self.episode_stats['Env_step'] = self.env_step
+        self.episode_stats['noise_ratio'] = np.mean(self.episode_noise_ratio)
 
         self.log(self.episode_stats, self.logger_episode)
 

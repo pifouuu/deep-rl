@@ -5,7 +5,6 @@ from gym.spaces import Box
 class CmcPos(goal_basic):
     def __init__(self, env):
         super(CmcPos, self).__init__(env)
-        self.goals = list(np.linspace(-1.2, 0.6, 100))
         self.state_to_goal = [2]
         self.state_to_obs = range(2)
         self.state_to_reached = [0]
