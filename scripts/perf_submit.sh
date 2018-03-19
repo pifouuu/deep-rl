@@ -4,35 +4,19 @@
 # Request a node per experiment to avoid competition between different TFs
 #PBS -l nodes=1:ppn=24
 #PBS -V
-NB_TRIALS=5
-LOGDIR=./log/
-
+NB_TRIALS=2
 for TRIAL in $(seq $NB_TRIALS)
 do
-  sleep 10
+  sleep 5
   (
     echo "Running experiment $TRIAL"
     export TRIAL
-    python3.4 src/main.py \
+    $HOME/mujoco131env/bin/python3 $HOME/deep-rl/src/main.py \
+    --env ${ENV} \
+    --${PARAM} ${PARAM_VAL} \
     --log-dir $LOGDIR \
-    --max-steps 200000 \
-    --save-freq 199000 \
-    --memory ${MEMORY} \
-    --strategy ${STRAT} \
-    --sampler ${SAMPLER} \
-    --alpha ${ALPHA} \
-    --delta ${DELTA} \
-    --sigma ${SIGMA} \
-    --activation ${ACTIVATION} \
-    --invert-grads ${IVG} \
-    --target-clip ${TCLIP} \
-    --env ${ENVT} \
-    --train-freq 1 \
-    --nb-train-iter 1 \
-    --eval-freq 1000 \
-    --no-render-test \
-    > ${LOGS}/${PERF_STUDY}_${TRIAL}.out \
-    2> ${LOGS}/${PERF_STUDY}_${TRIAL}.err
+    > ${TEMP_LOG}/${PERF_STUDY}_${TRIAL}.out \
+    2> ${TEMP_LOG}/${PERF_STUDY}_${TRIAL}.err
   ) &
 done
 

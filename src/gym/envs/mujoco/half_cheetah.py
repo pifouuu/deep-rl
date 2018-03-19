@@ -4,7 +4,7 @@ from gym import utils
 from gym.envs.mujoco import mujoco_env
 
 
-class HalfCheetahEnvFull(mujoco_env.MujocoEnv, utils.EzPickle):
+class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self):
         mujoco_env.MujocoEnv.__init__(self, 'half_cheetah.xml', 5)
         utils.EzPickle.__init__(self)
@@ -35,15 +35,15 @@ class HalfCheetahEnvFull(mujoco_env.MujocoEnv, utils.EzPickle):
     def viewer_setup(self):
         self.viewer.cam.distance = self.model.stat.extent * 0.5
 
-class HalfCheetahEnv(HalfCheetahEnvFull):
-    def __init__(self):
-        super(HalfCheetahEnv, self).__init__()
-
-    def _get_obs(self):
-        return np.concatenate([
-            self.model.data.qpos.flat[1:],
-            self.model.data.qvel.flat,
-        ])
+# class HalfCheetahEnv(HalfCheetahEnvFull):
+#     def __init__(self):
+#         super(HalfCheetahEnv, self).__init__()
+#
+#     def _get_obs(self):
+#         return np.concatenate([
+#             self.model.data.qpos.flat[1:],
+#             self.model.data.qvel.flat,
+#         ])
 
 
 

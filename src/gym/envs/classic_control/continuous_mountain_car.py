@@ -135,18 +135,25 @@ class Continuous_MountainCarEnv(gym.Env):
             backwheel.add_attr(self.cartrans)
             backwheel.set_color(.5, .5, .5)
             self.viewer.add_geom(backwheel)
-            flagx = (self.goal_position-self.min_position)*scale
-            flagy1 = self._height(self.goal_position)*scale
-            flagy2 = flagy1 + 50
-            flagpole = rendering.Line((flagx, flagy1), (flagx, flagy2))
+            # flagx = (self.goal_position-self.min_position)*scale
+            # flagy1 = self._height(self.goal_position)*scale
+            # flagy2 = flagy1 + 50
+            flagpole = rendering.Line((0, 0), (0, 50))
+            flagpole.add_attr(rendering.Transform(translation=(0, 0)))
+            self.flagtrans = rendering.Transform()
+            flagpole.add_attr(self.flagtrans)
             self.viewer.add_geom(flagpole)
-            flag = rendering.FilledPolygon([(flagx, flagy2), (flagx, flagy2 - 10), (flagx + 25, flagy2 - 5)])
+            flag = rendering.FilledPolygon([(0, 50), (0, 50 - 10), (0 + 25, 50 - 5)])
             flag.set_color(.8,.8,0)
+            flag.add_attr(rendering.Transform(translation=(0, 0)))
+            flag.add_attr(self.flagtrans)
             self.viewer.add_geom(flag)
 
         pos = self.state[0]
         self.cartrans.set_translation((pos-self.min_position)*scale, self._height(pos)*scale)
         self.cartrans.set_rotation(math.cos(3 * pos))
+
+        self.flagtrans.set_translation((self.goal_position - self.min_position) * scale, self._height(self.goal_position) * scale)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 

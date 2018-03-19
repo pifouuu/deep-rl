@@ -27,8 +27,7 @@ class BaseNoGoal(no_goal):
 
         self.unwrapped.model.body_pos = body_pos
 
-        obs = self.unwrapped._get_obs()
-        state = self.add_goal(obs, self.goal)
+        state = self.unwrapped._get_obs()
         self.prev_state = state
 
         return state
@@ -157,8 +156,7 @@ class PegNoGoal(BaseNoGoal):
         self.unwrapped.model.body_quat = body_quat
         self.unwrapped.model.body_pos = body_pos
 
-        obs = self.unwrapped._get_obs()
-        state = self.add_goal(obs, self.initial_goal)
+        state = self.unwrapped._get_obs()
         self.prev_state = state
         return state
 

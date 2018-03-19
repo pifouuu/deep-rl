@@ -7,6 +7,7 @@ class no_goal(Wrapper):
     def __init__(self, env):
         super(no_goal, self).__init__(env)
         self.goal = None
+        self.rec = None
         self.state_to_goal = []
         self.state_to_obs = range(env.observation_space.high.shape[0])
         self.state_to_reached = []
@@ -16,27 +17,18 @@ class no_goal(Wrapper):
     def eval_exp(self, previous_state_goal, action, state_goal, reward, terminal):
         return reward, terminal
 
-    def get_random_goal(self):
-        return None
-
-    def get_initial_goal(self):
-        return None
-
-    def add_goal(self, state, goal):
-        return state
-
     def _reset(self):
-        obs = self.env.reset()
-        state = self.add_goal(obs, self.goal)
+        state = self.env.reset()
         self.prev_state = state
+        if self.rec is not None: self.rec.capture_frame()
         return state
 
     def _step(self,action):
-        obs, env_reward, env_terminal, info = self.env.step(action)
-        state = self.add_goal(obs, self.goal)
+        state, env_reward, env_terminal, info = self.env.step(action)
         reward, terminal = self.eval_exp(self.prev_state, action, state, env_reward,
                                          env_terminal)
         self.prev_state = state
+        if self.rec is not None: self.rec.capture_frame()
         return state, reward, terminal, info
 
     @property
@@ -55,6 +47,7 @@ class goal_basic(Wrapper):
     def __init__(self,env):
         super(goal_basic, self).__init__(env)
         self.goal = []
+        self.rec = None
         self.state_to_goal = []
         self.state_to_reached = []
         self.state_to_obs = []
@@ -71,18 +64,20 @@ class goal_basic(Wrapper):
         goal_reached = agent_state_1[self.state_to_reached]
         goal = agent_state_1[self.state_to_goal]
         vec = goal - goal_reached
-        term = np.linalg.norm(vec) < 0.1
+        term = np.linalg.norm(vec) < 0.05
         if term:
             r += 100
         r -= 0.1 * np.square(action).sum()
         return r, term
 
-    def get_random_goal(self):
-        goal = self.goal_space.sample()
-        return goal
+    def set_goal_rnd(self):
+        self.goal = self.goal_space.sample()
 
-    def get_initial_goal(self):
-        return self.initial_goal
+    def set_goal_reachable(self):
+        self.set_goal_rnd()
+
+    def set_goal_init(self):
+        self.goal = self.initial_goal
 
     def change_goal(self, buffer_item, final_state):
         res = buffer_item
@@ -98,6 +93,7 @@ class goal_basic(Wrapper):
     def _step(self,action):
         obs, env_reward, env_terminal, info = self.env.step(action)
         state = self.add_goal(obs, self.goal)
+        if self.rec is not None: self.rec.capture_frame()
         reward, terminal = self.eval_exp(self.prev_state, action, state, env_reward,
                                          env_terminal)
         self.prev_state = state
@@ -106,6 +102,7 @@ class goal_basic(Wrapper):
     def _reset(self):
         obs = self.env.reset()
         state = self.add_goal(obs, self.goal)
+        if self.rec is not None: self.rec.capture_frame()
         self.prev_state = state
         return state
 

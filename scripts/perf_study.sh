@@ -1,63 +1,23 @@
 #!/usr/bin/env bash
 
-ENVTS=(CMCPos-v0)
-MEMORIES=(sarst)
-STRATS=(final)
-SAMPLERS=(rnd)
-ALPHAS=(2)
-DELTAS=(inf)
-ACTIVATIONS=(tanh)
-IVGS=(True)
-TCLIPS=(True)
-SIGMAS=(2)
+ENV="$1"
+PARAM="$2"
+read -a PARAM_VALS <<< $3
 
+LOGDIR=$HOME/deep-rl/log
 
-for ENVT in ${ENVTS[*]}
-do
-    for MEMORY in ${MEMORIES[*]}
-    do
-        for STRAT in ${STRATS[*]}
-        do
-            for SAMPLER in ${SAMPLERS[*]}
-            do
-                for ALPHA in ${ALPHAS[*]}
-                do
-                    for DELTA in ${DELTAS[*]}
-                    do
-                        for ACTIVATION in ${ACTIVATIONS[*]}
-                        do
-                            for IVG in ${IVGS[*]}
-                            do
-                                for TCLIP in ${TCLIPS[*]}
-                                do
-                                    for SIGMA in ${SIGMAS[*]}
-                                    do
-                                        export LOGS=./log/logs/${ENVT}_${MEMORY}_${STRAT}_${SAMPLER}_${ALPHA}_${DELTA}_${ACTIVATION}_${IVG}_${TCLIP}_${SIGMA}
-                                        rm -rf $LOGS
-                                        mkdir -p $LOGS
-                                        (
-                                            export LOGS
-                                            export ENVT
-                                            export MEMORY
-                                            export STRAT
-                                            export SAMPLER
-                                            export ALPHA
-                                            export DELTA
-                                            export ACTIVATION
-                                            export IVG
-                                            export TCLIP
-                                            export SIGMA
-                                            export PERF_STUDY="perf_${ENVT}_${MEMORY}_${STRAT}_${SAMPLER}_${ALPHA}_${DELTA}_${ACTIVATION}_${IVG}_${TCLIP}_${SIGMA}"
-                                            rm -f ${PERF_STUDY}.e*
-                                            qsub -N ${PERF_STUDY} -o "$LOGS/${PERF_STUDY}.out" -b "$LOGS/${PERF_STUDY}.err" -d $HOME/deep-rl perf_submit.sh
-                                        )
-                                    done
-                                done
-                            done
-                        done
-                    done
-                done
-            done
-        done
-    done
+for PARAM_VAL in ${PARAM_VALS[@]}; do
+    export TEMP_LOG=$LOGDIR/temp_log_${ENV}_${PARAM}_${PARAM_VAL}
+    rm -rf $TEMP_LOG
+    mkdir -p $TEMP_LOG
+    (
+        export TEMP_LOG
+        export ENV
+        export PARAM
+        export PARAM_VAL
+        export PERF_STUDY=perf_${ENV}_${PARAM}_${PARAM_VAL}
+        export LOGDIR
+        rm -f ${PERF_STUDY}.e*
+        qsub -N ${PERF_STUDY} -o "$TEMP_LOG/${PERF_STUDY}.out" -b "$TEMP_LOG/${PERF_STUDY}.err" -d $HOME/deep-rl $HOME/deep-rl/scripts/perf_submit.sh
+    )
 done

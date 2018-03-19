@@ -13,9 +13,26 @@ class CmcPos(goal_basic):
         self.initial_goal = np.array([0.45])
         self.reward_range = [-0.1, 100]
 
-    def get_initial_goal(self):
-        return np.random.uniform([0.449], [0.451], (1,))
+    def set_goal_init(self):
+        self.goal = np.random.uniform([0.449], [0.451], (1,))
 
+    def _reset(self):
+        obs = self.env.reset()
+        self.unwrapped.goal_position = self.goal
+        state = self.add_goal(obs, self.goal)
+        self.prev_state = state
+        return state
+
+    def eval_exp(self, _, action, agent_state_1, reward, terminal):
+        r = 0
+        goal_reached = agent_state_1[self.state_to_reached]
+        goal = agent_state_1[self.state_to_goal]
+        vec = goal - goal_reached
+        term = np.linalg.norm(vec) < 0.1
+        if term:
+            r += 100
+        r -= 0.1 * np.square(action).sum()
+        return r, term
 
 class CmcFull(goal_basic):
     def __init__(self, env):

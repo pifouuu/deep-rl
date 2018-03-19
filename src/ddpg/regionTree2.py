@@ -95,15 +95,15 @@ class Region(Box):
         return self.size == self.maxlen
 
 class TreeMemory():
-    def __init__(self, space, dims, buffer, max_regions, n_split, split_min, lambd, maxlen, n_cp):
+    def __init__(self, space, dims, buffer, max_regions, n_split, split_min, alpha, maxlen, n_cp):
         self.n_split = n_split
         self.split_min = split_min
         self.maxlen = maxlen
         self.n_cp = n_cp
         self.max_regions = max_regions
-        self.lambd = lambd
+        self.alpha = alpha
         self.dims = dims
-
+        self.figure_dims = dims
 
         self.buffer = buffer
 
@@ -233,7 +233,7 @@ class TreeMemory():
                 eval_splits_1_norm = [(a-np.min(eval_splits_1)) / width1 for a in eval_splits_1]
                 width2 = np.max(eval_splits_2) - np.min(eval_splits_2)
                 eval_splits_2_norm = [(a - np.min(eval_splits_2)) / width2 for a in eval_splits_2]
-                eval_splits = [self.lambd*x + (1-self.lambd)*y for (x,y) in zip(eval_splits_1_norm, eval_splits_2_norm)]
+                eval_splits = [self.alpha*x + (1-self.alpha)*y for (x,y) in zip(eval_splits_1_norm, eval_splits_2_norm)]
                 split_idx = np.argmax(eval_splits)
                 if eval_splits_1[split_idx] > self.split_min:
                     region.dim_split = self.dims[split_idx // self.n_split]
@@ -242,51 +242,51 @@ class TreeMemory():
                     print('splint succeeded: dim=', region.dim_split, ' val=', region.val_split)
                     self.n_leaves += 1
 
-    def displayTree(self, dims):
+    def init_display(self, figure_dims=None):
+        self.figure_dims = figure_dims
         self.figure = plt.figure()
         self.ax = plt.axes()
-        self.ax.set_xlim(self.root.low[dims[0]], self.root.high[dims[0]])
-        if len(dims)>1:
-            self.ax.set_ylim(self.root.low[dims[1]], self.root.high[dims[1]])
+        self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
+        if len(self.figure_dims)>1:
+            self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
         else:
             self.ax.set_ylim(0, 1)
         plt.ion()
         plt.show()
 
 
-    def compute_image(self, dims, with_points=False):
+    def compute_image(self, with_points=False):
         self.lines.clear()
         self.patches.clear()
         self.points.clear()
-        self._compute_image(1, dims, with_points)
-        print('max_cp: ', self.max_CP)
-        print('min_cp', self.min_CP)
-        if True:
-            self.ax.lines.clear()
-            self.ax.patches.clear()
-            for line in self.lines:
-                self.ax.add_line(line)
-            for patch in self.patches:
-                self.ax.add_patch(patch)
-            if with_points:
-                x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
-                sizes = [0.01 + ze for ze in z]
-                self.ax.scatter(x, y, s=sizes, c='red')
-            plt.draw()
-            plt.pause(0.001)
+        self._compute_image(1, with_points)
 
-    def _compute_image(self, idx, dims, with_points=False):
+    def plot_image(self, with_points=False):
+        self.ax.lines.clear()
+        self.ax.patches.clear()
+        for line in self.lines:
+            self.ax.add_line(line)
+        for patch in self.patches:
+            self.ax.add_patch(patch)
+        if with_points:
+            x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
+            sizes = [0.01 + ze for ze in z]
+            self.ax.scatter(x, y, s=sizes, c='red')
+        plt.draw()
+        plt.pause(0.001)
+
+    def _compute_image(self, idx, with_points=False):
         region = self.region_array[idx]
-        if len(dims) > 1:
-            low1 = region.low[dims[1]]
-            high1 = region.high[dims[1]]
+        if len(self.figure_dims) > 1:
+            low1 = region.low[self.figure_dims[1]]
+            high1 = region.high[self.figure_dims[1]]
         else:
             low1 = 0
             high1 = 1
 
         if region.is_leaf:
-            angle = (region.low[dims[0]], low1)
-            width = region.high[dims[0]] - region.low[dims[0]]
+            angle = (region.low[self.figure_dims[0]], low1)
+            width = region.high[self.figure_dims[0]] - region.low[self.figure_dims[0]]
             height = high1 - low1
             if self.max_CP == 0:
                 color = 0
@@ -303,17 +303,17 @@ class TreeMemory():
                 for point in region.points:
                     self.points.append(point)
         else:
-            if region.dim_split == dims[0]:
+            if region.dim_split == self.figure_dims[0]:
                 line1_xs = 2 * [region.val_split]
                 line1_ys = [low1, high1]
                 self.lines.append(lines.Line2D(line1_xs, line1_ys, linewidth=2, color='blue'))
-            elif len(dims)>1 and region.dim_split == dims[1]:
+            elif len(self.figure_dims)>1 and region.dim_split == self.figure_dims[1]:
                 line1_ys = 2 * [region.val_split]
-                line1_xs = [region.low[dims[0]], region.high[dims[0]]]
+                line1_xs = [region.low[self.figure_dims[0]], region.high[self.figure_dims[0]]]
                 self.lines.append(lines.Line2D(line1_xs, line1_ys, linewidth=2, color='blue'))
 
-            self._compute_image(2 * idx, dims)
-            self._compute_image(2 * idx + 1, dims)
+            self._compute_image(2 * idx, self.figure_dims)
+            self._compute_image(2 * idx + 1, self.figure_dims)
 
     def find_prop_region(self, sum):
         """Find the highest index `i` in the array such that
@@ -424,7 +424,7 @@ class zones3(zones):
 
 class demo():
     def __init__(self):
-        self.tree = RegionTree(max_regions=64, n_split=10, split_min=0, lambd = 1, maxlen = 300, n_cp = 30)
+        self.tree = RegionTree(max_regions=64, n_split=10, split_min=0, alpha = 1, maxlen = 300, n_cp = 30)
         self.tree.init_root(np.array([-1.2]), np.array([0.6]))
         self.tree.init_grid_1D(64)
         self.zones = zones3()

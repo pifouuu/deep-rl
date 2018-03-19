@@ -2,7 +2,7 @@ from gym.envs.mujoco.mujoco_env import MujocoEnv
 # ^^^^^ so that user gets the correct error
 # message if mujoco is not installed correctly
 from gym.envs.mujoco.ant import AntEnv
-from gym.envs.mujoco.half_cheetah import HalfCheetahEnv, HalfCheetahEnvFull
+from gym.envs.mujoco.half_cheetah import HalfCheetahEnv
 from gym.envs.mujoco.hopper import HopperEnv
 from gym.envs.mujoco.walker2d import Walker2dEnv
 from gym.envs.mujoco.humanoid import HumanoidEnv

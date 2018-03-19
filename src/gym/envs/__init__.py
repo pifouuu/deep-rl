@@ -76,15 +76,13 @@ register(
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
     max_episode_steps=999,
-    reward_threshold=90.0,
 )
 
 register(
     id='CMCPos-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcPos',
-    max_episode_steps=50,
-    reward_threshold=90.0,
+    max_episode_steps=999,
 )
 
 register(
@@ -92,7 +90,6 @@ register(
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcFull',
     max_episode_steps=999,
-    reward_threshold=90.0,
 )
 
 register(
@@ -114,7 +111,6 @@ register(
     entry_point='gym.envs.gridworlds:gridEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
     max_episode_steps=50,
-    reward_threshold=5.0,
 )
 
 # Robotics
@@ -362,19 +358,17 @@ register(
 # 2D
 
 register(
-    id='Reacher-v1',
+    id='Reacher-v0',
     entry_point='gym.envs.mujoco:ReacherEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
-    max_episode_steps=50,
-    reward_threshold=-3.75,
+    max_episode_steps=1000,
 )
 
 register(
-    id='ReacherSparse-v1',
+    id='ReacherGoal-v0',
     entry_point='gym.envs.mujoco:ReacherEnv',
-    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherSparse',
-    max_episode_steps=50,
-    reward_threshold=-3.75,
+    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:Reacher',
+    max_episode_steps=200,
 )
 
 register(
@@ -413,19 +407,17 @@ register(
 )
 
 register(
-    id='HalfCheetah-v1',
+    id='HalfCheetah-v0',
     entry_point='gym.envs.mujoco:HalfCheetahEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
     max_episode_steps=1000,
-    reward_threshold=4800.0,
 )
 
 register(
-    id='HalfCheetahG-v1',
-    entry_point='gym.envs.mujoco:HalfCheetahEnvFull',
+    id='HalfCheetahGoal-v0',
+    entry_point='gym.envs.mujoco:HalfCheetahEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.hc:HcRootx',
     max_episode_steps=1000,
-    reward_threshold=4800.0,
 )
 
 register(
