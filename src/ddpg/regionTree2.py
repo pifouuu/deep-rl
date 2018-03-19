@@ -263,8 +263,8 @@ class TreeMemory():
     #     self.ax.lines.clear()
     #     self.ax.patches.clear()
     #     for line_dict in self.lines:
-    #         self.ax.add_line(lines.Line2D(line1_xs=line_dict['xdata'],
-    #                                       line1_ys=line_dict['ydata'],
+    #         self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
+    #                                       ydata=line_dict['ydata'],
     #                                       linewidth=2,
     #                                       color='blue'))
     #     for patch_dict in self.patches:
