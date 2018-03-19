@@ -21,12 +21,12 @@ def main(args):
     now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
     # Two loggers are defined to retrieve information by step or by episode. Only episodic information is displayed to stdout.
-    log_dir = args['log_dir']+args['env']+'/'+now
+    log_dir = os.path.join(args['log_dir'],args['env'],now)
     os.makedirs(log_dir, exist_ok=True)
     with open(os.path.join(log_dir, 'config.txt'), 'w') as config_file:
         config_file.write(json.dumps(args))
-    logger_step = Logger(dir=log_dir+'/log_steps', format_strs=['stdout', 'json'])
-    logger_episode = Logger(dir=log_dir+'/log_episodes', format_strs=['stdout', 'json'])
+    logger_step = Logger(dir=os.path.join(log_dir,'log_steps'), format_strs=['stdout', 'json'])
+    logger_episode = Logger(dir=os.path.join(log_dir,'log_episodes'), format_strs=['stdout', 'json'])
 
     # os.environ['PYTHONHASHSEED'] = '0'
     # if args['random_seed'] is not None:

@@ -123,22 +123,22 @@ class DDPG_agent():
         self.critic.target_train()
 
     def save_weights(self):
-        dir = self.log_dir+'/saves'
+        dir = os.path.join(dir, 'saves')
         os.makedirs(dir, exist_ok=True)
-        self.actor.save_weights(dir+'/actor_weights_{}.h5'.format(self.env_step), overwrite=True)
-        self.actor.save_target_weights(dir + '/target_actor_weights_{}.h5'.format(self.env_step), overwrite=True)
-        self.critic.save_weights(dir + '/critic_weights_{}.h5'.format(self.env_step), overwrite=True)
-        self.critic.save_target_weights(dir + '/target_critic_weights_{}.h5'.format(self.env_step), overwrite=True)
+        self.actor.save_weights(os.path.join(dir, 'actor_weights_{}.h5'.format(self.env_step)), overwrite=True)
+        self.actor.save_target_weights(os.path.join(dir, 'target_actor_weights_{}.h5'.format(self.env_step)), overwrite=True)
+        self.critic.save_weights(os.path.join(dir, 'critic_weights_{}.h5'.format(self.env_step)), overwrite=True)
+        self.critic.save_target_weights(os.path.join(dir, 'target_critic_weights_{}.h5'.format(self.env_step)), overwrite=True)
 
     def load_weights(self):
         dir = self.log_dir.split('/')[:-1]
         dir.append(self.resume_timestamp)
         dir = '/'.join(dir)
-        dir = dir+'/saves'
-        self.actor.load_weights(dir+'/actor_weights_{}.h5'.format(self.resume_step))
-        self.critic.load_weights(dir + '/critic_weights_{}.h5'.format(self.resume_step))
-        self.actor.load_target_weights(dir + '/target_actor_weights_{}.h5'.format(self.resume_step))
-        self.critic.load_target_weights(dir + '/target_critic_weights_{}.h5'.format(self.resume_step))
+        dir = os.path.join(dir, 'saves')
+        self.actor.load_weights(os.path.join(dir, 'actor_weights_{}.h5'.format(self.resume_step)))
+        self.critic.load_weights(os.path.join(dir, 'critic_weights_{}.h5'.format(self.resume_step)))
+        self.actor.load_target_weights(os.path.join(dir, 'target_actor_weights_{}.h5'.format(self.resume_step)))
+        self.critic.load_target_weights(os.path.join(dir, 'target_critic_weights_{}.h5'.format(self.resume_step)))
 
     def log(self, stats, logger):
         for key in sorted(stats.keys()):
@@ -235,9 +235,7 @@ class DDPG_agent():
                 self.memory.init_display(self.train_env.state_to_goal)
             self.memory.plot_image()
 
-        lines = [line.get_xydata() for line in self.memory.lines]
-        patches = [list(patch.get_xy()) + [patch.get_height(), patch.get_width()] + list(patch._facecolor) for patch in self.memory.patches]
-        self.video.append([lines, patches])
+        self.video.append([self.memory.lines, self.memory.patches])
 
         video_path = os.path.join(self.pickle_dir, 'comp_progress.pkl')
         with open(video_path, 'wb') as f:
@@ -297,7 +295,7 @@ class DDPG_agent():
         return np.array(critic_stats), np.array(actor_stats)
 
     def get_rec(self, type):
-        vid_dir = self.log_dir + '/videos'
+        vid_dir = os.path.join(self.log_dir, 'videos')
         os.makedirs(vid_dir, exist_ok=True)
         if type is None:
             type_str = 'init'

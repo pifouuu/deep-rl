@@ -1,16 +1,14 @@
 from collections import deque
 from gym.spaces import Box
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.lines as lines
-import matplotlib.patches as patches
-from matplotlib import animation
 import itertools
-
 from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
 
-
-Blues = plt.get_cmap('Blues')
+# import matplotlib.pyplot as plt
+# import matplotlib.lines as lines
+# import matplotlib.patches as patches
+# from matplotlib import animation
+# Blues = plt.get_cmap('Blues')
 
 class Point(object):
     def __init__(self, state, val):
@@ -242,17 +240,17 @@ class TreeMemory():
                     print('splint succeeded: dim=', region.dim_split, ' val=', region.val_split)
                     self.n_leaves += 1
 
-    def init_display(self, figure_dims=None):
-        self.figure_dims = figure_dims
-        self.figure = plt.figure()
-        self.ax = plt.axes()
-        self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
-        if len(self.figure_dims)>1:
-            self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
-        else:
-            self.ax.set_ylim(0, 1)
-        plt.ion()
-        plt.show()
+    # def init_display(self, figure_dims=None):
+    #     self.figure_dims = figure_dims
+    #     self.figure = plt.figure()
+    #     self.ax = plt.axes()
+    #     self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
+    #     if len(self.figure_dims)>1:
+    #         self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
+    #     else:
+    #         self.ax.set_ylim(0, 1)
+    #     plt.ion()
+    #     plt.show()
 
 
     def compute_image(self, with_points=False):
@@ -261,19 +259,28 @@ class TreeMemory():
         self.points.clear()
         self._compute_image(1, with_points)
 
-    def plot_image(self, with_points=False):
-        self.ax.lines.clear()
-        self.ax.patches.clear()
-        for line in self.lines:
-            self.ax.add_line(line)
-        for patch in self.patches:
-            self.ax.add_patch(patch)
-        if with_points:
-            x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
-            sizes = [0.01 + ze for ze in z]
-            self.ax.scatter(x, y, s=sizes, c='red')
-        plt.draw()
-        plt.pause(0.001)
+    # def plot_image(self, with_points=False):
+    #     self.ax.lines.clear()
+    #     self.ax.patches.clear()
+    #     for line_dict in self.lines:
+    #         self.ax.add_line(lines.Line2D(line1_xs=line_dict['xdata'],
+    #                                       line1_ys=line_dict['ydata'],
+    #                                       linewidth=2,
+    #                                       color='blue'))
+    #     for patch_dict in self.patches:
+    #         self.ax.add_patch(patches.Rectangle(angle=patch_dict['angle'],
+    #                               width=patch_dict['width'],
+    #                               height=patch_dict['height'],
+    #                               fill=True,
+    #                               facecolor=Blues(patch_dict['color']),
+    #                               edgecolor=None,
+    #                               alpha=0.8))
+    #     if with_points:
+    #         x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
+    #         sizes = [0.01 + ze for ze in z]
+    #         self.ax.scatter(x, y, s=sizes, c='red')
+    #     plt.draw()
+    #     plt.pause(0.001)
 
     def _compute_image(self, idx, with_points=False):
         region = self.region_array[idx]
@@ -292,13 +299,10 @@ class TreeMemory():
                 color = 0
             else:
                 color = region.CP/self.max_CP
-            self.patches.append(patches.Rectangle(angle,
-                                  width,
-                                  height,
-                                  fill=True,
-                                  facecolor=Blues(color),
-                                  edgecolor=None,
-                                  alpha=0.8))
+            self.patches.append({'angle': angle,
+                                 'width': width,
+                                 'height': height,
+                                 'color': color})
             if with_points:
                 for point in region.points:
                     self.points.append(point)
@@ -306,11 +310,13 @@ class TreeMemory():
             if region.dim_split == self.figure_dims[0]:
                 line1_xs = 2 * [region.val_split]
                 line1_ys = [low1, high1]
-                self.lines.append(lines.Line2D(line1_xs, line1_ys, linewidth=2, color='blue'))
+                self.lines.append({'xdata': line1_xs,
+                                   'ydata': line1_ys})
             elif len(self.figure_dims)>1 and region.dim_split == self.figure_dims[1]:
                 line1_ys = 2 * [region.val_split]
                 line1_xs = [region.low[self.figure_dims[0]], region.high[self.figure_dims[0]]]
-                self.lines.append(lines.Line2D(line1_xs, line1_ys, linewidth=2, color='blue'))
+                self.lines.append({'xdata': line1_xs,
+                               'ydata': line1_ys})
 
             self._compute_image(2 * idx, self.figure_dims)
             self._compute_image(2 * idx + 1, self.figure_dims)
@@ -364,102 +370,102 @@ class TreeMemory():
     def sum_CP(self):
         return self.root.sum_CP
 
-class zones():
-    def __init__(self):
-
-        self.zones = []
-        self.samples_per_zone = []
-        self.comp_per_zone = []
-        self.zone_difficulties = []
-
-    def compute_comp(self, goal):
-        goal_zone = None
-        i = 0
-        while goal_zone is None:
-            if self.zones[i].contains(goal):
-                goal_zone = self.zones[i]
-            i += 1
-        n_samples = self.samples_per_zone[i - 1]
-
-        if n_samples < self.zone_difficulties[i - 1]:
-            comp = 0
-        else:
-            comp = np.min([1, (n_samples - self.zone_difficulties[i - 1]) / 1000])
-
-        self.samples_per_zone[i - 1] += 1
-        return comp
-
-class zones1(zones):
-    def __init__(self):
-        super(zones1, self).__init__()
-        zone1 = Region(np.array([-1.2, -0.07]), np.array([-0.6, 0]))
-        zone2 = Region(np.array([-0.6, -0.07]), np.array([0, 0]))
-        zone3 = Region(np.array([0, -0.07]), np.array([0.6, 0]))
-        zone4 = Region(np.array([-1.2, 0]), np.array([-0.6, 0.07]))
-        zone5 = Region(np.array([-0.6, 0]), np.array([0, 0.07]))
-        zone6 = Region(np.array([0, 0]), np.array([0.6, 0.07]))
-        self.zones = [zone1, zone2, zone3, zone4, zone5, zone6]
-        self.samples_per_zone = 6 * [0]
-        self.comp_per_zone = 6 * [0]
-        self.zone_difficulties = [0, 200, 400, 800, 1000, 1200]
-
-class zones2(zones):
-    def __init__(self):
-        super(zones2, self).__init__()
-        zone1 = Region(np.array([-1.2, -0.07]), np.array([0.6, 0.07]))
-        self.zones = [zone1]
-        self.samples_per_zone = [0]
-        self.comp_per_zone = [0]
-        self.zone_difficulties = [200]
-
-class zones3(zones):
-    def __init__(self):
-        super(zones3, self).__init__()
-        zone1 = Region(np.array([-1.2]), np.array([0]))
-        zone2 = Region(np.array([0]), np.array([0.6]))
-        self.zones = [zone1, zone2]
-        self.samples_per_zone = 2*[0]
-        self.comp_per_zone = 2*[0]
-        self.zone_difficulties = [200, 500]
-
-class demo():
-    def __init__(self):
-        self.tree = RegionTree(max_regions=64, n_split=10, split_min=0, alpha = 1, maxlen = 300, n_cp = 30)
-        self.tree.init_root(np.array([-1.2]), np.array([0.6]))
-        self.tree.init_grid_1D(64)
-        self.zones = zones3()
-        self.iteration = 0
-        self.dims = [0]
-        np.random.seed(None)
-
-    def iter(self):
-        goal = self.tree.sample(prop_rnd=1)
-        comp = self.zones.compute_comp(goal)
-        point = Point(goal, comp)
-        self.tree.insert_point(point)
-        self.iteration += 1
-
-    def updatefig(self, i, with_points=False):
-        for _ in range(100):
-            self.iter()
-        print(self.iteration)
-        self.tree.compute_image(dims=self.dims, with_points=with_points)
-        for line in self.tree.lines:
-            self.tree.ax.add_line(line)
-        for patch in self.tree.patches:
-            self.tree.ax.add_patch(patch)
-        if with_points:
-            x,y,z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.tree.points])
-            sizes = [0.01 + ze for ze in z]
-            self.tree.ax.scatter(x,y, s=sizes, c='red')
-        return self.tree.ax,
-
-    def run(self):
-        self.tree.displayTree(dims=self.dims)
-        ani = animation.FuncAnimation(self.tree.figure, self.updatefig, frames=100, interval=200, blit=True)
-        plt.show()
-
-if __name__ == "__main__":
-    demo = demo()
-    demo.run()
+# class zones():
+#     def __init__(self):
+#
+#         self.zones = []
+#         self.samples_per_zone = []
+#         self.comp_per_zone = []
+#         self.zone_difficulties = []
+#
+#     def compute_comp(self, goal):
+#         goal_zone = None
+#         i = 0
+#         while goal_zone is None:
+#             if self.zones[i].contains(goal):
+#                 goal_zone = self.zones[i]
+#             i += 1
+#         n_samples = self.samples_per_zone[i - 1]
+#
+#         if n_samples < self.zone_difficulties[i - 1]:
+#             comp = 0
+#         else:
+#             comp = np.min([1, (n_samples - self.zone_difficulties[i - 1]) / 1000])
+#
+#         self.samples_per_zone[i - 1] += 1
+#         return comp
+#
+# class zones1(zones):
+#     def __init__(self):
+#         super(zones1, self).__init__()
+#         zone1 = Region(np.array([-1.2, -0.07]), np.array([-0.6, 0]))
+#         zone2 = Region(np.array([-0.6, -0.07]), np.array([0, 0]))
+#         zone3 = Region(np.array([0, -0.07]), np.array([0.6, 0]))
+#         zone4 = Region(np.array([-1.2, 0]), np.array([-0.6, 0.07]))
+#         zone5 = Region(np.array([-0.6, 0]), np.array([0, 0.07]))
+#         zone6 = Region(np.array([0, 0]), np.array([0.6, 0.07]))
+#         self.zones = [zone1, zone2, zone3, zone4, zone5, zone6]
+#         self.samples_per_zone = 6 * [0]
+#         self.comp_per_zone = 6 * [0]
+#         self.zone_difficulties = [0, 200, 400, 800, 1000, 1200]
+#
+# class zones2(zones):
+#     def __init__(self):
+#         super(zones2, self).__init__()
+#         zone1 = Region(np.array([-1.2, -0.07]), np.array([0.6, 0.07]))
+#         self.zones = [zone1]
+#         self.samples_per_zone = [0]
+#         self.comp_per_zone = [0]
+#         self.zone_difficulties = [200]
+#
+# class zones3(zones):
+#     def __init__(self):
+#         super(zones3, self).__init__()
+#         zone1 = Region(np.array([-1.2]), np.array([0]))
+#         zone2 = Region(np.array([0]), np.array([0.6]))
+#         self.zones = [zone1, zone2]
+#         self.samples_per_zone = 2*[0]
+#         self.comp_per_zone = 2*[0]
+#         self.zone_difficulties = [200, 500]
+#
+# class demo():
+#     def __init__(self):
+#         self.tree = RegionTree(max_regions=64, n_split=10, split_min=0, alpha = 1, maxlen = 300, n_cp = 30)
+#         self.tree.init_root(np.array([-1.2]), np.array([0.6]))
+#         self.tree.init_grid_1D(64)
+#         self.zones = zones3()
+#         self.iteration = 0
+#         self.dims = [0]
+#         np.random.seed(None)
+#
+#     def iter(self):
+#         goal = self.tree.sample(prop_rnd=1)
+#         comp = self.zones.compute_comp(goal)
+#         point = Point(goal, comp)
+#         self.tree.insert_point(point)
+#         self.iteration += 1
+#
+#     def updatefig(self, i, with_points=False):
+#         for _ in range(100):
+#             self.iter()
+#         print(self.iteration)
+#         self.tree.compute_image(dims=self.dims, with_points=with_points)
+#         for line in self.tree.lines:
+#             self.tree.ax.add_line(line)
+#         for patch in self.tree.patches:
+#             self.tree.ax.add_patch(patch)
+#         if with_points:
+#             x,y,z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.tree.points])
+#             sizes = [0.01 + ze for ze in z]
+#             self.tree.ax.scatter(x,y, s=sizes, c='red')
+#         return self.tree.ax,
+#
+#     def run(self):
+#         self.tree.displayTree(dims=self.dims)
+#         ani = animation.FuncAnimation(self.tree.figure, self.updatefig, frames=100, interval=200, blit=True)
+#         plt.show()
+#
+# if __name__ == "__main__":
+#     demo = demo()
+#     demo.run()
 
