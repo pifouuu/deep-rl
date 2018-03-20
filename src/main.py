@@ -91,7 +91,7 @@ def main(args):
                             split_min=0,
                             alpha=args['alpha'],
                             maxlen=3000,
-                            n_cp=30,
+                            n_cp=500,
                             render=args['render_memory'])
 
         agent = DDPG_agent(sess,
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('--random-seed', help='random seed for repeatability', default=5)
     boolean_flag(parser, 'render-test', default=False)
     boolean_flag(parser, 'render-train', default=False)
-    boolean_flag(parser, 'render-memory', default=True)
+    boolean_flag(parser, 'render-memory', default=False)
     boolean_flag(parser, 'invert-grads', default=True)
     boolean_flag(parser, 'target-clip', default=True)
 

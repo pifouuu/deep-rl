@@ -6,11 +6,11 @@ from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
 import os
 
 
-import matplotlib.pyplot as plt
-import matplotlib.lines as lines
-import matplotlib.patches as patches
-from matplotlib import animation
-Blues = plt.get_cmap('Blues')
+# import matplotlib.pyplot as plt
+# import matplotlib.lines as lines
+# import matplotlib.patches as patches
+# from matplotlib import animation
+# Blues = plt.get_cmap('Blues')
 
 class Region(Box):
 
@@ -136,7 +136,7 @@ class TreeMemory():
     def _sample_competence(self, idx):
         region = self.region_array[idx]
         if region.is_leaf:
-            N = 10
+            N = 1
             region_goals = [region.sample(size=1) for _ in range(N)]
             starts = [self.buffer.env.get_start() for _ in range(N)]
             states = np.array([np.hstack([start,goal]) for start,goal in zip(starts, region_goals)])
@@ -278,48 +278,12 @@ class TreeMemory():
                     self.n_leaves += 1
                     self.update_CP_tree(2 * idx)
 
-
-
-
     def compute_image(self, with_points=False):
         self.lines.clear()
         self.patches.clear()
         self.points.clear()
         self._compute_image(1, with_points)
-
-    def init_display(self):
-        self.figure = plt.figure()
-        self.ax = plt.axes()
-        self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
-        if len(self.figure_dims)>1:
-            self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
-        else:
-            self.ax.set_ylim(0, 1)
-        plt.ion()
-        plt.show()
-
-    def plot_image(self, with_points=False):
-        self.ax.lines.clear()
-        self.ax.patches.clear()
-        for line_dict in self.lines:
-            self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
-                                          ydata=line_dict['ydata'],
-                                          linewidth=2,
-                                          color='blue'))
-        for patch_dict in self.patches:
-            self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
-                                  width=patch_dict['width'],
-                                  height=patch_dict['height'],
-                                  fill=True,
-                                  facecolor=Blues(patch_dict['color']),
-                                  edgecolor=None,
-                                  alpha=0.8))
-        # if with_points:
-        #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
-        #     sizes = [0.01 + ze for ze in z]
-        #     self.ax.scatter(x, y, s=sizes, c='red')
-        plt.draw()
-        plt.pause(0.001)
+        print("max_cp : ", self.max_CP)
 
     def _compute_image(self, idx, with_points=False):
         region = self.region_array[idx]
@@ -334,10 +298,12 @@ class TreeMemory():
             angle = (region.low[self.figure_dims[0]], low1)
             width = region.high[self.figure_dims[0]] - region.low[self.figure_dims[0]]
             height = high1 - low1
-            if self.max_CP == 0:
+            print("region ", idx, " cp : ", region.CP)
+            if self.max_CP-self.min_CP == 0:
                 color = 0
             else:
-                color = region.competence/self.max_competence
+                color = (region.CP-self.min_CP)/(self.max_CP-self.min_CP)
+                # color = region.competence/self.max_competence
             self.patches.append({'angle': angle,
                                  'width': width,
                                  'height': height,
@@ -359,6 +325,41 @@ class TreeMemory():
 
             self._compute_image(2 * idx, self.figure_dims)
             self._compute_image(2 * idx + 1, self.figure_dims)
+
+    # def init_display(self):
+    #     self.figure = plt.figure()
+    #     self.ax = plt.axes()
+    #     self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
+    #     if len(self.figure_dims)>1:
+    #         self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
+    #     else:
+    #         self.ax.set_ylim(0, 1)
+    #     plt.ion()
+    #     plt.show()
+    #
+    # def plot_image(self, with_points=False):
+    #     self.ax.lines.clear()
+    #     self.ax.patches.clear()
+    #     for line_dict in self.lines:
+    #         self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
+    #                                       ydata=line_dict['ydata'],
+    #                                       linewidth=2,
+    #                                       color='blue'))
+    #     for patch_dict in self.patches:
+    #         self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
+    #                               width=patch_dict['width'],
+    #                               height=patch_dict['height'],
+    #                               fill=True,
+    #                               facecolor=Blues(patch_dict['color']),
+    #                               edgecolor=None,
+    #                               alpha=0.8))
+    #     # if with_points:
+    #     #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
+    #     #     sizes = [0.01 + ze for ze in z]
+    #     #     self.ax.scatter(x, y, s=sizes, c='red')
+    #     plt.draw()
+    #     plt.pause(0.001)
+
 
     def find_prop_region(self, sum):
         """Find the highest index `i` in the array such that
