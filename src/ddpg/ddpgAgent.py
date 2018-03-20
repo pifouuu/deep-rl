@@ -200,6 +200,10 @@ class DDPG_agent():
                 if terminal:
                     self.nb_goals_reached += 1
                 self.memory.end_episode(terminal)
+                if self.train_env.goal_parameterized:
+                    video_path = os.path.join(self.pickle_dir, 'comp_progress.pkl')
+                    with open(video_path, 'wb') as f:
+                        pickle.dump(self.memory.history, f)
                 self.log_episode_stats()
 
                 state0 = self.reset_train()
@@ -221,25 +225,12 @@ class DDPG_agent():
 
                     self.log_step_stats()
 
-                    if self.train_env.goal_parameterized:
-                        self.update_memory_display()
+
 
             if self.env_step % self.save_freq == 0:
                 self.save_weights()
 
-    def update_memory_display(self):
 
-        self.memory.compute_image()
-        if self.render_test:
-            if self.memory.figure is None:
-                self.memory.init_display(self.train_env.state_to_goal)
-            self.memory.plot_image()
-
-        self.video.append([self.memory.lines, self.memory.patches])
-
-        video_path = os.path.join(self.pickle_dir, 'comp_progress.pkl')
-        with open(video_path, 'wb') as f:
-            pickle.dump(self.video, f)
 
     def act(self, state, noise=False):
         action = self.actor.model.predict(np.reshape(state, (1, self.actor.s_dim[0])))
@@ -290,7 +281,7 @@ class DDPG_agent():
             target_q_vals, critic_stat = self.train_critic(experiences)
             q_vals, actor_stat = self.train_actor(experiences)
             if self.train_env.goal_parameterized:
-                self.memory.update(batch_idxs, q_vals)
+                self.memory.update(experiences['state0'], q_vals)
             self.update_targets()
             critic_stats.append(critic_stat)
             actor_stats.append(actor_stat)

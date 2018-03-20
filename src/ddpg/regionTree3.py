@@ -3,12 +3,14 @@ from gym.spaces import Box
 import numpy as np
 import itertools
 from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
+import os
 
-# import matplotlib.pyplot as plt
-# import matplotlib.lines as lines
-# import matplotlib.patches as patches
-# from matplotlib import animation
-# Blues = plt.get_cmap('Blues')
+
+import matplotlib.pyplot as plt
+import matplotlib.lines as lines
+import matplotlib.patches as patches
+from matplotlib import animation
+Blues = plt.get_cmap('Blues')
 
 class Point(object):
     def __init__(self, state, val):
@@ -35,9 +37,7 @@ class Region(Box):
 
     def contains(self, point):
         x = point.state
-        above_low = (x >= self.low[self.dims]).all()
-        below_high = (x <= self.high[self.dims]).all()
-        return x.shape == self.low[self.dims].shape and above_low and below_high
+        return x.shape == self.low[self.dims].shape and (x >= self.low[self.dims]).all() and (x <= self.high[self.dims]).all()
 
     def split(self, dim, split_val):
         print("split_region")
@@ -49,26 +49,17 @@ class Region(Box):
         right = Region(low_right, self.high, maxlen=self.maxlen, n_cp = self.n_cp, dims=self.dims)
         left.CP = self.CP
         right.CP = self.CP
-        left_points = []
-        right_points = []
         for point in self.points:
             if left.contains(point):
-                left_points.append(point)
+                left.points.append(point)
             else:
-                right_points.append(point)
-        left.add(left_points)
-        right.add(right_points)
+                right.points.append(point)
         left.update_CP()
         right.update_CP()
         return left, right
 
-    def add(self, points):
-        for point in points:
-            self.points.append(point)
-        self.update_CP()
-
     def update_CP(self):
-        print("update_region")
+        print("update_CP_region")
         if self.size > 2*self.n_cp:
             len = self.size
             q1 = [pt.val for pt in list(itertools.islice(self.points, len-self.n_cp, len))]
@@ -92,7 +83,7 @@ class Region(Box):
         return self.size == self.maxlen
 
 class TreeMemory():
-    def __init__(self, space, dims, buffer, max_regions, n_split, split_min, alpha, maxlen, n_cp):
+    def __init__(self, space, dims, buffer, max_regions, n_split, split_min, alpha, maxlen, n_cp, render):
         self.n_split = n_split
         self.split_min = split_min
         self.maxlen = maxlen
@@ -109,6 +100,7 @@ class TreeMemory():
         self.lines = []
         self.patches = []
         self.points = []
+        self.history = []
 
         capacity = 1
         while capacity < max_regions:
@@ -118,9 +110,12 @@ class TreeMemory():
         self.region_array[1] = Region(space.low, space.high, maxlen=self.maxlen, n_cp=self.n_cp, dims=dims)
         self.update_CP_tree(1)
         self.n_leaves = 1
+        self.render = render
 
     def end_episode(self, goal_reached):
         self.buffer.end_episode(goal_reached)
+        self.update_tree()
+        self.update_display()
 
     def sample(self, batch_size):
         return self.buffer.sample(batch_size)
@@ -137,7 +132,19 @@ class TreeMemory():
         maxval = self.buffer.env.reward_range[1]
         states = [state[stg] for state in states]
         corr_vals = [(val-minval)/(maxval-minval) for val in vals]
-        self.insert([Point(state,val) for state,val in zip(states,corr_vals)])
+        for state, val in zip(states,corr_vals):
+            self.insert(Point(state,val))
+
+    def update_display(self):
+        self.compute_image()
+        if self.render:
+            if self.figure is None:
+                self.init_display()
+            self.plot_image()
+
+        self.history.append([self.lines, self.patches])
+
+
 
     def init_grid_1D(self, n):
         assert n & (n-1) == 0 #n must be a power of 2
@@ -157,34 +164,36 @@ class TreeMemory():
             self._init_grid_1D(2 * idx, n/2)
             self._init_grid_1D(2 * idx + 1, n/2)
 
-    def insert(self, points):
-        self._insert(points, 1)
+    def insert(self, point):
+        self._insert(point, 1)
 
-    def _insert(self, points, idx):
-        print("insert")
+    def _insert(self, point, idx):
         region = self.region_array[idx]
-        region.add(points)
-
         if not region.is_leaf:
             left = self.region_array[2 * idx]
-            left_points = []
-            right_points = []
-            for point in points:
-                if left.contains(point):
-                    left_points.append(point)
-                else:
-                    right_points.append(point)
-            self._insert(left_points, 2 * idx)
-            self._insert(right_points, 2 * idx + 1)
+            if left.contains(point):
+                self._insert(point, 2 * idx)
+            else:
+                self._insert(point, 2 * idx + 1)
+        else:
+            region.points.append(point)
+
+    def update_tree(self):
+        self._update_tree(1)
+
+    def _update_tree(self, idx):
+        region = self.region_array[idx]
+        if not region.is_leaf:
+            self._update_tree(2 * idx)
+            self._update_tree(2 * idx + 1)
         else:
             if region.full and idx < self.capacity:
                 self.split(idx)
             self.update_CP_tree(idx)
 
-
     def update_CP_tree(self, idx):
-        print('update_tree')
         region = self.region_array[idx]
+        region.update_CP()
         region.max_CP = region.CP
         region.min_CP = region.CP
         region.sum_CP = region.CP
@@ -218,7 +227,6 @@ class TreeMemory():
         return -np.abs(left.size-right.size)
 
     def split(self, idx):
-        print("split")
         eval_splits_1 = []
         eval_splits_2 = []
         if self.n_leaves < self.max_regions:
@@ -242,17 +250,7 @@ class TreeMemory():
                     print('splint succeeded: dim=', region.dim_split, ' val=', region.val_split)
                     self.n_leaves += 1
 
-    # def init_display(self, figure_dims=None):
-    #     self.figure_dims = figure_dims
-    #     self.figure = plt.figure()
-    #     self.ax = plt.axes()
-    #     self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
-    #     if len(self.figure_dims)>1:
-    #         self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
-    #     else:
-    #         self.ax.set_ylim(0, 1)
-    #     plt.ion()
-    #     plt.show()
+
 
 
     def compute_image(self, with_points=False):
@@ -261,28 +259,39 @@ class TreeMemory():
         self.points.clear()
         self._compute_image(1, with_points)
 
-    # def plot_image(self, with_points=False):
-    #     self.ax.lines.clear()
-    #     self.ax.patches.clear()
-    #     for line_dict in self.lines:
-    #         self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
-    #                                       ydata=line_dict['ydata'],
-    #                                       linewidth=2,
-    #                                       color='blue'))
-    #     for patch_dict in self.patches:
-    #         self.ax.add_patch(patches.Rectangle(angle=patch_dict['angle'],
-    #                               width=patch_dict['width'],
-    #                               height=patch_dict['height'],
-    #                               fill=True,
-    #                               facecolor=Blues(patch_dict['color']),
-    #                               edgecolor=None,
-    #                               alpha=0.8))
-    #     if with_points:
-    #         x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
-    #         sizes = [0.01 + ze for ze in z]
-    #         self.ax.scatter(x, y, s=sizes, c='red')
-    #     plt.draw()
-    #     plt.pause(0.001)
+    def init_display(self):
+        self.figure = plt.figure()
+        self.ax = plt.axes()
+        self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
+        if len(self.figure_dims)>1:
+            self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
+        else:
+            self.ax.set_ylim(0, 1)
+        plt.ion()
+        plt.show()
+
+    def plot_image(self, with_points=False):
+        self.ax.lines.clear()
+        self.ax.patches.clear()
+        for line_dict in self.lines:
+            self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
+                                          ydata=line_dict['ydata'],
+                                          linewidth=2,
+                                          color='blue'))
+        for patch_dict in self.patches:
+            self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
+                                  width=patch_dict['width'],
+                                  height=patch_dict['height'],
+                                  fill=True,
+                                  facecolor=Blues(patch_dict['color']),
+                                  edgecolor=None,
+                                  alpha=0.8))
+        if with_points:
+            x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
+            sizes = [0.01 + ze for ze in z]
+            self.ax.scatter(x, y, s=sizes, c='red')
+        plt.draw()
+        plt.pause(0.001)
 
     def _compute_image(self, idx, with_points=False):
         region = self.region_array[idx]

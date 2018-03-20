@@ -5,7 +5,7 @@ import argparse
 import pprint as pp
 from ddpg.logger import Logger
 from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
-from ddpg.regionTree2 import TreeMemory
+from ddpg.regionTree3 import TreeMemory
 import datetime
 from ddpg.networks import ActorNetwork, CriticNetwork
 from ddpg.ddpgAgent import DDPG_agent
@@ -57,7 +57,7 @@ def main(args):
     high = np.concatenate([train_env.observation_space.high, train_env.goal_space.high])
     state_space = Box(low, high)
 
-    memory = TreeMemory(state_space, train_env.state_to_goal, memory, max_regions=64, n_split=10, split_min=0, alpha = args['alpha'], maxlen = 300, n_cp = 30)
+    memory = TreeMemory(state_space, train_env.state_to_goal, memory, max_regions=64, n_split=10, split_min=0, alpha = args['alpha'], maxlen = 3000, n_cp = 30, render=args['render_memory'])
     # memory.init_grid_1D(64)
 
     # Noise for the actor in vanilla ddpg
@@ -123,6 +123,7 @@ if __name__ == '__main__':
     parser.add_argument('--random-seed', help='random seed for repeatability', default=5)
     boolean_flag(parser, 'render-test', default=False)
     boolean_flag(parser, 'render-train', default=False)
+    boolean_flag(parser, 'render-memory', default=True)
     boolean_flag(parser, 'invert-grads', default=True)
     boolean_flag(parser, 'target-clip', default=True)
 
