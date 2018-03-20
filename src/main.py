@@ -57,9 +57,6 @@ def main(args):
     high = np.concatenate([train_env.observation_space.high, train_env.goal_space.high])
     state_space = Box(low, high)
 
-    memory = TreeMemory(state_space, train_env.state_to_goal, memory, max_regions=64, n_split=10, split_min=0, alpha = args['alpha'], maxlen = 3000, n_cp = 30, render=args['render_memory'])
-    # memory.init_grid_1D(64)
-
     # Noise for the actor in vanilla ddpg
     actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(train_env.action_dim), sigma=float(args['sigma']))
 
@@ -83,6 +80,19 @@ def main(args):
                                float(args['gamma']),
                                float(args['tau']),
                                float(args['critic_lr']))
+
+        memory = TreeMemory(state_space,
+                            train_env.state_to_goal,
+                            memory,
+                            actor,
+                            critic,
+                            max_regions=64,
+                            n_split=10,
+                            split_min=0,
+                            alpha=args['alpha'],
+                            maxlen=3000,
+                            n_cp=30,
+                            render=args['render_memory'])
 
         agent = DDPG_agent(sess,
                            actor,

@@ -12,11 +12,6 @@ import matplotlib.patches as patches
 from matplotlib import animation
 Blues = plt.get_cmap('Blues')
 
-class Point(object):
-    def __init__(self, state, val):
-        self.state = state
-        self.val = val
-
 class Region(Box):
 
     def __init__(self, low = np.array([-np.inf]), high=np.array([np.inf]), maxlen=0, n_cp=0, dims=None):
@@ -25,6 +20,8 @@ class Region(Box):
         self.points = deque(maxlen=self.maxlen)
         self.n_cp = n_cp
         self.CP = 0
+        self.competence = 0
+        self.max_competence = 0
         self.max_CP = 0
         self.min_CP = 0
         self.sum_CP = 0
@@ -32,15 +29,14 @@ class Region(Box):
         self.val_split = None
         self.dims = dims
 
-    def sample(self):
-        return np.random.uniform(low=self.low[self.dims], high=self.high[self.dims], size=self.low[self.dims].shape)
+    def sample(self, size=1):
+        return np.random.uniform(low=self.low[self.dims], high=self.high[self.dims], size=size)
 
     def contains(self, point):
-        x = point.state
+        x = point[0]
         return x.shape == self.low[self.dims].shape and (x >= self.low[self.dims]).all() and (x <= self.high[self.dims]).all()
 
     def split(self, dim, split_val):
-        print("split_region")
         low_right = np.copy(self.low)
         low_right[dim] = split_val
         high_left = np.copy(self.high)
@@ -49,6 +45,8 @@ class Region(Box):
         right = Region(low_right, self.high, maxlen=self.maxlen, n_cp = self.n_cp, dims=self.dims)
         left.CP = self.CP
         right.CP = self.CP
+        left.competence = self.competence
+        right.competence = self.competence
         for point in self.points:
             if left.contains(point):
                 left.points.append(point)
@@ -59,13 +57,14 @@ class Region(Box):
         return left, right
 
     def update_CP(self):
-        print("update_CP_region")
         if self.size > 2*self.n_cp:
             len = self.size
-            q1 = [pt.val for pt in list(itertools.islice(self.points, len-self.n_cp, len))]
-            q2 = [pt.val for pt in list(itertools.islice(self.points, len-2*self.n_cp, len-self.n_cp))]
+            q1 = [pt[1] for pt in list(itertools.islice(self.points, len-self.n_cp, len))]
+            q2 = [pt[1] for pt in list(itertools.islice(self.points, len-2*self.n_cp, len-self.n_cp))]
             self.CP = 1/2 + (np.sum(q1)-np.sum(q2))/(2*self.n_cp)
+            self.competence = (np.sum(q1)+np.sum(q2))/(2*self.n_cp)
         self.max_CP = self.CP
+        self.max_competence = self.competence
         self.sum_CP = self.CP
         self.min_CP = self.CP
         assert self.CP >= 0
@@ -83,7 +82,7 @@ class Region(Box):
         return self.size == self.maxlen
 
 class TreeMemory():
-    def __init__(self, space, dims, buffer, max_regions, n_split, split_min, alpha, maxlen, n_cp, render):
+    def __init__(self, space, dims, buffer, actor, critic, max_regions, n_split, split_min, alpha, maxlen, n_cp, render):
         self.n_split = n_split
         self.split_min = split_min
         self.maxlen = maxlen
@@ -111,6 +110,11 @@ class TreeMemory():
         self.update_CP_tree(1)
         self.n_leaves = 1
         self.render = render
+        self.actor = actor
+        self.critic = critic
+
+        self.minval = self.buffer.env.reward_range[0] / (1 - 0.99)
+        self.maxval = self.buffer.env.reward_range[1]
 
     def end_episode(self, goal_reached):
         self.buffer.end_episode(goal_reached)
@@ -126,6 +130,25 @@ class TreeMemory():
     def build_exp(self, state, action, next_state, reward, terminal):
         return self.buffer.build_exp(state, action, next_state, reward, terminal)
 
+    def sample_competence(self):
+        self._sample_competence(1)
+
+    def _sample_competence(self, idx):
+        region = self.region_array[idx]
+        if region.is_leaf:
+            N = 10
+            region_goals = [region.sample(size=1) for _ in range(N)]
+            starts = [self.buffer.env.get_start() for _ in range(N)]
+            states = np.array([np.hstack([start,goal]) for start,goal in zip(starts, region_goals)])
+            a_outs = self.actor.predict(states)
+            q_outs = list(self.critic.predict(states, a_outs))
+            corr_vals = [(val - self.minval) / (self.maxval - self.minval) for val in q_outs]
+            for goal, val in zip(region_goals, corr_vals):
+                region.points.append((goal,val))
+        else:
+            self._sample_competence(2 * idx)
+            self._sample_competence(2 * idx + 1)
+
     def update(self, states, vals):
         stg = self.buffer.env.state_to_goal
         minval = self.buffer.env.reward_range[0] / (1 - 0.99)
@@ -133,7 +156,7 @@ class TreeMemory():
         states = [state[stg] for state in states]
         corr_vals = [(val-minval)/(maxval-minval) for val in vals]
         for state, val in zip(states,corr_vals):
-            self.insert(Point(state,val))
+            self.insert((state,val))
 
     def update_display(self):
         self.compute_image()
@@ -187,14 +210,14 @@ class TreeMemory():
             self._update_tree(2 * idx)
             self._update_tree(2 * idx + 1)
         else:
+            region.update_CP()
             if region.full and idx < self.capacity:
                 self.split(idx)
-            self.update_CP_tree(idx)
 
     def update_CP_tree(self, idx):
         region = self.region_array[idx]
-        region.update_CP()
         region.max_CP = region.CP
+        region.max_competence = region.competence
         region.min_CP = region.CP
         region.sum_CP = region.CP
         idx //= 2
@@ -206,6 +229,7 @@ class TreeMemory():
             to_merge = left.is_leaf and right.is_leaf and split_eval < self.split_min
             if to_merge:
                 region.max_CP = region.CP
+                region.max_competence = region.competence
                 region.min_CP = region.CP
                 region.sum_CP = region.CP
                 region.dim_split = None
@@ -216,6 +240,7 @@ class TreeMemory():
                 print('merge')
             else:
                 region.max_CP = np.max([left.max_CP, right.max_CP])
+                region.max_competence = np.max([left.max_competence, right.max_competence])
                 region.min_CP = np.min([left.min_CP, right.min_CP])
                 region.sum_CP = np.sum([left.sum_CP, right.sum_CP])
             idx //= 2
@@ -228,20 +253,22 @@ class TreeMemory():
 
     def split(self, idx):
         eval_splits_1 = []
-        eval_splits_2 = []
+        # eval_splits_2 = []
         if self.n_leaves < self.max_regions:
             region = self.region_array[idx]
             for dim in self.dims:
-                for num_split, split_val in enumerate(np.linspace(region.low[dim], region.high[dim], self.n_split+2)[1:-1]):
+                sub_regions = np.linspace(region.low[dim], region.high[dim], self.n_split+2)
+                for num_split, split_val in enumerate(sub_regions[1:-1]):
                     temp_left, temp_right = region.split(dim, split_val)
                     eval_splits_1.append(self.split_eval_1(temp_left, temp_right))
-                    eval_splits_2.append(self.split_eval_2(temp_left, temp_right))
+                    # eval_splits_2.append(self.split_eval_2(temp_left, temp_right))
             width1 = np.max(eval_splits_1)-np.min(eval_splits_1)
             if width1 != 0:
                 eval_splits_1_norm = [(a-np.min(eval_splits_1)) / width1 for a in eval_splits_1]
-                width2 = np.max(eval_splits_2) - np.min(eval_splits_2)
-                eval_splits_2_norm = [(a - np.min(eval_splits_2)) / width2 for a in eval_splits_2]
-                eval_splits = [self.alpha*x + (1-self.alpha)*y for (x,y) in zip(eval_splits_1_norm, eval_splits_2_norm)]
+                # width2 = np.max(eval_splits_2) - np.min(eval_splits_2)
+                # eval_splits_2_norm = [(a - np.min(eval_splits_2)) / width2 for a in eval_splits_2]
+                # eval_splits = [self.alpha*x + (1-self.alpha)*y for (x,y) in zip(eval_splits_1_norm, eval_splits_2_norm)]
+                eval_splits = eval_splits_1_norm
                 split_idx = np.argmax(eval_splits)
                 if eval_splits_1[split_idx] > self.split_min:
                     region.dim_split = self.dims[split_idx // self.n_split]
@@ -249,6 +276,7 @@ class TreeMemory():
                     self.region_array[2 * idx], self.region_array[2 * idx + 1] = region.split(region.dim_split, region.val_split)
                     print('splint succeeded: dim=', region.dim_split, ' val=', region.val_split)
                     self.n_leaves += 1
+                    self.update_CP_tree(2 * idx)
 
 
 
@@ -286,10 +314,10 @@ class TreeMemory():
                                   facecolor=Blues(patch_dict['color']),
                                   edgecolor=None,
                                   alpha=0.8))
-        if with_points:
-            x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
-            sizes = [0.01 + ze for ze in z]
-            self.ax.scatter(x, y, s=sizes, c='red')
+        # if with_points:
+        #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
+        #     sizes = [0.01 + ze for ze in z]
+        #     self.ax.scatter(x, y, s=sizes, c='red')
         plt.draw()
         plt.pause(0.001)
 
@@ -309,7 +337,7 @@ class TreeMemory():
             if self.max_CP == 0:
                 color = 0
             else:
-                color = region.CP/self.max_CP
+                color = region.competence/self.max_competence
             self.patches.append({'angle': angle,
                                  'width': width,
                                  'height': height,
@@ -358,9 +386,9 @@ class TreeMemory():
         sample = self.root.sample()
         return sample
 
-    def sample_goal(self, prop_rnd=1):
+    def sample_goal(self):
         p = np.random.random()
-        if p<prop_rnd:
+        if p < self.alpha:
             return self.sample_random()
         else:
             return self.sample_prop()
@@ -372,6 +400,10 @@ class TreeMemory():
     @property
     def max_CP(self):
         return self.root.max_CP
+
+    @property
+    def max_competence(self):
+        return self.root.max_competence
 
     @property
     def min_CP(self):

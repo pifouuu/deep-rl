@@ -280,8 +280,9 @@ class DDPG_agent():
             batch_idxs, experiences = self.memory.sample(self.batch_size)
             target_q_vals, critic_stat = self.train_critic(experiences)
             q_vals, actor_stat = self.train_actor(experiences)
-            if self.train_env.goal_parameterized:
-                self.memory.update(experiences['state0'], q_vals)
+            self.memory.sample_competence()
+            # if self.train_env.goal_parameterized:
+            #     self.memory.update(experiences['state0'], q_vals)
             self.update_targets()
             critic_stats.append(critic_stat)
             actor_stats.append(actor_stat)

@@ -15,6 +15,9 @@ class CmcPos(goal_basic):
     def set_goal_init(self):
         self.goal = np.random.uniform([0.449], [0.451], (1,))
 
+    def get_start(self):
+        return np.array([np.random.uniform(low=-0.6, high=-0.4), 0])
+
     def _reset(self):
         obs = self.env.reset()
         self.unwrapped.goal_position = self.goal
