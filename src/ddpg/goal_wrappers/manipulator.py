@@ -29,7 +29,7 @@ class BaseNoGoal(no_goal):
 
         state = self.unwrapped._get_obs()
         self.prev_state = state
-
+        if self.rec is not None: self.rec.capture_frame()
         return state
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
@@ -46,8 +46,8 @@ class BaseNoGoal(no_goal):
 class Base(goal_basic):
     def __init__(self, env):
         super(Base, self).__init__(env)
-        self.state_to_goal = range(25,27)
-        self.state_to_obs = range(25)
+        self.state_to_goal = range(24,26)
+        self.state_to_obs = range(24)
         self.state_to_reached = range(22,24)
         self.goal_space = Box(np.array([-.4, .1]), np.array([.4, .4]))
         self.target = 'target'

@@ -360,7 +360,7 @@ register(
 register(
     id='Reacher-v0',
     entry_point='gym.envs.mujoco:ReacherEnv',
-    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherNoGoal',
     max_episode_steps=1000,
 )
 
@@ -409,14 +409,14 @@ register(
 register(
     id='HalfCheetah-v0',
     entry_point='gym.envs.mujoco:HalfCheetahEnv',
-    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.hc:HalfCheetahNoGoal',
     max_episode_steps=1000,
 )
 
 register(
     id='HalfCheetahGoal-v0',
     entry_point='gym.envs.mujoco:HalfCheetahEnv',
-    goal_wrapper_entry_point='ddpg.goal_wrappers.hc:HcRootx',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.hc:HalfCheetahX',
     max_episode_steps=1000,
 )
 

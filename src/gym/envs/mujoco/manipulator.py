@@ -14,10 +14,10 @@ class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.target = 'target'
         self.objects = []
         self.fixed_objects = []
-        self.sites = []
+        self.sites = ['grasp']
         self.arm_joints = ['arm_root', 'arm_shoulder', 'arm_elbow', 'arm_wrist',
                            'finger', 'fingertip', 'thumb', 'thumbtip']
-        self.arm_bodies = ['hand']
+        self.arm_bodies = []
 
     def _step(self, a):
         self.do_simulation(a, self.frame_skip)
@@ -152,7 +152,7 @@ class ManipulatorEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         # Objects sites for reward computation
         if self.sites:
             site_idx = [self.model.site_names.index(six.b(site)) for site in self.sites]
-            site_positions = [self.model.data.site_xpos[idx][0, 2] for idx in site_idx]
+            site_positions = [self.model.data.site_xpos[idx][[0, 2]] for idx in site_idx]
             sites = np.hstack(site_positions) # size 2*n_sites
             observations.append(sites)
 

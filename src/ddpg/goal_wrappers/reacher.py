@@ -1,7 +1,13 @@
-from .wrapper import goal_basic
+from .wrapper import goal_basic, no_goal
 import numpy as np
 
 from gym.spaces import Box
+
+class ReacherNoGoal(no_goal):
+    def __init__(self, env):
+        super(ReacherNoGoal, self).__init__(env)
+        self.initial_goal = np.array([0, 0.1])
+        self.state_to_reached = [6, 7]
 
 class Reacher(goal_basic):
     def __init__(self, env):
@@ -11,7 +17,6 @@ class Reacher(goal_basic):
         self.state_to_reached = [6,7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
         self.initial_goal = np.array([0, 0.1])
-        self.reward_range = [-0.2, 100]
 
     def _reset(self):
         _ = self.env.reset()
@@ -23,6 +28,7 @@ class Reacher(goal_basic):
         self.starts.append(obs)
         state = self.add_goal(obs, self.goal)
         self.prev_state = state
+        if self.rec is not None: self.rec.capture_frame()
         return state
 
     def set_goal_reachable(self):

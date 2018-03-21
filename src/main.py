@@ -137,7 +137,7 @@ if __name__ == '__main__':
     boolean_flag(parser, 'invert-grads', default=True)
     boolean_flag(parser, 'target-clip', default=True)
 
-    parser.add_argument('--env', help='choose the gym env', default='CMC-v0')
+    parser.add_argument('--env', help='choose the gym env', default='ManipulatorGoal-v0')
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
     parser.add_argument('--alpha', help='proportion of random goal sampling', default=1)

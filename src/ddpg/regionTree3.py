@@ -32,8 +32,8 @@ class Region(Box):
         self.dims = dims
         self.freq = 0
 
-    def sample(self, size=1):
-        return np.random.uniform(low=self.low[self.dims], high=self.high[self.dims], size=size)
+    def sample(self):
+        return np.random.uniform(low=self.low[self.dims], high=self.high[self.dims])
 
     def contains(self, x):
         return x.shape == self.low[self.dims].shape and (x >= self.low[self.dims]).all() and (x <= self.high[self.dims]).all()
@@ -141,7 +141,7 @@ class TreeMemory():
         region = self.region_array[idx]
         if region.is_leaf:
             N = 1
-            region_goals = [region.sample(size=1) for _ in range(N)]
+            region_goals = [region.sample() for _ in range(N)]
             starts = [self.buffer.env.get_start() for _ in range(N)]
             states = np.array([np.hstack([start,goal]) for start,goal in zip(starts, region_goals)])
             a_outs = self.actor.predict(states)
