@@ -11,18 +11,11 @@ class CmcPos(goal_basic):
         self.goal_space = Box(np.array([-1.2]), np.array([0.6]))
         self.initial_goal = np.array([0.45])
         self.reward_range = [-0.1, 100]
-
-    def set_goal_init(self):
-        self.goal = np.random.uniform([0.449], [0.451], (1,))
-
-    def get_start(self):
-        return np.array([np.random.uniform(low=-0.6, high=-0.4), 0])
+        self.starts = []
 
     def _reset(self):
-        obs = self.env.reset()
+        state = super(CmcPos, self)._reset()
         self.unwrapped.goal_position = self.goal
-        state = self.add_goal(obs, self.goal)
-        self.prev_state = state
         return state
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):

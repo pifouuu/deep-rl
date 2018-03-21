@@ -12,3 +12,4 @@ class HcRootx(goal_basic):
         self.reward_range = [-0.6, 100]
         self.goal_space = Box(np.array([0]), np.array([100]))
         self.initial_goal = np.array([100])
+

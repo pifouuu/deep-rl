@@ -2,6 +2,8 @@ from gym import Wrapper
 import numpy as np
 import math
 from gym.spaces import Box
+from collections import deque
+
 
 class no_goal(Wrapper):
     def __init__(self, env):
@@ -55,6 +57,7 @@ class goal_basic(Wrapper):
         self.initial_goal = np.array([])
         self.reward_range = [-self.action_dim[0]*0.1, 100]
         self.prev_state = None
+        self.starts = deque(maxlen=100)
 
     def add_goal(self, state, goal):
         return np.concatenate([state, goal])
@@ -101,10 +104,15 @@ class goal_basic(Wrapper):
 
     def _reset(self):
         obs = self.env.reset()
+        self.starts.append(obs)
         state = self.add_goal(obs, self.goal)
         if self.rec is not None: self.rec.capture_frame()
         self.prev_state = state
         return state
+
+    def get_start(self):
+        start = self.starts[np.random.randint(len(self.starts))]
+        return start
 
     @property
     def state_dim(self):
