@@ -165,7 +165,7 @@ class TreeMemory():
                 self.init_display()
             self.plot_image()
 
-        self.history.append([self.lines, self.patches])
+        self.history.append([self.lines.copy(), self.patches.copy()])
 
 
 
