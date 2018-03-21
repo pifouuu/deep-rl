@@ -22,6 +22,8 @@ class Region(Box):
         self.CP = 0
         self.competence = 0
         self.max_competence = 0
+        self.min_competence = 0
+        self.sum_competence = 0
         self.max_CP = 0
         self.min_CP = 0
         self.sum_CP = 0
@@ -65,6 +67,7 @@ class Region(Box):
             self.competence = (np.sum(q1)+np.sum(q2))/(2*self.n_cp)
         self.max_CP = self.CP
         self.max_competence = self.competence
+        self.min_competence = self.competence
         self.sum_CP = self.CP
         self.min_CP = self.CP
         assert self.CP >= 0
@@ -217,9 +220,11 @@ class TreeMemory():
     def update_CP_tree(self, idx):
         region = self.region_array[idx]
         region.max_CP = region.CP
-        region.max_competence = region.competence
         region.min_CP = region.CP
         region.sum_CP = region.CP
+        region.max_competence = region.competence
+        region.min_competence = region.competence
+        region.sum_competence = region.competence
         idx //= 2
         while idx >= 1:
             region = self.region_array[idx]
@@ -229,9 +234,11 @@ class TreeMemory():
             to_merge = left.is_leaf and right.is_leaf and split_eval < self.split_min
             if to_merge:
                 region.max_CP = region.CP
-                region.max_competence = region.competence
                 region.min_CP = region.CP
                 region.sum_CP = region.CP
+                region.max_competence = region.competence
+                region.min_competence = region.competence
+                region.sum_competence = region.competence
                 region.dim_split = None
                 region.val_split = None
                 self.region_array[2 * idx] = None
@@ -240,9 +247,11 @@ class TreeMemory():
                 print('merge')
             else:
                 region.max_CP = np.max([left.max_CP, right.max_CP])
-                region.max_competence = np.max([left.max_competence, right.max_competence])
                 region.min_CP = np.min([left.min_CP, right.min_CP])
                 region.sum_CP = np.sum([left.sum_CP, right.sum_CP])
+                region.max_competence = np.max([left.max_competence, right.max_competence])
+                region.min_competence = np.min([left.min_competence, right.min_competence])
+                region.sum_competence = np.sum([left.sum_competence, right.sum_competence])
             idx //= 2
 
     def split_eval_1(self, left, right):
@@ -299,15 +308,16 @@ class TreeMemory():
             width = region.high[self.figure_dims[0]] - region.low[self.figure_dims[0]]
             height = high1 - low1
             print("region ", idx, " cp : ", region.CP)
-            if self.max_CP-self.min_CP == 0:
-                color = 0
-            else:
-                color = (region.CP-self.min_CP)/(self.max_CP-self.min_CP)
-                # color = region.competence/self.max_competence
             self.patches.append({'angle': angle,
                                  'width': width,
                                  'height': height,
-                                 'color': color})
+                                 'max_cp': self.max_CP,
+                                 'min_cp': self.min_CP,
+                                 'cp': region.CP,
+                                 'max_competence': self.max_competence,
+                                 'min_competence': self.min_competence,
+                                 'competence': region.competence
+                                 })
             if with_points:
                 for point in region.points:
                     self.points.append(point)
@@ -346,11 +356,16 @@ class TreeMemory():
     #                                       linewidth=2,
     #                                       color='blue'))
     #     for patch_dict in self.patches:
+    #         if patch_dict['max_cp'] - patch_dict['min_cp'] == 0:
+    #             color = 0
+    #         else:
+    #             color = (patch_dict['cp']-patch_dict['min_cp'])/(patch_dict['max_cp']-patch_dict['min_cp'])
+    #             # color = region.competence/self.max_competence
     #         self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
     #                               width=patch_dict['width'],
     #                               height=patch_dict['height'],
     #                               fill=True,
-    #                               facecolor=Blues(patch_dict['color']),
+    #                               facecolor=Blues(color),
     #                               edgecolor=None,
     #                               alpha=0.8))
     #     # if with_points:
@@ -405,6 +420,14 @@ class TreeMemory():
     @property
     def max_competence(self):
         return self.root.max_competence
+
+    @property
+    def min_competence(self):
+        return self.root.min_competence
+
+    @property
+    def sum_competence(self):
+        return self.root.sum_competence
 
     @property
     def min_CP(self):

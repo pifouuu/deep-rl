@@ -68,6 +68,7 @@ class Base(goal_basic):
         self.unwrapped.model.body_pos = body_pos
 
         obs = self.unwrapped._get_obs()
+        self.starts.append(obs)
         state = self.add_goal(obs, self.goal)
         self.prev_state = state
         return state
@@ -127,6 +128,7 @@ class Peg(Base):
         self.unwrapped.model.body_pos = body_pos
 
         obs = self.unwrapped._get_obs()
+        self.starts.append(obs)
         state = self.add_goal(obs, self.goal)
         self.prev_state = state
         return state

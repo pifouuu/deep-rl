@@ -20,6 +20,7 @@ class Reacher(goal_basic):
         qpos[[2,3]] = self.goal
         self.unwrapped.set_state(qpos, qvel)
         obs = self.unwrapped._get_obs()
+        self.starts.append(obs)
         state = self.add_goal(obs, self.goal)
         self.prev_state = state
         return state
