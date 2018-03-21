@@ -15,9 +15,21 @@ class no_goal(Wrapper):
         self.state_to_reached = []
         self.goal_space = Box(np.array([]), np.array([]))
         self.reward_range = [-self.action_dim[0] * 0.1, 100]
+        self.initial_goal = np.array([])
 
-    def eval_exp(self, previous_state_goal, action, state_goal, reward, terminal):
-        return reward, terminal
+    def eval_exp(self, _, action, agent_state_1, reward, terminal):
+        r = 0
+        goal_reached = agent_state_1[self.state_to_reached]
+        goal = self.initial_goal
+        vec = goal - goal_reached
+        term = np.linalg.norm(vec) < 0.05
+        if term:
+            r += 100
+        r -= 0.1 * np.square(action).sum()
+        return r, term
+
+    # def eval_exp(self, previous_state_goal, action, state_goal, reward, terminal):
+    #     return reward, terminal
 
     def _reset(self):
         state = self.env.reset()

@@ -166,7 +166,8 @@ class DDPG_agent():
             self.update_targets()
 
     def reset_train(self):
-        self.train_env.goal = self.memory.sample_goal()
+        if self.train_env.goal_parameterized:
+            self.train_env.goal = self.memory.sample_goal()
         state = self.train_env.reset()
         self.start = state[self.train_env.state_to_reached]
         return state
@@ -280,7 +281,8 @@ class DDPG_agent():
             batch_idxs, experiences = self.memory.sample(self.batch_size)
             target_q_vals, critic_stat = self.train_critic(experiences)
             q_vals, actor_stat = self.train_actor(experiences)
-            self.memory.sample_competence()
+            if self.train_env.goal_parameterized:
+                self.memory.sample_competence()
             # if self.train_env.goal_parameterized:
             #     self.memory.update(experiences['state0'], q_vals)
             self.update_targets()

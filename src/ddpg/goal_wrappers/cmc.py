@@ -1,6 +1,12 @@
-from .wrapper import goal_basic
+from .wrapper import goal_basic, no_goal
 import numpy as np
 from gym.spaces import Box
+
+class CmcNoGoal(no_goal):
+    def __init__(self, env):
+        super(CmcNoGoal, self).__init__(env)
+        self.initial_goal = np.array([0.45])
+        self.state_to_reached = [0]
 
 class CmcPos(goal_basic):
     def __init__(self, env):

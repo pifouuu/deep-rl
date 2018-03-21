@@ -30,12 +30,12 @@ class Region(Box):
         self.dim_split = None
         self.val_split = None
         self.dims = dims
+        self.freq = 0
 
     def sample(self, size=1):
         return np.random.uniform(low=self.low[self.dims], high=self.high[self.dims], size=size)
 
-    def contains(self, point):
-        x = point[0]
+    def contains(self, x):
         return x.shape == self.low[self.dims].shape and (x >= self.low[self.dims]).all() and (x <= self.high[self.dims]).all()
 
     def split(self, dim, split_val):
@@ -50,7 +50,7 @@ class Region(Box):
         left.competence = self.competence
         right.competence = self.competence
         for point in self.points:
-            if left.contains(point):
+            if left.contains(point[0]):
                 left.points.append(point)
             else:
                 right.points.append(point)
@@ -121,8 +121,9 @@ class TreeMemory():
 
     def end_episode(self, goal_reached):
         self.buffer.end_episode(goal_reached)
-        self.update_tree()
-        self.update_display()
+        if self.buffer.env.goal_parameterized:
+            self.update_tree()
+            self.update_display()
 
     def sample(self, batch_size):
         return self.buffer.sample(batch_size)
@@ -190,19 +191,34 @@ class TreeMemory():
             self._init_grid_1D(2 * idx, n/2)
             self._init_grid_1D(2 * idx + 1, n/2)
 
+    def find_region(self, sample):
+        return self._find_region(sample, 1)
+
+    def _find_region(self, sample, idx):
+        region = self.region_array[idx]
+        if region.is_leaf:
+            return region
+        else:
+            left = self.region_array[2 * idx]
+            if left.contains(sample):
+                return self._find_region(sample, 2 * idx)
+            else:
+                return self._find_region(sample, 2 * idx + 1)
+
+
     def insert(self, point):
         self._insert(point, 1)
 
     def _insert(self, point, idx):
         region = self.region_array[idx]
-        if not region.is_leaf:
+        if region.is_leaf:
+            region.points.append(point)
+        else:
             left = self.region_array[2 * idx]
-            if left.contains(point):
+            if left.contains(point[0]):
                 self._insert(point, 2 * idx)
             else:
                 self._insert(point, 2 * idx + 1)
-        else:
-            region.points.append(point)
 
     def update_tree(self):
         self._update_tree(1)
@@ -262,7 +278,7 @@ class TreeMemory():
 
     def split(self, idx):
         eval_splits_1 = []
-        # eval_splits_2 = []
+        eval_splits_2 = []
         if self.n_leaves < self.max_regions:
             region = self.region_array[idx]
             for dim in self.dims:
@@ -270,7 +286,7 @@ class TreeMemory():
                 for num_split, split_val in enumerate(sub_regions[1:-1]):
                     temp_left, temp_right = region.split(dim, split_val)
                     eval_splits_1.append(self.split_eval_1(temp_left, temp_right))
-                    # eval_splits_2.append(self.split_eval_2(temp_left, temp_right))
+                    eval_splits_2.append(self.split_eval_2(temp_left, temp_right))
             width1 = np.max(eval_splits_1)-np.min(eval_splits_1)
             if width1 != 0:
                 eval_splits_1_norm = [(a-np.min(eval_splits_1)) / width1 for a in eval_splits_1]
@@ -283,7 +299,10 @@ class TreeMemory():
                     region.dim_split = self.dims[split_idx // self.n_split]
                     region.val_split = np.linspace(region.low[region.dim_split], region.high[region.dim_split], self.n_split+2)[split_idx % self.n_split+1]
                     self.region_array[2 * idx], self.region_array[2 * idx + 1] = region.split(region.dim_split, region.val_split)
-                    print('splint succeeded: dim=', region.dim_split, ' val=', region.val_split)
+                    print('splint succeeded: dim=', region.dim_split,
+                          ' val=', region.val_split,
+                          ' diff_cp=', eval_splits_1[split_idx],
+                          ' diff_nb=', eval_splits_2[split_idx])
                     self.n_leaves += 1
                     self.update_CP_tree(2 * idx)
 
@@ -307,7 +326,7 @@ class TreeMemory():
             angle = (region.low[self.figure_dims[0]], low1)
             width = region.high[self.figure_dims[0]] - region.low[self.figure_dims[0]]
             height = high1 - low1
-            print("region ", idx, " cp : ", region.CP)
+            # print("region ", idx, " cp : ", region.CP)
             self.patches.append({'angle': angle,
                                  'width': width,
                                  'height': height,
@@ -316,7 +335,8 @@ class TreeMemory():
                                  'cp': region.CP,
                                  'max_competence': self.max_competence,
                                  'min_competence': self.min_competence,
-                                 'competence': region.competence
+                                 'competence': region.competence,
+                                 'freq': region.freq
                                  })
             if with_points:
                 for point in region.points:
@@ -395,11 +415,14 @@ class TreeMemory():
         sum = self.sum_CP
         mass = np.random.random() * sum
         region = self.find_prop_region(mass)
+        region.freq += 1
         sample = region.sample()
         return sample
 
     def sample_random(self):
         sample = self.root.sample()
+        region = self.find_region(sample)
+        region.freq += 1
         return sample
 
     def sample_goal(self):

@@ -74,7 +74,7 @@ register(
 register(
     id='CMC-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
-    goal_wrapper_entry_point='ddpg.goal_wrappers.wrapper:no_goal',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcNoGoal',
     max_episode_steps=999,
 )
 
