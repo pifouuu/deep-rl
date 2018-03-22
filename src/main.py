@@ -90,7 +90,7 @@ def main(args):
                             n_split=int(args['n_split']),
                             split_min=float(args['split_min']),
                             alpha=float(args['alpha']),
-                            maxlen=100,
+                            maxlen=3000,
                             n_cp=int(args['n_cp']),
                             render=args['render_memory'])
 
