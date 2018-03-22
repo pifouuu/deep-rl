@@ -130,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
     parser.add_argument('--sigma', help="amount of exploration", default=0.3)
-    parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
+    parser.add_argument('--random-seed', help='random seed for repeatability', default=10)
     boolean_flag(parser, 'render-test', default=False)
     boolean_flag(parser, 'render-train', default=False)
     boolean_flag(parser, 'render-memory', default=False)
