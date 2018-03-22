@@ -185,7 +185,7 @@ class DDPG_agent():
             if self.render_train:
                 self.train_env.render(mode='human')
 
-            action = self.act(state0, noise=True)
+            action = self.act(state0, train=True)
             state1, reward, terminal, info = self.train_env.step(action[0])
             experience = self.memory.build_exp(state0, action, state1, reward, terminal)
             self.memory.append(experience)
@@ -233,12 +233,14 @@ class DDPG_agent():
 
 
 
-    def act(self, state, noise=False):
-        action = self.actor.model.predict(np.reshape(state, (1, self.actor.s_dim[0])))
-        if noise:
+    def act(self, state, train=False):
+        if train:
+            action = self.actor.model.predict(np.reshape(state, (1, self.actor.s_dim[0])))
             val_noise = self.actor_noise()
             self.episode_noise_ratio.append(np.abs(val_noise))
             action += val_noise
+        else:
+            action = self.actor.target_model.predict(np.reshape(state, (1, self.actor.s_dim[0])))
         action = np.clip(action, self.train_env.action_space.low, self.train_env.action_space.high)
         return action
 
@@ -322,7 +324,7 @@ class DDPG_agent():
             if self.render_test:
                 self.test_env.render(mode='human')
 
-            action = self.act(state, noise=False)
+            action = self.act(state, train=False)
             state, reward, terminal, info = self.test_env.step(action[0])
             ep_test_reward += reward
             if (terminal or info['past_limit']):
@@ -343,7 +345,7 @@ class DDPG_agent():
 
         state = self.test_env.reset()
         for k in range(self.nb_test_steps):
-            action = self.act(state, noise=False)
+            action = self.act(state, train=False)
             state, reward, terminal, info = self.test_env.step(action[0])
             terminal = terminal or info['past_limit']
             ep_test_reward += reward

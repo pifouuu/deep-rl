@@ -24,6 +24,12 @@ class CmcPos(goal_basic):
         self.unwrapped.goal_position = self.goal
         return state
 
+    def set_goal_rnd(self):
+        while True:
+            goal = self.goal_space.sample()
+            if np.abs(goal+0.5) > 0.1: break
+        self.goal = goal
+
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
         r = 0
         goal_reached = agent_state_1[self.state_to_reached]
