@@ -15,4 +15,3 @@ from gym.envs.mujoco.pusher import PusherEnv
 from gym.envs.mujoco.thrower import ThrowerEnv
 from gym.envs.mujoco.striker import StrikerEnv
 from gym.envs.mujoco.manipulator import ManipulatorPegEnv, ManipulatorEnv, ManipulatorBallCupEnv, ManipulatorBallEnv,ManipulatorBoxesEnv, ManipulatorPegSlotEnv, PlayroomEnv
-from gym.envs.mujoco.reach import FetchReachEnv

@@ -87,11 +87,11 @@ def main(args):
                             actor,
                             critic,
                             max_regions=64,
-                            n_split=args['n_split'],
-                            split_min=args['split_min'],
-                            alpha=args['alpha'],
-                            maxlen=3000,
-                            n_cp=args['n_cp'],
+                            n_split=int(args['n_split']),
+                            split_min=float(args['split_min']),
+                            alpha=float(args['alpha']),
+                            maxlen=100,
+                            n_cp=int(args['n_cp']),
                             render=args['render_memory'])
 
         agent = DDPG_agent(sess,
@@ -130,14 +130,14 @@ if __name__ == '__main__':
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
     parser.add_argument('--sigma', help="amount of exploration", default=0.3)
-    parser.add_argument('--random-seed', help='random seed for repeatability', default=5)
+    parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     boolean_flag(parser, 'render-test', default=False)
-    boolean_flag(parser, 'render-train', default=True)
+    boolean_flag(parser, 'render-train', default=False)
     boolean_flag(parser, 'render-memory', default=False)
     boolean_flag(parser, 'invert-grads', default=True)
     boolean_flag(parser, 'target-clip', default=True)
 
-    parser.add_argument('--env', help='choose the gym env', default='ManipulatorGoal-v0')
+    parser.add_argument('--env', help='choose the gym env', default='CMCPos-v0')
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
     parser.add_argument('--alpha', help='proportion of random goal sampling', default=1)
