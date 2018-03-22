@@ -140,9 +140,9 @@ if __name__ == '__main__':
     parser.add_argument('--env', help='choose the gym env', default='CMCPos-v0')
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
-    parser.add_argument('--alpha', help='proportion of random goal sampling', default=1)
+    parser.add_argument('--alpha', help='proportion of random goal sampling', default=0.3)
     parser.add_argument('--n-split', help='number of split comparisons', default=10)
-    parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.0001)
+    parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.001)
     parser.add_argument('--n-cp', help='length of running window used to compute cp', default=500)
 
 

@@ -338,6 +338,7 @@ class DDPG_agent():
 
     def run_test_episode(self, type):
         ep_test_reward = 0
+
         if type == 'random':
             self.test_env.set_goal_reachable()
         elif type == 'init':
@@ -356,8 +357,13 @@ class DDPG_agent():
     def test2(self, type=None):
         test_rewards = []
         for episode in range(10):
+            if episode == 1:
+                self.test_env.recorder = self.get_rec(type)
             reward = self.run_test_episode(type)
             test_rewards.append(reward)
+            if episode == 1 and self.test_env.rec is not None:
+                self.test_env.rec.close()
+                self.test_env.rec = None
         return test_rewards
 
 
