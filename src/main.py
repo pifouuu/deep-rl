@@ -90,7 +90,7 @@ def main(args):
                             n_split=int(args['n_split']),
                             split_min=float(args['split_min']),
                             alpha=float(args['alpha']),
-                            maxlen=3000,
+                            maxlen=1200,
                             n_cp=int(args['n_cp']),
                             render=args['render_memory'])
 
@@ -140,9 +140,9 @@ if __name__ == '__main__':
     parser.add_argument('--env', help='choose the gym env', default='CMCPos-v0')
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
-    parser.add_argument('--alpha', help='proportion of random goal sampling', default=0.3)
+    parser.add_argument('--alpha', help='proportion of random goal sampling', default=1)
     parser.add_argument('--n-split', help='number of split comparisons', default=10)
-    parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.001)
+    parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.00000001)
     parser.add_argument('--n-cp', help='length of running window used to compute cp', default=500)
 
 

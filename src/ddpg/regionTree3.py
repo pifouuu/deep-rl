@@ -226,11 +226,11 @@ class TreeMemory():
 
     def _update_tree(self, idx):
         region = self.region_array[idx]
+        region.update_CP()
         if not region.is_leaf:
             self._update_tree(2 * idx)
             self._update_tree(2 * idx + 1)
         else:
-            region.update_CP()
             if region.full and idx < self.capacity:
                 self.split(idx)
 
