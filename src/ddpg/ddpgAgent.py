@@ -4,7 +4,6 @@ import time
 import numpy as np
 import tensorflow as tf
 from .goalSampler2 import RandomGoalSampler, CompetenceProgressGoalBuffer
-from gym.monitoring import VideoRecorder
 import pickle
 
 
@@ -123,13 +122,21 @@ class DDPG_agent():
         self.actor.target_train()
         self.critic.target_train()
 
+    def save(self):
+        dir = os.path.join(self.log_dir, 'saves')
+        os.makedirs(dir, exist_ok=True)
+        self.actor.save_model(os.path.join(dir, 'actor_model.h5'), overwrite=True)
+        self.actor.save_target_model(os.path.join(dir, 'target_actor_model.h5'), overwrite=True)
+        self.critic.save_model(os.path.join(dir, 'critic_model.h5'), overwrite=True)
+        self.critic.save_target_model(os.path.join(dir, 'target_critic_model.h5'), overwrite=True)
+
     def save_weights(self):
         dir = os.path.join(self.log_dir, 'saves')
         os.makedirs(dir, exist_ok=True)
-        self.actor.save_weights(os.path.join(dir, 'actor_weights_{}.h5'.format(self.env_step)), overwrite=True)
-        self.actor.save_target_weights(os.path.join(dir, 'target_actor_weights_{}.h5'.format(self.env_step)), overwrite=True)
-        self.critic.save_weights(os.path.join(dir, 'critic_weights_{}.h5'.format(self.env_step)), overwrite=True)
-        self.critic.save_target_weights(os.path.join(dir, 'target_critic_weights_{}.h5'.format(self.env_step)), overwrite=True)
+        self.actor.save_weights(os.path.join(dir, 'actor_weights.h5'), overwrite=True)
+        self.actor.save_target_weights(os.path.join(dir, 'target_actor_weights.h5'), overwrite=True)
+        self.critic.save_weights(os.path.join(dir, 'critic_weights.h5'), overwrite=True)
+        self.critic.save_target_weights(os.path.join(dir, 'target_critic_weights.h5'), overwrite=True)
 
     def load_weights(self):
         dir = self.log_dir.split('/')[:-1]
@@ -226,9 +233,8 @@ class DDPG_agent():
 
                     self.log_step_stats()
 
-
-
-        self.save_weights()
+            if self.env_step % self.save_freq == 0:
+                self.save()
 
 
 
@@ -292,22 +298,9 @@ class DDPG_agent():
         self.train_step += self.nb_train_iter
         return np.array(critic_stats), np.array(actor_stats)
 
-    def get_rec(self, type):
-        vid_dir = os.path.join(self.log_dir, 'videos')
-        os.makedirs(vid_dir, exist_ok=True)
-        if type is None:
-            type_str = 'init'
-        else:
-            type_str = type
-        base_path = os.path.join(vid_dir, 'video_' + type_str + '_{:06}'.format(self.env_step))
-        rec = None
-        if self.env_step % self.save_freq == 0:
-            rec = VideoRecorder(self.test_env, base_path=base_path)
-        return rec
+
 
     def test(self, type=None):
-
-        self.test_env.rec = self.get_rec(type)
 
         if type == 'random':
             self.test_env.set_goal_reachable()
@@ -356,13 +349,8 @@ class DDPG_agent():
     def test2(self, type=None):
         test_rewards = []
         for episode in range(10):
-            if episode == 1:
-                self.test_env.rec = self.get_rec(type)
             reward = self.run_test_episode(type)
             test_rewards.append(reward)
-            if episode == 1 and self.test_env.rec is not None:
-                self.test_env.rec.close()
-                self.test_env.rec = None
         return test_rewards
 
 

@@ -18,7 +18,7 @@ import os
 def main(args):
     """Despite following the directives of https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development, fully reproducible results could not be obtained. See here : https://github.com/keras-team/keras/issues/2280 for any improvements"""
 
-    now = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    now = datetime.datetime.now().strftime("%Y%m%d%H%M%S_%f")
 
     # Two loggers are defined to retrieve information by step or by episode. Only episodic information is displayed to stdout.
     log_dir = os.path.join(args['log_dir'],args['env'],now)
@@ -129,7 +129,6 @@ if __name__ == '__main__':
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
-    parser.add_argument('--sigma', help="amount of exploration", default=2)
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     boolean_flag(parser, 'render-test', default=False)
     boolean_flag(parser, 'render-train', default=False)
@@ -144,6 +143,7 @@ if __name__ == '__main__':
     parser.add_argument('--n-split', help='number of split comparisons', default=10)
     parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.0001)
     parser.add_argument('--n-cp', help='length of running window used to compute cp', default=500)
+    parser.add_argument('--sigma', help="amount of exploration", default=2)
 
 
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=100000)
