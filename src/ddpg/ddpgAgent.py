@@ -228,8 +228,7 @@ class DDPG_agent():
 
 
 
-            if self.env_step % self.save_freq == 0:
-                self.save_weights()
+        self.save_weights()
 
 
 
@@ -308,7 +307,7 @@ class DDPG_agent():
 
     def test(self, type=None):
 
-        self.test_env.recorder = self.get_rec(type)
+        self.test_env.rec = self.get_rec(type)
 
         if type == 'random':
             self.test_env.set_goal_reachable()
@@ -358,7 +357,7 @@ class DDPG_agent():
         test_rewards = []
         for episode in range(10):
             if episode == 1:
-                self.test_env.recorder = self.get_rec(type)
+                self.test_env.rec = self.get_rec(type)
             reward = self.run_test_episode(type)
             test_rewards.append(reward)
             if episode == 1 and self.test_env.rec is not None:
