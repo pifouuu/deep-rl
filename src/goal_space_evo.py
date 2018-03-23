@@ -8,7 +8,7 @@ import os
 
 Blues = plt.get_cmap('Blues')
 
-log_dir = '../log/cluster/CMCPos-v0/2018_03_22_13_24_19/'
+log_dir = '../log/cluster/ReacherGoal-v0/2018_03_22_19_39_26/'
 fig = plt.figure()
 ax = plt.axes()
 plt.ion()
@@ -22,31 +22,36 @@ with open(log_dir+'config.txt') as config:
     print(d["split_min"])
 print(len(video))
 
-ax.set_xlim(left=-1.2, right=0.6)
+ax.set_xlim(left=-0.2, right=0.2)
+ax.set_ylim(bottom=-0.2, top=0.2)
 
 param = 'cp'
 
 for i in range(len(video)):
-    l = video[i][0]
-    p = video[i][1]
-    print("iteration ", i)
-    for line_dict in l:
-        ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
-                                 ydata=line_dict['ydata'],
-                                 linewidth=2,
-                                 color='blue'))
-    for patch_dict in p:
-        if patch_dict['max_'+param] - patch_dict['min_'+param] == 0:
-            color = 0
-        else:
-            color = (patch_dict[param] - patch_dict['min_'+param]) / (patch_dict['max_'+param] - patch_dict['min_'+param])
-        print("color ", color)
-        ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
-                                  width=patch_dict['width'],
-                                  height=patch_dict['height'],
-                                  fill=True,
-                                  facecolor=Blues(color),
-                                  edgecolor=None,
-                                  alpha=0.8))
-    ax.set_title("Episode {}".format(i))
-    plt.pause(0.05)
+    if i % 1 == 0:
+        l = video[i][0]
+        p = video[i][1]
+        print("iteration ", i)
+        ax.lines.clear()
+        ax.patches.clear()
+        for line_dict in l:
+            ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
+                                     ydata=line_dict['ydata'],
+                                     linewidth=2,
+                                     color='blue'))
+        for patch_dict in p:
+            if patch_dict['max_'+param] - patch_dict['min_'+param] == 0:
+                color = 0
+            else:
+                color = (patch_dict[param] - patch_dict['min_'+param]) / (patch_dict['max_'+param] - patch_dict['min_'+param])
+            print("color ", color)
+            ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
+                                      width=patch_dict['width'],
+                                      height=patch_dict['height'],
+                                      fill=True,
+                                      facecolor=Blues(color),
+                                      edgecolor=None,
+                                      alpha=0.8))
+        ax.set_title("Episode {}".format(i))
+        plt.pause(0.05)
+plt.waitforbuttonpress()

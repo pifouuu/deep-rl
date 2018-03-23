@@ -14,18 +14,18 @@ class no_goal(Wrapper):
         self.state_to_obs = range(env.observation_space.high.shape[0])
         self.state_to_reached = []
         self.goal_space = Box(np.array([]), np.array([]))
-        self.reward_range = [-self.action_dim[0] * 0.1, 100]
+        self.reward_range = [-1, 0]
         self.initial_goal = np.array([])
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
-        r = 0
         goal_reached = agent_state_1[self.state_to_reached]
         goal = self.initial_goal
         vec = goal - goal_reached
         term = np.linalg.norm(vec) < 0.05
         if term:
-            r += 100
-        r -= 0.1 * np.square(action).sum()
+            r = 0
+        else:
+            r = -1
         return r, term
 
     # def eval_exp(self, previous_state_goal, action, state_goal, reward, terminal):
@@ -67,7 +67,7 @@ class goal_basic(Wrapper):
         self.state_to_obs = []
         self.goal_space = None
         self.initial_goal = np.array([])
-        self.reward_range = [-self.action_dim[0]*0.1, 100]
+        self.reward_range = [-1, 0]
         self.prev_state = None
         self.starts = deque(maxlen=100)
 
@@ -75,14 +75,14 @@ class goal_basic(Wrapper):
         return np.concatenate([state, goal])
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
-        r = 0
         goal_reached = agent_state_1[self.state_to_reached]
         goal = agent_state_1[self.state_to_goal]
         vec = goal - goal_reached
         term = np.linalg.norm(vec) < 0.05
         if term:
-            r += 100
-        r -= 0.1 * np.square(action).sum()
+            r = 0
+        else:
+            r = -1
         return r, term
 
     def set_goal_rnd(self):

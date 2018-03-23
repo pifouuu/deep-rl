@@ -13,7 +13,6 @@ class Reacher(goal_basic):
     def __init__(self, env):
         super(Reacher, self).__init__(env)
         self.state_to_goal = [8,9]
-        self.state_to_obs = [0, 1, 2, 3, 4, 5, 6, 7]
         self.state_to_reached = [6,7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
         self.initial_goal = np.array([0, 0.1])
@@ -40,15 +39,15 @@ class Reacher(goal_basic):
     def is_reachable(self):
         return (np.linalg.norm(self.goal) < 0.2)
 
-    def eval_exp(self, _, action, agent_state_1, reward, terminal):
-        goal_reached = agent_state_1[self.state_to_reached]
-        goal = agent_state_1[self.state_to_goal]
-        vec = goal - goal_reached
-        reward_dist = - np.linalg.norm(vec)
-        reward_ctrl = - np.square(action).sum()
-
-        r = reward_dist + reward_ctrl
-        return r, False
+    # def eval_exp(self, _, action, agent_state_1, reward, terminal):
+    #     goal_reached = agent_state_1[self.state_to_reached]
+    #     goal = agent_state_1[self.state_to_goal]
+    #     vec = goal - goal_reached
+    #     reward_dist = - np.linalg.norm(vec)
+    #     reward_ctrl = - np.square(action).sum()
+    #
+    #     r = reward_dist + reward_ctrl
+    #     return r, False
 
 
 

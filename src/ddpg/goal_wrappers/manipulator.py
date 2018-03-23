@@ -32,17 +32,6 @@ class BaseNoGoal(no_goal):
         if self.rec is not None: self.rec.capture_frame()
         return state
 
-    def eval_exp(self, _, action, agent_state_1, reward, terminal):
-        r = 0
-        goal_reached = agent_state_1[self.state_to_reached]
-        goal = self.initial_goal
-        vec = goal - goal_reached
-        term = np.linalg.norm(vec) < 0.1
-        if term:
-            r += 100
-        r -= 0.1 * np.square(action).sum()
-        return r, term
-
 class Base(goal_basic):
     def __init__(self, env):
         super(Base, self).__init__(env)
@@ -186,7 +175,7 @@ class Boxes(Base):
         self.state_to_reached = range(22, 34)
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
-        r = 0
+        r = -1
         goal_reached = agent_state_1[self.state_to_reached]
         goal = agent_state_1[self.state_to_goal]
         term = False
@@ -194,8 +183,7 @@ class Boxes(Base):
             vec = goal - goal_reached[[3*i, 3*i+1]]
             term = term or np.linalg.norm(vec) < 0.1
         if term:
-            r += 100
-        r -= 0.1 * np.square(action).sum()
+            r = 0
         return r, term
 
 class BoxesNoGoal(BaseNoGoal):
@@ -205,7 +193,7 @@ class BoxesNoGoal(BaseNoGoal):
         self.state_to_reached = range(22, 34)
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
-        r = 0
+        r = -1
         goal_reached = agent_state_1[self.state_to_reached]
         goal = self.initial_goal
         term = False
@@ -213,8 +201,7 @@ class BoxesNoGoal(BaseNoGoal):
             vec = goal - goal_reached[[3*i, 3*i+1]]
             term = term or np.linalg.norm(vec) < 0.1
         if term:
-            r += 100
-        r -= 0.1 * np.square(action).sum()
+            r =0
         return r, term
 
 class Playroom(Base):
