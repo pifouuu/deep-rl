@@ -17,7 +17,7 @@ class ReacherDenseNoGoal(no_goal):
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
         goal_reached = agent_state_1[self.state_to_reached]
-        goal = agent_state_1[self.state_to_goal]
+        goal = self.initial_goal
         vec = goal - goal_reached
         reward_dist = - np.linalg.norm(vec)
         reward_ctrl = - np.square(action).sum()
