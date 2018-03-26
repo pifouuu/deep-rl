@@ -18,10 +18,20 @@ import os
 def main(args):
     """Despite following the directives of https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development, fully reproducible results could not be obtained. See here : https://github.com/keras-team/keras/issues/2280 for any improvements"""
 
+    params = [args['env'],
+             args['memory'],
+             args['strategy'],
+             str(args['alpha']),
+             str(args['n_split']),
+             str(args['split_min']),
+             str(args['n_cp']),
+             str(args['sigma']),
+             str(args['train_freq']),
+             str(args['nb_train_iter'])]
     now = datetime.datetime.now().strftime("%Y%m%d%H%M%S_%f")
 
     # Two loggers are defined to retrieve information by step or by episode. Only episodic information is displayed to stdout.
-    log_dir = os.path.join(args['log_dir'], now)
+    log_dir = os.path.join(args['log_dir'], '_'.join(params), now)
     os.makedirs(log_dir, exist_ok=True)
     with open(os.path.join(log_dir, 'config.txt'), 'w') as config_file:
         config_file.write(json.dumps(args))
@@ -144,6 +154,8 @@ if __name__ == '__main__':
     parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.0001)
     parser.add_argument('--n-cp', help='length of running window used to compute cp', default=500)
     parser.add_argument('--sigma', help="amount of exploration", default=2)
+    parser.add_argument('--train-freq', help='training frequency', default=1)
+    parser.add_argument('--nb-train-iter', help='training iteration number', default=1)
 
 
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=100000)
@@ -152,8 +164,6 @@ if __name__ == '__main__':
     parser.add_argument('--resume-timestamp', help='directory to retrieve weights of actor and critic',
                         default=None)
     parser.add_argument('--resume-step', help='resume_step', default=None)
-    parser.add_argument('--train-freq', help='training frequency', default=1)
-    parser.add_argument('--nb-train-iter', help='training iteration number', default=1)
     parser.add_argument('--nb-test-steps', help='number of steps in the environment during evaluation', default=200)
     parser.add_argument('--save-freq', help='saving models weights frequency', default=1000)
     parser.add_argument('--eval-freq', help='evaluating every n training steps', default=1000)
