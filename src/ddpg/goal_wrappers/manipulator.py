@@ -66,6 +66,9 @@ class Ball(Base):
     def __init__(self, env):
         super(Ball, self).__init__(env)
         self.target = 'target_ball'
+        self.state_to_goal = range(25, 27)
+        self.state_to_obs = range(25)
+        self.state_to_reached = range(22, 24)
 
 class BallNoGoal(BaseNoGoal):
     def __init__(self, env):

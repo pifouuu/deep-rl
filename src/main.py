@@ -21,7 +21,7 @@ def main(args):
     now = datetime.datetime.now().strftime("%Y%m%d%H%M%S_%f")
 
     # Two loggers are defined to retrieve information by step or by episode. Only episodic information is displayed to stdout.
-    log_dir = os.path.join(args['log_dir'],args['env'],now)
+    log_dir = os.path.join(args['log_dir'], now)
     os.makedirs(log_dir, exist_ok=True)
     with open(os.path.join(log_dir, 'config.txt'), 'w') as config_file:
         config_file.write(json.dumps(args))

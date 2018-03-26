@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
-ENV="$1"
-PARAM="$2"
-read -a PARAM_VALS <<< $3
+PARAM="$1"
+read -a PARAM_VALS <<< $2
 
 LOGDIR=$HOME/deep-rl/log
+TEMPLOG=$HOME/deep-rl/log/temp_log
 
 for PARAM_VAL in ${PARAM_VALS[@]}; do
-    export TEMP_LOG=$LOGDIR/temp_log_${ENV}_${PARAM}_${PARAM_VAL}
+    export TEMP_LOG=$LOG/temp_log_${ENV}_${PARAM}_${PARAM_VAL}
+    export LOGDIR=$LOG/${ENV}_${PARAM}_${PARAM_VAL}
     rm -rf $TEMP_LOG
     mkdir -p $TEMP_LOG
     (

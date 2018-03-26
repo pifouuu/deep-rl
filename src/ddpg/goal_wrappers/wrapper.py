@@ -64,7 +64,7 @@ class goal_basic(Wrapper):
         self.rec = None
         self.state_to_goal = []
         self.state_to_reached = []
-        self.state_to_obs = []
+        self.state_to_obs = range(env.observation_space.high.shape[0])
         self.goal_space = None
         self.initial_goal = np.array([])
         self.reward_range = [-1, 0]
