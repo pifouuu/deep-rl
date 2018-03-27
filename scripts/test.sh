@@ -15,6 +15,9 @@ then
 fi
 if [ $# -eq 0 ];
 then
-    export PARAM_NAMES
-    bash ./test2.sh "$PARAM_NAMES" "$PARAM_VALS"
+    (
+        export PARAM_NAMES
+        export PARAM_VALS
+        bash ./test2.sh
+    )
 fi

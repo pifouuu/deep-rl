@@ -174,7 +174,10 @@ class DDPG_agent():
 
     def reset_train(self):
         if self.train_env.goal_parameterized:
-            self.train_env.goal = self.memory.sample_goal()
+            while True:
+                self.train_env.goal = self.memory.sample_goal()
+                if self.train_env.is_reachable():
+                    break
         state = self.train_env.reset()
         self.start = state[self.train_env.state_to_reached]
         return state
@@ -226,10 +229,10 @@ class DDPG_agent():
                 if self.env_step % self.eval_freq == 0:
 
                     if self.test_env.goal_parameterized:
-                        self.eval_reward_random = self.test2('random')
-                        self.eval_reward_init = self.test2('init')
+                        self.eval_reward_random = self.test('random')
+                        self.eval_reward_init = self.test('init')
                     else:
-                        self.eval_reward_init = self.test2()
+                        self.eval_reward_init = self.test()
 
                     self.log_step_stats()
 

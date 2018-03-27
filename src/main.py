@@ -158,13 +158,13 @@ if __name__ == '__main__':
     parser.add_argument('--nb-train-iter', help='training iteration number', default=1)
 
 
-    parser.add_argument('--max-steps', help='max num of episodes to do while training', default=100000)
+    parser.add_argument('--max-steps', help='max num of episodes to do while training', default=500000)
     parser.add_argument('--log-dir', help='directory for storing run info',
                         default='/home/pierre/PycharmProjects/deep-rl/log/local/')
     parser.add_argument('--resume-timestamp', help='directory to retrieve weights of actor and critic',
                         default=None)
     parser.add_argument('--resume-step', help='resume_step', default=None)
-    parser.add_argument('--nb-test-steps', help='number of steps in the environment during evaluation', default=200)
+    parser.add_argument('--nb-test-steps', help='number of steps in the environment during evaluation', default=1000)
     parser.add_argument('--save-freq', help='saving models weights frequency', default=1000)
     parser.add_argument('--eval-freq', help='evaluating every n training steps', default=1000)
 

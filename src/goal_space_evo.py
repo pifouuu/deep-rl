@@ -8,7 +8,7 @@ import os
 
 Blues = plt.get_cmap('Blues')
 
-log_dir = '../log/cluster/CMCPos-v0_split-min_0.0001/20180323154802_746636/'
+log_dir = '../log/local/ReacherGoal-v0_sarst_final_0.1_10_0.0001_500_0.3_1_1/20180327113508_060758/'
 fig = plt.figure()
 ax = plt.axes()
 plt.ion()
@@ -22,10 +22,10 @@ with open(log_dir+'config.txt') as config:
     print(d["split_min"])
 print(len(video))
 
-# ax.set_xlim(left=-0.2, right=0.2)
-# ax.set_ylim(bottom=-0.2, top=0.2)
+ax.set_xlim(left=-0.2, right=0.2)
+ax.set_ylim(bottom=-0.2, top=0.2)
 
-ax.set_xlim(left=-1.2, right=0.6)
+# ax.set_xlim(left=-1.2, right=0.6)
 
 
 param = 'cp'
