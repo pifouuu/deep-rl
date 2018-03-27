@@ -91,6 +91,9 @@ class goal_basic(Wrapper):
     def set_goal_reachable(self):
         self.set_goal_rnd()
 
+    def is_reachable(self):
+        return True
+
     def set_goal_init(self):
         self.goal = self.initial_goal
 
