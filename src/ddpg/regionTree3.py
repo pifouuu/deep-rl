@@ -14,11 +14,11 @@ import os
 
 class Region(Box):
 
-    def __init__(self, low = np.array([-np.inf]), high=np.array([np.inf]), maxlen=0, n_cp=0, dims=None):
+    def __init__(self, low = np.array([-np.inf]), high=np.array([np.inf]), maxlen=0, n_window=0, dims=None):
         super(Region, self).__init__(low, high)
         self.maxlen = maxlen
         self.points = deque(maxlen=self.maxlen)
-        self.n_cp = n_cp
+        self.n_window = n_window
         self.CP = 0
         self.competence = 0
         self.max_competence = 0
@@ -43,8 +43,8 @@ class Region(Box):
         low_right[dim] = split_val
         high_left = np.copy(self.high)
         high_left[dim] = split_val
-        left = Region(self.low, high_left, maxlen=self.maxlen, n_cp = self.n_cp, dims=self.dims)
-        right = Region(low_right, self.high, maxlen=self.maxlen, n_cp = self.n_cp, dims=self.dims)
+        left = Region(self.low, high_left, maxlen=self.maxlen, n_window = self.n_window, dims=self.dims)
+        right = Region(low_right, self.high, maxlen=self.maxlen, n_window = self.n_window, dims=self.dims)
         left.CP = self.CP
         right.CP = self.CP
         left.competence = self.competence
@@ -59,12 +59,12 @@ class Region(Box):
         return left, right
 
     def update_CP(self):
-        if self.size > 2*self.n_cp:
+        if self.size > 2*self.n_window:
             len = self.size
-            q1 = [pt[1] for pt in list(itertools.islice(self.points, len-self.n_cp, len))]
-            q2 = [pt[1] for pt in list(itertools.islice(self.points, len-2*self.n_cp, len-self.n_cp))]
-            self.CP = 1/2 + (np.sum(q1)-np.sum(q2))/(2*self.n_cp)
-            self.competence = (np.sum(q1)+np.sum(q2))/(2*self.n_cp)
+            q1 = [pt[1] for pt in list(itertools.islice(self.points, len-self.n_window, len))]
+            q2 = [pt[1] for pt in list(itertools.islice(self.points, len-2*self.n_window, len-self.n_window))]
+            self.CP = 1/2 + (np.sum(q1)-np.sum(q2))/(2*self.n_window)
+            self.competence = (np.sum(q1)+np.sum(q2))/(2*self.n_window)
         self.max_CP = self.CP
         self.max_competence = self.competence
         self.min_competence = self.competence
@@ -85,11 +85,11 @@ class Region(Box):
         return self.size == self.maxlen
 
 class TreeMemory():
-    def __init__(self, space, dims, buffer, actor, critic, max_regions, n_split, split_min, alpha, maxlen, n_cp, render, sampler):
+    def __init__(self, space, dims, buffer, actor, critic, max_regions, n_split, split_min, alpha, maxlen, n_window, render, sampler):
         self.n_split = n_split
         self.split_min = split_min
         self.maxlen = maxlen
-        self.n_cp = n_cp
+        self.n_window = n_window
         self.max_regions = max_regions
         self.alpha = alpha
         self.dims = dims
@@ -110,7 +110,7 @@ class TreeMemory():
             capacity *= 2
         self.capacity = capacity
         self.region_array = [Region() for _ in range(2 * self.capacity)]
-        self.region_array[1] = Region(space.low, space.high, maxlen=self.maxlen, n_cp=self.n_cp, dims=dims)
+        self.region_array[1] = Region(space.low, space.high, maxlen=self.maxlen, n_window=self.n_window, dims=dims)
         self.update_CP_tree()
         self.n_leaves = 1
         self.render = render
@@ -123,6 +123,7 @@ class TreeMemory():
     def end_episode(self, goal_reached):
         self.buffer.end_episode(goal_reached)
         if self.buffer.env.goal_parameterized:
+            self.sample_competence()
             self.update_tree()
             self.update_CP_tree()
             self.update_display()
@@ -142,9 +143,8 @@ class TreeMemory():
     def _sample_competence(self, idx):
         region = self.region_array[idx]
         if region.is_leaf:
-            N = 1
-            region_goals = [region.sample() for _ in range(N)]
-            starts = [self.buffer.env.get_start() for _ in range(N)]
+            region_goals = [region.sample() for _ in range(self.n_window)]
+            starts = [self.buffer.env.get_start() for _ in range(self.n_window)]
             states = np.array([np.hstack([start,goal]) for start,goal in zip(starts, region_goals)])
             a_outs = self.actor.predict(states)
             q_outs = list(self.critic.predict(states, a_outs))

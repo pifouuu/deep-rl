@@ -17,16 +17,19 @@ class no_goal(Wrapper):
         self.reward_range = [-1, 0]
         self.initial_goal = np.array([])
         self.reward_type = reward_type
+        self.epsilon = 0.05
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
         goal_reached = agent_state_1[self.state_to_reached]
         goal = self.initial_goal
         vec = goal - goal_reached
-        term = np.linalg.norm(vec) < 0.05
-        if term:
-            r = 0
-        else:
-            r = -1
+        term = np.linalg.norm(vec) < self.epsilon
+        r=0
+        if not term:
+            if self.reward_type == 'sparse':
+                r = -1
+            elif self.reward_type == 'dense':
+                r = - np.linalg.norm(vec)
         return r, term
 
     # def eval_exp(self, previous_state_goal, action, state_goal, reward, terminal):
@@ -72,6 +75,7 @@ class goal_basic(Wrapper):
         self.prev_state = None
         self.starts = deque(maxlen=100)
         self.reward_type = reward_type
+        self.epsilon = 0.05
 
     def add_goal(self, state, goal):
         return np.concatenate([state, goal])
@@ -80,11 +84,13 @@ class goal_basic(Wrapper):
         goal_reached = agent_state_1[self.state_to_reached]
         goal = agent_state_1[self.state_to_goal]
         vec = goal - goal_reached
-        term = np.linalg.norm(vec) < 0.05
-        if term:
-            r = 0
-        else:
-            r = -1
+        term = np.linalg.norm(vec) < self.epsilon
+        r=0
+        if not term:
+            if self.reward_type == 'sparse':
+                r = -1
+            elif self.reward_type == 'dense':
+                r = - np.linalg.norm(vec)
         return r, term
 
     def set_goal_rnd(self):

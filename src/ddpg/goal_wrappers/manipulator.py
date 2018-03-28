@@ -11,6 +11,7 @@ class BaseNoGoal(no_goal):
         self.state_to_reached = range(22, 24)
         self.target = 'target'
         self.initial_goal = np.array([0., 0.2])
+        self.epsilon = 0.02
 
 
     def _reset(self):
@@ -41,6 +42,7 @@ class Base(goal_basic):
         self.goal_space = Box(np.array([-.4, .1]), np.array([.4, .4]))
         self.target = 'target'
         self.initial_goal = np.array([0., 0.2])
+        self.epsilon = 0.02
 
     def _reset(self):
         _ = self.env.reset()
@@ -69,12 +71,14 @@ class Ball(Base):
         self.state_to_goal = range(25, 27)
         self.state_to_obs = range(25)
         self.state_to_reached = range(22, 24)
+        self.epsilon = 0.02
 
 class BallNoGoal(BaseNoGoal):
     def __init__(self, env, reward_type):
         super(BallNoGoal, self).__init__(env, reward_type)
         self.target = 'target_ball'
         self.state_to_reached = range(22, 24)
+        self.epsilon = 0.02
 
 
 class BallCup(Base):

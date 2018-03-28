@@ -365,23 +365,9 @@ register(
 )
 
 register(
-    id='ReacherDense-v0',
-    entry_point='gym.envs.mujoco:ReacherEnv',
-    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherDenseNoGoal',
-    max_episode_steps=1000,
-)
-
-register(
     id='ReacherGoal-v0',
     entry_point='gym.envs.mujoco:ReacherEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:Reacher',
-    max_episode_steps=1000,
-)
-
-register(
-    id='ReacherDenseGoal-v0',
-    entry_point='gym.envs.mujoco:ReacherEnv',
-    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherDense',
     max_episode_steps=1000,
 )
 

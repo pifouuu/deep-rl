@@ -24,10 +24,15 @@ def main(args):
              str(args['alpha']),
              str(args['n_split']),
              str(args['split_min']),
-             str(args['n_cp']),
+             str(args['n_window']),
              str(args['sigma']),
              str(args['train_freq']),
-             str(args['nb_train_iter'])]
+             str(args['nb_train_iter']),
+             str(args['reward_type']),
+             str(args['sampler']),
+             str(args['n_cut']),
+             str(args['n_points'])]
+
     now = datetime.datetime.now().strftime("%Y%m%d%H%M%S_%f")
 
     # Two loggers are defined to retrieve information by step or by episode. Only episodic information is displayed to stdout.
@@ -101,7 +106,7 @@ def main(args):
                             split_min=float(args['split_min']),
                             alpha=float(args['alpha']),
                             maxlen=int(args['n_points']),
-                            n_cp=int(args['n_cp']),
+                            n_window=int(args['n_window']),
                             render=args['render_memory'],
                             sampler=args['sampler'])
 
@@ -153,14 +158,14 @@ if __name__ == '__main__':
     parser.add_argument('--alpha', help='proportion of prioritized goal sampling', default=0)
     parser.add_argument('--n-split', help='number of split comparisons', default=10)
     parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.0001)
-    parser.add_argument('--n-window', help='length of running window used to compute cp', default=500)
+    parser.add_argument('--n-window', help='length of running window used to compute cp', default=50)
     parser.add_argument('--sigma', help="amount of exploration", default=0.3)
     parser.add_argument('--train-freq', help='training frequency', default=1)
     parser.add_argument('--nb-train-iter', help='training iteration number', default=1)
     parser.add_argument('--reward-type', help='sparse, dense', default='sparse')
     parser.add_argument('--sampler', help='random, initial, prioritized', default='initial')
     parser.add_argument('--n-cut', help='number of regions in goal space', default=16)
-    parser.add_argument('--n-points', help='number of points stored in region', default=3000)
+    parser.add_argument('--n-points', help='number of points stored in region', default=1000)
 
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=500000)
     parser.add_argument('--log-dir', help='directory for storing run info',
