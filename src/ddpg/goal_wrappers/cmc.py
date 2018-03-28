@@ -3,14 +3,14 @@ import numpy as np
 from gym.spaces import Box
 
 class CmcNoGoal(no_goal):
-    def __init__(self, env):
-        super(CmcNoGoal, self).__init__(env)
+    def __init__(self, env, reward_type):
+        super(CmcNoGoal, self).__init__(env, reward_type)
         self.initial_goal = np.array([0.45])
         self.state_to_reached = [0]
 
 class CmcPos(goal_basic):
-    def __init__(self, env):
-        super(CmcPos, self).__init__(env)
+    def __init__(self, env, reward_type):
+        super(CmcPos, self).__init__(env, reward_type)
         self.state_to_goal = [2]
         self.state_to_reached = [0]
         self.goal_space = Box(np.array([-1.2]), np.array([0.6]))
@@ -28,8 +28,8 @@ class CmcPos(goal_basic):
     #     self.goal = goal
 
 class CmcFull(goal_basic):
-    def __init__(self, env):
-        super(CmcFull, self).__init__(env)
+    def __init__(self, env, reward_type):
+        super(CmcFull, self).__init__(env, reward_type)
         self.state_to_goal = [2,3]
         self.state_to_reached = [0,1]
         self.goal_space = Box(np.array([-1.2, -0.07]), np.array([0.6, 0.07]))

@@ -85,7 +85,7 @@ class Region(Box):
         return self.size == self.maxlen
 
 class TreeMemory():
-    def __init__(self, space, dims, buffer, actor, critic, max_regions, n_split, split_min, alpha, maxlen, n_cp, render):
+    def __init__(self, space, dims, buffer, actor, critic, max_regions, n_split, split_min, alpha, maxlen, n_cp, render, sampler):
         self.n_split = n_split
         self.split_min = split_min
         self.maxlen = maxlen
@@ -96,6 +96,7 @@ class TreeMemory():
         self.figure_dims = dims
 
         self.buffer = buffer
+        self.sampler = sampler
 
         self.ax = None
         self.figure = None
@@ -270,44 +271,6 @@ class TreeMemory():
                 region.min_competence = np.min([left.min_competence, right.min_competence])
                 region.sum_competence = np.sum([left.sum_competence, right.sum_competence])
 
-
-    # def update_CP_tree(self, idx):
-    #     region = self.region_array[idx]
-    #     region.max_CP = region.CP
-    #     region.min_CP = region.CP
-    #     region.sum_CP = region.CP
-    #     region.max_competence = region.competence
-    #     region.min_competence = region.competence
-    #     region.sum_competence = region.competence
-    #     idx //= 2
-    #     while idx >= 1:
-    #         region = self.region_array[idx]
-    #         left = self.region_array[2*idx]
-    #         right = self.region_array[2*idx + 1]
-    #         split_eval = self.split_eval_1(left, right)
-    #         to_merge = left.is_leaf and right.is_leaf and split_eval < self.split_min
-    #         if to_merge:
-    #             region.max_CP = region.CP
-    #             region.min_CP = region.CP
-    #             region.sum_CP = region.CP
-    #             region.max_competence = region.competence
-    #             region.min_competence = region.competence
-    #             region.sum_competence = region.competence
-    #             region.dim_split = None
-    #             region.val_split = None
-    #             self.region_array[2 * idx] = None
-    #             self.region_array[2 * idx + 1] = None
-    #             self.n_leaves -= 1
-    #             print('merge')
-    #         else:
-    #             region.max_CP = np.max([left.max_CP, right.max_CP])
-    #             region.min_CP = np.min([left.min_CP, right.min_CP])
-    #             region.sum_CP = np.sum([left.sum_CP, right.sum_CP])
-    #             region.max_competence = np.max([left.max_competence, right.max_competence])
-    #             region.min_competence = np.min([left.min_competence, right.min_competence])
-    #             region.sum_competence = np.sum([left.sum_competence, right.sum_competence])
-    #         idx //= 2
-
     def split_eval_1(self, left, right):
         return (right.CP-left.CP)**2
 
@@ -463,11 +426,18 @@ class TreeMemory():
         return sample
 
     def sample_goal(self):
-        p = np.random.random()
-        if p < self.alpha:
+        if self.sampler=='prioritized':
+            p = np.random.random()
+            if p < self.alpha:
+                return self.sample_random()
+            else:
+                return self.sample_prop()
+        elif self.sampler=='random':
             return self.sample_random()
+        elif self.sampler=='initial':
+            return self.buffer.env.initial_goal
         else:
-            return self.sample_prop()
+            raise RuntimeError
 
     @property
     def root(self):

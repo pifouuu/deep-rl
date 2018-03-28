@@ -6,7 +6,7 @@ from collections import deque
 
 
 class no_goal(Wrapper):
-    def __init__(self, env):
+    def __init__(self, env, reward_type):
         super(no_goal, self).__init__(env)
         self.goal = None
         self.rec = None
@@ -16,6 +16,7 @@ class no_goal(Wrapper):
         self.goal_space = Box(np.array([]), np.array([]))
         self.reward_range = [-1, 0]
         self.initial_goal = np.array([])
+        self.reward_type = reward_type
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
         goal_reached = agent_state_1[self.state_to_reached]
@@ -58,7 +59,7 @@ class no_goal(Wrapper):
         return False
 
 class goal_basic(Wrapper):
-    def __init__(self,env):
+    def __init__(self,env, reward_type):
         super(goal_basic, self).__init__(env)
         self.goal = []
         self.rec = None
@@ -70,6 +71,7 @@ class goal_basic(Wrapper):
         self.reward_range = [-1, 0]
         self.prev_state = None
         self.starts = deque(maxlen=100)
+        self.reward_type = reward_type
 
     def add_goal(self, state, goal):
         return np.concatenate([state, goal])

@@ -4,14 +4,14 @@ import numpy as np
 from gym.spaces import Box
 
 class ReacherNoGoal(no_goal):
-    def __init__(self, env):
-        super(ReacherNoGoal, self).__init__(env)
+    def __init__(self, env, reward_type):
+        super(ReacherNoGoal, self).__init__(env, reward_type)
         self.initial_goal = np.array([0, 0.1])
         self.state_to_reached = [6, 7]
 
 class ReacherDenseNoGoal(no_goal):
-    def __init__(self, env):
-        super(ReacherDenseNoGoal, self).__init__(env)
+    def __init__(self, env, reward_type):
+        super(ReacherDenseNoGoal, self).__init__(env, reward_type)
         self.initial_goal = np.array([0, 0.1])
         self.state_to_reached = [6, 7]
 
@@ -26,8 +26,8 @@ class ReacherDenseNoGoal(no_goal):
         return r, False
 
 class Reacher(goal_basic):
-    def __init__(self, env):
-        super(Reacher, self).__init__(env)
+    def __init__(self, env, reward_type):
+        super(Reacher, self).__init__(env, reward_type)
         self.state_to_goal = [8,9]
         self.state_to_reached = [6,7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
@@ -57,8 +57,8 @@ class Reacher(goal_basic):
 
 
 class ReacherDense(goal_basic):
-    def __init__(self, env):
-        super(ReacherDense, self).__init__(env)
+    def __init__(self, env, reward_type):
+        super(ReacherDense, self).__init__(env, reward_type)
         self.state_to_goal = [8,9]
         self.state_to_reached = [6,7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))

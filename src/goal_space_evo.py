@@ -8,7 +8,8 @@ import os
 
 Blues = plt.get_cmap('Blues')
 
-log_dir = '../log/local/ReacherGoal-v0_sarst_final_0.1_10_0.0001_500_0.3_1_1/20180327113508_060758/'
+log_dir = '../log/cluster/ReacherGoal-v0_sarst_final_1_10_0.000001_500_0.3_1_1/20180328101200_316862/'
+
 fig = plt.figure()
 ax = plt.axes()
 plt.ion()
@@ -28,7 +29,7 @@ ax.set_ylim(bottom=-0.2, top=0.2)
 # ax.set_xlim(left=-1.2, right=0.6)
 
 
-param = 'cp'
+param = 'competence'
 
 for i in range(len(video)):
     if i % 1 == 0:
@@ -47,7 +48,8 @@ for i in range(len(video)):
                 color = 0
             else:
                 color = (patch_dict[param] - patch_dict['min_'+param]) / (patch_dict['max_'+param] - patch_dict['min_'+param])
-            print("color ", color)
+            # color = patch_dict[param]/ patch_dict['max_'+param]
+            # print("color ", color)
             ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
                                       width=patch_dict['width'],
                                       height=patch_dict['height'],

@@ -52,8 +52,8 @@ def main(args):
     # Wraps each environment in a goal_wrapper to override basic env methods and be able to access goal space properties, or modify the environment simulation according to sampled goals. The wrapper classes paths corresponding to each environment are defined in gym.envs.int
     if train_env.spec._goal_wrapper_entry_point is not None:
         wrapper_cls = load(train_env.spec._goal_wrapper_entry_point)
-        train_env = wrapper_cls(train_env)
-        test_env = wrapper_cls(test_env)
+        train_env = wrapper_cls(train_env, args['reward_type'])
+        test_env = wrapper_cls(test_env, args['reward_type'])
 
     #TODO integrate the choice of memory in environments specs in gym.env.init
     if args['memory'] == 'sarst':
@@ -96,13 +96,14 @@ def main(args):
                             memory,
                             actor,
                             critic,
-                            max_regions=64,
+                            max_regions=int(args['n_cut']),
                             n_split=int(args['n_split']),
                             split_min=float(args['split_min']),
                             alpha=float(args['alpha']),
-                            maxlen=3000,
+                            maxlen=int(args['n_points']),
                             n_cp=int(args['n_cp']),
-                            render=args['render_memory'])
+                            render=args['render_memory'],
+                            sampler=args['sampler'])
 
         agent = DDPG_agent(sess,
                            actor,
@@ -149,14 +150,17 @@ if __name__ == '__main__':
     parser.add_argument('--env', help='choose the gym env', default='CMCPos-v0')
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
-    parser.add_argument('--alpha', help='proportion of random goal sampling', default=1)
+    parser.add_argument('--alpha', help='proportion of prioritized goal sampling', default=0)
     parser.add_argument('--n-split', help='number of split comparisons', default=10)
     parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.0001)
-    parser.add_argument('--n-cp', help='length of running window used to compute cp', default=500)
+    parser.add_argument('--n-window', help='length of running window used to compute cp', default=500)
     parser.add_argument('--sigma', help="amount of exploration", default=0.3)
     parser.add_argument('--train-freq', help='training frequency', default=1)
     parser.add_argument('--nb-train-iter', help='training iteration number', default=1)
-
+    parser.add_argument('--reward-type', help='sparse, dense', default='sparse')
+    parser.add_argument('--sampler', help='random, initial, prioritized', default='initial')
+    parser.add_argument('--n-cut', help='number of regions in goal space', default=16)
+    parser.add_argument('--n-points', help='number of points stored in region', default=3000)
 
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=500000)
     parser.add_argument('--log-dir', help='directory for storing run info',
