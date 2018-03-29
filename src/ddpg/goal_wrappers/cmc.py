@@ -5,6 +5,7 @@ from gym.spaces import Box
 class CmcNoGoal(no_goal):
     def __init__(self, env, reward_type):
         super(CmcNoGoal, self).__init__(env, reward_type)
+        self.goal_space = Box(np.array([-1.2]), np.array([0.6]))
         self.initial_goal = np.array([0.45])
         self.state_to_reached = [0]
 
