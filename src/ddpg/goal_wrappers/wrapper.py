@@ -87,13 +87,14 @@ class goal_basic(Wrapper):
         vec = goal - goal_reached
         widths = self.goal_space.high - self.goal_space.low
         norm_vec = np.divide(vec, widths)
-        term = np.linalg.norm(norm_vec) < self.epsilon
+        dist = np.linalg.norm(norm_vec)
+        term = dist < self.epsilon
         r=0
         if not term:
             if self.reward_type == 'sparse':
                 r = -1
             elif self.reward_type == 'dense':
-                r = - np.linalg.norm(norm_vec)
+                r = - dist
         return r, term
 
     def set_goal_rnd(self):

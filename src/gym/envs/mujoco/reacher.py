@@ -42,7 +42,7 @@ class ReacherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             np.cos(theta),
             np.sin(theta),
             self.model.data.qvel.flat[:2],
-            self.get_body_com("fingertip")[:2],
+            self.get_body_com("fingertip")[:2]
         ])
 
 

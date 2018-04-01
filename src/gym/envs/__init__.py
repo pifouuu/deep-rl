@@ -361,14 +361,14 @@ register(
     id='Reacher-v0',
     entry_point='gym.envs.mujoco:ReacherEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherNoGoal',
-    max_episode_steps=1000,
+    max_episode_steps=50,
 )
 
 register(
     id='ReacherGoal-v0',
     entry_point='gym.envs.mujoco:ReacherEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:Reacher',
-    max_episode_steps=1000,
+    max_episode_steps=50,
 )
 
 register(
