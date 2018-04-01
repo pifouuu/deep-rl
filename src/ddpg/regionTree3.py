@@ -124,6 +124,9 @@ class TreeMemory():
         self.buffer.end_episode(goal_reached)
         if self.buffer.env.goal_parameterized:
             self.sample_competence()
+            # regions = self.find_regions(self.buffer.env.goal)
+            # region_idx = np.random.choice(regions)
+            # starts = [self.buffer.env.get_start() for _ in range(1)]
             self.update_tree()
             self.update_CP_tree()
             self.update_display()
@@ -143,8 +146,8 @@ class TreeMemory():
     def _sample_competence(self, idx):
         region = self.region_array[idx]
         if region.is_leaf:
-            region_goals = [region.sample() for _ in range(self.n_window)]
-            starts = [self.buffer.env.get_start() for _ in range(self.n_window)]
+            region_goals = [region.sample() for _ in range(1)]
+            starts = [self.buffer.env.get_start() for _ in range(1)]
             states = np.array([np.hstack([start,goal]) for start,goal in zip(starts, region_goals)])
             a_outs = self.actor.predict(states)
             q_outs = list(self.critic.predict(states, a_outs))
@@ -193,19 +196,22 @@ class TreeMemory():
             self._init_grid_1D(2 * idx, n/2)
             self._init_grid_1D(2 * idx + 1, n/2)
 
-    def find_region(self, sample):
-        return self._find_region(sample, 1)
+    def find_regions(self, sample):
+        regions = self._find_regions(sample, 1)
+        return regions
 
-    def _find_region(self, sample, idx):
+    def _find_regions(self, sample, idx):
+        regions = [idx]
         region = self.region_array[idx]
-        if region.is_leaf:
-            return region
-        else:
+        if not region.is_leaf:
             left = self.region_array[2 * idx]
             if left.contains(sample):
-                return self._find_region(sample, 2 * idx)
+                regions_left = self._find_regions(sample, 2 * idx)
+                regions += regions_left
             else:
-                return self._find_region(sample, 2 * idx + 1)
+                regions_right = self._find_regions(sample, 2 * idx + 1)
+                regions += regions_right
+        return regions
 
 
     def insert(self, point):
@@ -271,39 +277,28 @@ class TreeMemory():
                 region.min_competence = np.min([left.min_competence, right.min_competence])
                 region.sum_competence = np.sum([left.sum_competence, right.sum_competence])
 
-    def split_eval_1(self, left, right):
-        return (right.CP-left.CP)**2
-
-    def split_eval_2(self, left, right):
-        return -np.abs(left.size-right.size)
+    def split_eval(self, left, right):
+        return left.size * right.size * np.sqrt((right.CP-left.CP)**2)
 
     def split(self, idx):
-        eval_splits_1 = []
-        eval_splits_2 = []
+        eval_splits = []
         if self.n_leaves < self.max_regions:
             region = self.region_array[idx]
             for dim in self.dims:
                 sub_regions = np.linspace(region.low[dim], region.high[dim], self.n_split+2)
                 for num_split, split_val in enumerate(sub_regions[1:-1]):
                     temp_left, temp_right = region.split(dim, split_val)
-                    eval_splits_1.append(self.split_eval_1(temp_left, temp_right))
-                    eval_splits_2.append(self.split_eval_2(temp_left, temp_right))
-            width1 = np.max(eval_splits_1)-np.min(eval_splits_1)
-            if width1 != 0:
-                eval_splits_1_norm = [(a-np.min(eval_splits_1)) / width1 for a in eval_splits_1]
-                # width2 = np.max(eval_splits_2) - np.min(eval_splits_2)
-                # eval_splits_2_norm = [(a - np.min(eval_splits_2)) / width2 for a in eval_splits_2]
-                # eval_splits = [self.alpha*x + (1-self.alpha)*y for (x,y) in zip(eval_splits_1_norm, eval_splits_2_norm)]
-                eval_splits = eval_splits_1_norm
+                    eval_splits.append(self.split_eval(temp_left, temp_right))
+            width = np.max(eval_splits)-np.min(eval_splits)
+            if width != 0:
                 split_idx = np.argmax(eval_splits)
-                if eval_splits_1[split_idx] > self.split_min:
+                if eval_splits[split_idx] > self.split_min:
                     region.dim_split = self.dims[split_idx // self.n_split]
                     region.val_split = np.linspace(region.low[region.dim_split], region.high[region.dim_split], self.n_split+2)[split_idx % self.n_split+1]
                     self.region_array[2 * idx], self.region_array[2 * idx + 1] = region.split(region.dim_split, region.val_split)
                     print('splint succeeded: dim=', region.dim_split,
                           ' val=', region.val_split,
-                          ' diff_cp=', eval_splits_1[split_idx],
-                          ' diff_nb=', eval_splits_2[split_idx])
+                          ' diff=', eval_splits[split_idx])
                     self.n_leaves += 1
 
     def compute_image(self, with_points=False):
@@ -421,8 +416,8 @@ class TreeMemory():
 
     def sample_random(self):
         sample = self.root.sample()
-        region = self.find_region(sample)
-        region.freq += 1
+        regions = self.find_regions(sample)
+        self.region_array[regions[-1]].freq += 1
         return sample
 
     def sample_goal(self):
