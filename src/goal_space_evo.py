@@ -8,7 +8,7 @@ import os
 
 Blues = plt.get_cmap('Blues')
 
-log_dir = '../log/cluster/ReacherGoal-v0_sarst_final_1_10_0.000001_500_0.3_1_1/20180328101200_316862/'
+log_dir = '../log/cluster0104/CMCPos-v0_sarst_final_0_10_0_50_0.3_1_1_sparse_random_16_1000/20180329201645_539505/'
 
 fig = plt.figure()
 ax = plt.axes()
@@ -23,16 +23,16 @@ with open(log_dir+'config.txt') as config:
     print(d["split_min"])
 print(len(video))
 
-ax.set_xlim(left=-0.2, right=0.2)
-ax.set_ylim(bottom=-0.2, top=0.2)
+# ax.set_xlim(left=-0.2, right=0.2)
+# ax.set_ylim(bottom=-0.2, top=0.2)
 
-# ax.set_xlim(left=-1.2, right=0.6)
+ax.set_xlim(left=-1.2, right=0.6)
 
 
-param = 'competence'
+param = 'cp'
 
 for i in range(len(video)):
-    if i % 1 == 0:
+    if i % 20 ==0:
         l = video[i][0]
         p = video[i][1]
         print("iteration ", i)
