@@ -62,7 +62,7 @@ class ReacherOriginEnv(ReacherEnv):
             np.cos(theta),
             np.sin(theta),
             self.model.data.qvel.flat[:2],
-            self.get_body_com("fingertip") - self.get_body_com("target")
+            self.get_body_com("fingertip")[:2] - self.get_body_com("target")[:2]
         ])
 
 

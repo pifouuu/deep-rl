@@ -18,9 +18,9 @@ import os
 def main(args):
     """Despite following the directives of https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development, fully reproducible results could not be obtained. See here : https://github.com/keras-team/keras/issues/2280 for any improvements"""
 
-    params = [args['env'],
-             args['memory'],
-             args['strategy'],
+    params = [str(args['env']),
+             str(args['memory']),
+             str(args['strategy']),
              str(args['n_her_goals']),
              str(args['alpha']),
              str(args['n_split']),
@@ -32,7 +32,7 @@ def main(args):
              str(args['reward_type']),
              str(args['sampler']),
              str(args['n_cut']),
-             str(args['n_points'])],
+             str(args['n_points'])]
 
 
     now = datetime.datetime.now().strftime("%Y%m%d%H%M%S_%f")
