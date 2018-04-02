@@ -369,11 +369,11 @@ class TreeMemory():
                                           linewidth=2,
                                           color='blue'))
         for patch_dict in self.patches:
-            if patch_dict['max_cp'] - patch_dict['min_cp'] == 0:
-                color = 0
-            else:
-                color = (patch_dict['cp']-patch_dict['min_cp'])/(patch_dict['max_cp']-patch_dict['min_cp'])
-            colors.append(color)
+            # if patch_dict['max_cp'] - patch_dict['min_cp'] == 0:
+            #     color = 0
+            # else:
+            #     color = (patch_dict['cp']-patch_dict['min_cp'])/(patch_dict['max_cp']-patch_dict['min_cp'])
+            colors.append(patch_dict['cp'])
                 # color = region.competence/self.max_competence
             # self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
             #                       width=patch_dict['width'],
