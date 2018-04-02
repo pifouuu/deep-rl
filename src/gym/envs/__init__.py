@@ -372,6 +372,13 @@ register(
 )
 
 register(
+    id='ReacherOriginGoal-v0',
+    entry_point='gym.envs.mujoco:ReacherOriginEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherOrigin',
+    max_episode_steps=50,
+)
+
+register(
     id='Pusher-v0',
     entry_point='gym.envs.mujoco:PusherEnv',
     max_episode_steps=100,
