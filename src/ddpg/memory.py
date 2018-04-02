@@ -107,7 +107,7 @@ class SARSTMemory(Memory):
         return dict
 
 class EpisodicHerSARSTMemory(SARSTMemory):
-    def __init__(self, env, limit, strategy):
+    def __init__(self, env, limit, strategy, n_her_goals):
         """Replay buffer that does Hindsight Experience Replay
         obs_to_goal is a function that converts observations to goals
         goal_slice is a slice of indices of goal in observation
@@ -115,6 +115,7 @@ class EpisodicHerSARSTMemory(SARSTMemory):
         super(EpisodicHerSARSTMemory, self).__init__(env, limit)
 
         self.strategy = strategy
+        self.n_her_goals = n_her_goals
         self.data = []
 
     def append(self, buffer_item):
@@ -129,7 +130,7 @@ class EpisodicHerSARSTMemory(SARSTMemory):
                 super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
         elif self.strategy == 'episode':
             indices = range(0, len(self.data))
-            random_indices = rnd.sample(indices, np.min([4, len(indices)]))
+            random_indices = rnd.sample(indices, np.min([self.n_her_goals, len(indices)]))
             final_states = [self.data[i]['state1'] for i in list(random_indices)]
             for final_state in final_states:
                 for buffer_item in self.data:
@@ -138,7 +139,7 @@ class EpisodicHerSARSTMemory(SARSTMemory):
         elif self.strategy == 'future':
             for idx, buffer_item in enumerate(self.data):
                 indices = range(idx, len(self.data))
-                future_indices = rnd.sample(indices, np.min([4, len(indices)]))
+                future_indices = rnd.sample(indices, np.min([self.n_her_goals, len(indices)]))
                 final_states = [self.data[i]['state1'] for i in list(future_indices)]
                 for final_state in final_states:
                     new_buffer_item = self.env.change_goal(buffer_item, final_state)

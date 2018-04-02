@@ -257,7 +257,7 @@ class TreeMemory():
         else:
             left = self.region_array[2 * idx]
             right = self.region_array[2 * idx + 1]
-            split_eval = self.split_eval_1(left, right)
+            split_eval = self.split_eval(left, right)
             to_merge = left.is_leaf and right.is_leaf and split_eval < self.split_min
             if to_merge:
                 region.dim_split = None

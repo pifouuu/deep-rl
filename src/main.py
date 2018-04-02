@@ -21,6 +21,7 @@ def main(args):
     params = [args['env'],
              args['memory'],
              args['strategy'],
+             str(args['n_her_goals']),
              str(args['alpha']),
              str(args['n_split']),
              str(args['split_min']),
@@ -31,7 +32,8 @@ def main(args):
              str(args['reward_type']),
              str(args['sampler']),
              str(args['n_cut']),
-             str(args['n_points'])]
+             str(args['n_points'])],
+
 
     now = datetime.datetime.now().strftime("%Y%m%d%H%M%S_%f")
 
@@ -64,7 +66,8 @@ def main(args):
     if args['memory'] == 'sarst':
         memory = SARSTMemory(train_env, limit=int(1e6))
     elif args['memory'] == 'hsarst':
-        memory = EpisodicHerSARSTMemory(train_env, limit=int(1e6), strategy=args['strategy'])
+        memory = EpisodicHerSARSTMemory(train_env, limit=int(1e6), strategy=args['strategy'],
+                                        n_her_goals=int(args['n_her_goals']))
     else:
         raise Exception('No existing memory defined')
 
@@ -155,6 +158,7 @@ if __name__ == '__main__':
     parser.add_argument('--env', help='choose the gym env', default='CMCPos-v0')
     parser.add_argument('--memory', help='type of memory to use', default='sarst')
     parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
+    parser.add_argument('--n-her-goals', default=4)
     parser.add_argument('--alpha', help='proportion of prioritized goal sampling', default=0)
     parser.add_argument('--n-split', help='number of split comparisons', default=10)
     parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.0001)
