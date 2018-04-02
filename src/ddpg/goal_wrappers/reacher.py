@@ -35,11 +35,16 @@ class Reacher(goal_basic):
         goal_reached = agent_state_1[self.state_to_reached]
         goal = agent_state_1[self.state_to_goal]
         vec = goal - goal_reached
-        # widths = self.goal_space.high - self.goal_space.low
-        # vec = np.divide(vec, widths)
-        dist = np.linalg.norm(vec)
-        ctrl = np.square(action).sum()
-        r = - dist - ctrl
+        widths = self.goal_space.high - self.goal_space.low
+        norm_vec = np.divide(vec, widths)
+        dist = np.linalg.norm(norm_vec)
+        term = dist < self.epsilon
+        r=0
+        if not term:
+            if self.reward_type == 'sparse':
+                r = -1
+            elif self.reward_type == 'dense':
+                r = - dist
         return r, False
 
     def set_goal_reachable(self):

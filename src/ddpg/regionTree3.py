@@ -6,11 +6,11 @@ from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
 import os
 
 
-# import matplotlib.pyplot as plt
-# import matplotlib.lines as lines
-# import matplotlib.patches as patches
-# from matplotlib import animation
-# Blues = plt.get_cmap('Blues')
+import matplotlib.pyplot as plt
+import matplotlib.lines as lines
+import matplotlib.patches as patches
+from matplotlib import animation
+Blues = plt.get_cmap('Blues')
 
 class Region(Box):
 
@@ -158,15 +158,6 @@ class TreeMemory():
             self._sample_competence(2 * idx)
             self._sample_competence(2 * idx + 1)
 
-    def update(self, states, vals):
-        stg = self.buffer.env.state_to_goal
-        minval = self.buffer.env.reward_range[0] / (1 - 0.99)
-        maxval = self.buffer.env.reward_range[1]
-        states = [state[stg] for state in states]
-        corr_vals = [(val-minval)/(maxval-minval) for val in vals]
-        for state, val in zip(states,corr_vals):
-            self.insert((state,val))
-
     def update_display(self):
         self.compute_image()
         if self.render:
@@ -176,25 +167,24 @@ class TreeMemory():
 
         self.history.append([self.lines.copy(), self.patches.copy()])
 
-
-
-    def init_grid_1D(self, n):
+    def divide(self, n):
         assert n & (n-1) == 0 #n must be a power of 2
-        assert len(self.dims) == 1
-        self._init_grid_1D(1, n)
+        self._divide(1, n, 0)
 
-    def _init_grid_1D(self, idx ,n):
+    def _divide(self, idx , n, dim_idx):
         if n > 1:
+            dim = self.dims[dim_idx]
             region = self.region_array[idx]
-            low = region.low[self.dims[0]]
-            high = region.high[self.dims[0]]
+            low = region.low[dim]
+            high = region.high[dim]
             val_split = (high+low)/2
-            self.region_array[2 * idx], self.region_array[2 * idx + 1] = region.split(self.dims[0], val_split)
-            region.dim_split = self.dims[0]
+            self.region_array[2 * idx], self.region_array[2 * idx + 1] = region.split(dim, val_split)
+            region.dim_split = dim
             region.val_split = val_split
             self.n_leaves += 1
-            self._init_grid_1D(2 * idx, n/2)
-            self._init_grid_1D(2 * idx + 1, n/2)
+            next_dim_idx = (dim_idx+1)%(len(self.dims))
+            self._divide(2 * idx, n/2, next_dim_idx)
+            self._divide(2 * idx + 1, n/2, next_dim_idx)
 
     def find_regions(self, sample):
         regions = self._find_regions(sample, 1)
@@ -212,21 +202,6 @@ class TreeMemory():
                 regions_right = self._find_regions(sample, 2 * idx + 1)
                 regions += regions_right
         return regions
-
-
-    def insert(self, point):
-        self._insert(point, 1)
-
-    def _insert(self, point, idx):
-        region = self.region_array[idx]
-        if region.is_leaf:
-            region.points.append(point)
-        else:
-            left = self.region_array[2 * idx]
-            if left.contains(point[0]):
-                self._insert(point, 2 * idx)
-            else:
-                self._insert(point, 2 * idx + 1)
 
     def update_tree(self):
         self._update_tree(1)
@@ -351,44 +326,44 @@ class TreeMemory():
             self._compute_image(2 * idx, self.figure_dims)
             self._compute_image(2 * idx + 1, self.figure_dims)
 
-    # def init_display(self):
-    #     self.figure = plt.figure()
-    #     self.ax = plt.axes()
-    #     self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
-    #     if len(self.figure_dims)>1:
-    #         self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
-    #     else:
-    #         self.ax.set_ylim(0, 1)
-    #     plt.ion()
-    #     plt.show()
-    #
-    # def plot_image(self, with_points=False):
-    #     self.ax.lines.clear()
-    #     self.ax.patches.clear()
-    #     for line_dict in self.lines:
-    #         self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
-    #                                       ydata=line_dict['ydata'],
-    #                                       linewidth=2,
-    #                                       color='blue'))
-    #     for patch_dict in self.patches:
-    #         if patch_dict['max_cp'] - patch_dict['min_cp'] == 0:
-    #             color = 0
-    #         else:
-    #             color = (patch_dict['cp']-patch_dict['min_cp'])/(patch_dict['max_cp']-patch_dict['min_cp'])
-    #             # color = region.competence/self.max_competence
-    #         self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
-    #                               width=patch_dict['width'],
-    #                               height=patch_dict['height'],
-    #                               fill=True,
-    #                               facecolor=Blues(color),
-    #                               edgecolor=None,
-    #                               alpha=0.8))
-    #     # if with_points:
-    #     #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
-    #     #     sizes = [0.01 + ze for ze in z]
-    #     #     self.ax.scatter(x, y, s=sizes, c='red')
-    #     plt.draw()
-    #     plt.pause(0.001)
+    def init_display(self):
+        self.figure = plt.figure()
+        self.ax = plt.axes()
+        self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
+        if len(self.figure_dims)>1:
+            self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
+        else:
+            self.ax.set_ylim(0, 1)
+        plt.ion()
+        plt.show()
+
+    def plot_image(self, with_points=False):
+        self.ax.lines.clear()
+        self.ax.patches.clear()
+        for line_dict in self.lines:
+            self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
+                                          ydata=line_dict['ydata'],
+                                          linewidth=2,
+                                          color='blue'))
+        for patch_dict in self.patches:
+            if patch_dict['max_cp'] - patch_dict['min_cp'] == 0:
+                color = 0
+            else:
+                color = (patch_dict['cp']-patch_dict['min_cp'])/(patch_dict['max_cp']-patch_dict['min_cp'])
+                # color = region.competence/self.max_competence
+            self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
+                                  width=patch_dict['width'],
+                                  height=patch_dict['height'],
+                                  fill=True,
+                                  facecolor=Blues(color),
+                                  edgecolor=None,
+                                  alpha=0.8))
+        # if with_points:
+        #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
+        #     sizes = [0.01 + ze for ze in z]
+        #     self.ax.scatter(x, y, s=sizes, c='red')
+        plt.draw()
+        plt.pause(0.001)
 
 
     def find_prop_region(self, sum):
@@ -557,7 +532,5 @@ class TreeMemory():
 #         ani = animation.FuncAnimation(self.tree.figure, self.updatefig, frames=100, interval=200, blit=True)
 #         plt.show()
 #
-# if __name__ == "__main__":
-#     demo = demo()
-#     demo.run()
+
 

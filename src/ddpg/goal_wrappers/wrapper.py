@@ -76,7 +76,7 @@ class goal_basic(Wrapper):
         self.prev_state = None
         self.starts = deque(maxlen=100)
         self.reward_type = reward_type
-        self.epsilon = 0.05
+        self.epsilon = 0.1
 
     def add_goal(self, state, goal):
         return np.concatenate([state, goal])
