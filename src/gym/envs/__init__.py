@@ -75,21 +75,21 @@ register(
     id='CMC-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcNoGoal',
-    max_episode_steps=999,
+    max_episode_steps=200,
 )
 
 register(
     id='CMCPos-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcPos',
-    max_episode_steps=999,
+    max_episode_steps=200,
 )
 
 register(
     id='CMCFull-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcFull',
-    max_episode_steps=999,
+    max_episode_steps=200,
 )
 
 register(

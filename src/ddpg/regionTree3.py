@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 import matplotlib.patches as patches
 from matplotlib import animation
+from matplotlib.collections import PatchCollection
 Blues = plt.get_cmap('Blues')
 
 class Region(Box):
@@ -141,22 +142,42 @@ class TreeMemory():
         return self.buffer.build_exp(state, action, next_state, reward, terminal)
 
     def sample_competence(self):
-        self._sample_competence(1)
+        region_goals = [self.root.sample() for _ in range(self.n_leaves)]
+        starts = [self.buffer.env.get_start() for _ in range(self.n_leaves)]
+        states = np.array([np.hstack([start, goal]) for start, goal in zip(starts, region_goals)])
+        a_outs = self.actor.predict(states)
+        q_outs = list(self.critic.predict(states, a_outs))
+        corr_vals = [(val - self.minval) / (self.maxval - self.minval) for val in q_outs]
+        for goal, val in zip(region_goals, corr_vals):
+            self.insert((goal, val))
 
-    def _sample_competence(self, idx):
+    # def _sample_competence(self, idx):
+    #     region = self.region_array[idx]
+    #     if region.is_leaf:
+    #         region_goals = [region.sample() for _ in range(1)]
+    #         starts = [self.buffer.env.get_start() for _ in range(1)]
+    #         states = np.array([np.hstack([start,goal]) for start,goal in zip(starts, region_goals)])
+    #         a_outs = self.actor.predict(states)
+    #         q_outs = list(self.critic.predict(states, a_outs))
+    #         corr_vals = [(val - self.minval) / (self.maxval - self.minval) for val in q_outs]
+    #         for goal, val in zip(region_goals, corr_vals):
+    #             region.points.append((goal,val))
+    #     else:
+    #         self._sample_competence(2 * idx)
+    #         self._sample_competence(2 * idx + 1)
+
+    def insert(self, point):
+        self._insert(point, 1)
+
+    def _insert(self, point, idx):
         region = self.region_array[idx]
-        if region.is_leaf:
-            region_goals = [region.sample() for _ in range(1)]
-            starts = [self.buffer.env.get_start() for _ in range(1)]
-            states = np.array([np.hstack([start,goal]) for start,goal in zip(starts, region_goals)])
-            a_outs = self.actor.predict(states)
-            q_outs = list(self.critic.predict(states, a_outs))
-            corr_vals = [(val - self.minval) / (self.maxval - self.minval) for val in q_outs]
-            for goal, val in zip(region_goals, corr_vals):
-                region.points.append((goal,val))
-        else:
-            self._sample_competence(2 * idx)
-            self._sample_competence(2 * idx + 1)
+        region.points.append(point)
+        if not region.is_leaf:
+            left = self.region_array[2 * idx]
+            if left.contains(point[0]):
+                self._insert(point, 2 * idx)
+            else:
+                self._insert(point, 2 * idx + 1)
 
     def update_display(self):
         self.compute_image()
@@ -212,9 +233,9 @@ class TreeMemory():
         if not region.is_leaf:
             self._update_tree(2 * idx)
             self._update_tree(2 * idx + 1)
-        else:
-            if region.full and idx < self.capacity:
-                self.split(idx)
+        # else:
+        #     if region.full and idx < self.capacity:
+        #         self.split(idx)
 
     def update_CP_tree(self):
         self._update_CP_tree(1)
@@ -232,9 +253,9 @@ class TreeMemory():
         else:
             left = self.region_array[2 * idx]
             right = self.region_array[2 * idx + 1]
-            split_eval = self.split_eval(left, right)
-            to_merge = left.is_leaf and right.is_leaf and split_eval < self.split_min
-            if to_merge:
+            # split_eval = self.split_eval(left, right)
+            # to_merge = left.is_leaf and right.is_leaf and split_eval < self.split_min
+            if False:
                 region.dim_split = None
                 region.val_split = None
                 self.region_array[2 * idx] = None
@@ -339,7 +360,9 @@ class TreeMemory():
 
     def plot_image(self, with_points=False):
         self.ax.lines.clear()
-        self.ax.patches.clear()
+        self.ax.collections.clear()
+        colors = []
+        patch_list = []
         for line_dict in self.lines:
             self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
                                           ydata=line_dict['ydata'],
@@ -350,20 +373,33 @@ class TreeMemory():
                 color = 0
             else:
                 color = (patch_dict['cp']-patch_dict['min_cp'])/(patch_dict['max_cp']-patch_dict['min_cp'])
+            colors.append(color)
                 # color = region.competence/self.max_competence
-            self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
-                                  width=patch_dict['width'],
-                                  height=patch_dict['height'],
-                                  fill=True,
-                                  facecolor=Blues(color),
-                                  edgecolor=None,
-                                  alpha=0.8))
+            # self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
+            #                       width=patch_dict['width'],
+            #                       height=patch_dict['height'],
+            #                       fill=True,
+            #                       facecolor=Blues(color),
+            #                       edgecolor=None,
+            #                       alpha=0.8))
+            patch_list.append(patches.Rectangle(xy=patch_dict['angle'],
+                                                width=patch_dict['width'],
+                                                height=patch_dict['height'],
+                                                fill=True,
+                                                edgecolor=None,
+                                                alpha=0.8))
         # if with_points:
         #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
         #     sizes = [0.01 + ze for ze in z]
         #     self.ax.scatter(x, y, s=sizes, c='red')
+        p = PatchCollection(patch_list)
+        p.set_array(np.array(colors))
+        self.ax.add_collection(p)
+        self.cb = self.figure.colorbar(p, ax=self.ax)
         plt.draw()
         plt.pause(0.001)
+        self.cb.remove()
+
 
 
     def find_prop_region(self, sum):
