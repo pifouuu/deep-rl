@@ -112,8 +112,7 @@ def main(args):
                             n_window=int(args['n_window']),
                             render=args['render_memory'],
                             sampler=args['sampler'])
-        memory.divide(8)
-        memory.update_display()
+        memory.divide(int(args['n_cut']))
 
         agent = DDPG_agent(sess,
                            actor,
@@ -153,7 +152,7 @@ if __name__ == '__main__':
     parser.add_argument('--random-seed', help='random seed for repeatability', default=None)
     boolean_flag(parser, 'render-test', default=False)
     boolean_flag(parser, 'render-train', default=False)
-    boolean_flag(parser, 'render-memory', default=True)
+    boolean_flag(parser, 'render-memory', default=False)
     boolean_flag(parser, 'invert-grads', default=True)
     boolean_flag(parser, 'target-clip', default=True)
 

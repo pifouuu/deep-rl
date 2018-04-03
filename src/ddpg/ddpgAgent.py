@@ -321,6 +321,10 @@ class DDPG_agent():
             state, reward, terminal, info = self.test_env.step(action[0])
             ep_test_reward += reward
             if (terminal or info['past_limit']):
+                if type == 'random':
+                    self.test_env.set_goal_reachable()
+                elif type == 'init':
+                    self.test_env.set_goal_init()
                 state = self.test_env.reset()
                 ep_test_rewards.append(ep_test_reward)
                 ep_test_reward = 0

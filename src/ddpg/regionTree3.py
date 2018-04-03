@@ -6,12 +6,12 @@ from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
 import os
 
 
-import matplotlib.pyplot as plt
-import matplotlib.lines as lines
-import matplotlib.patches as patches
-from matplotlib import animation
-from matplotlib.collections import PatchCollection
-Blues = plt.get_cmap('Blues')
+# import matplotlib.pyplot as plt
+# import matplotlib.lines as lines
+# import matplotlib.patches as patches
+# from matplotlib import animation
+# from matplotlib.collections import PatchCollection
+# Blues = plt.get_cmap('Blues')
 
 class Region(Box):
 
@@ -347,54 +347,54 @@ class TreeMemory():
             self._compute_image(2 * idx, self.figure_dims)
             self._compute_image(2 * idx + 1, self.figure_dims)
 
-    def init_display(self):
-        self.figure = plt.figure()
-        self.ax = plt.axes()
-        self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
-        if len(self.figure_dims)>1:
-            self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
-        else:
-            self.ax.set_ylim(0, 1)
-        plt.ion()
-        plt.show()
-
-    def plot_image(self, with_points=False):
-        self.ax.lines.clear()
-        self.ax.collections.clear()
-        colors = []
-        patch_list = []
-        for line_dict in self.lines:
-            self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
-                                          ydata=line_dict['ydata'],
-                                          linewidth=2,
-                                          color='blue'))
-        for patch_dict in self.patches:
-            colors.append(patch_dict['cp'])
-            # self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
-            #                       width=patch_dict['width'],
-            #                       height=patch_dict['height'],
-            #                       fill=True,
-            #                       facecolor=Blues(color),
-            #                       edgecolor=None,
-            #                       alpha=0.8))
-            patch_list.append(patches.Rectangle(xy=patch_dict['angle'],
-                                                width=patch_dict['width'],
-                                                height=patch_dict['height'],
-                                                fill=True,
-                                                edgecolor=None,
-                                                alpha=0.8))
-        # if with_points:
-        #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
-        #     sizes = [0.01 + ze for ze in z]
-        #     self.ax.scatter(x, y, s=sizes, c='red')
-        p = PatchCollection(patch_list)
-        p.set_array(np.array(colors))
-        self.ax.add_collection(p)
-        self.cb = self.figure.colorbar(p, ax=self.ax)
-        plt.draw()
-        plt.pause(0.001)
-        self.cb.remove()
-
+    # def init_display(self):
+    #     self.figure = plt.figure()
+    #     self.ax = plt.axes()
+    #     self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
+    #     if len(self.figure_dims)>1:
+    #         self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
+    #     else:
+    #         self.ax.set_ylim(0, 1)
+    #     plt.ion()
+    #     plt.show()
+    #
+    # def plot_image(self, with_points=False):
+    #     self.ax.lines.clear()
+    #     self.ax.collections.clear()
+    #     colors = []
+    #     patch_list = []
+    #     for line_dict in self.lines:
+    #         self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
+    #                                       ydata=line_dict['ydata'],
+    #                                       linewidth=2,
+    #                                       color='blue'))
+    #     for patch_dict in self.patches:
+    #         colors.append(patch_dict['cp'])
+    #         # self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
+    #         #                       width=patch_dict['width'],
+    #         #                       height=patch_dict['height'],
+    #         #                       fill=True,
+    #         #                       facecolor=Blues(color),
+    #         #                       edgecolor=None,
+    #         #                       alpha=0.8))
+    #         patch_list.append(patches.Rectangle(xy=patch_dict['angle'],
+    #                                             width=patch_dict['width'],
+    #                                             height=patch_dict['height'],
+    #                                             fill=True,
+    #                                             edgecolor=None,
+    #                                             alpha=0.8))
+    #     # if with_points:
+    #     #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
+    #     #     sizes = [0.01 + ze for ze in z]
+    #     #     self.ax.scatter(x, y, s=sizes, c='red')
+    #     p = PatchCollection(patch_list)
+    #     p.set_array(np.array(colors))
+    #     self.ax.add_collection(p)
+    #     self.cb = self.figure.colorbar(p, ax=self.ax)
+    #     plt.draw()
+    #     plt.pause(0.001)
+    #     self.cb.remove()
+    #
 
 
     def find_prop_region(self, sum):
