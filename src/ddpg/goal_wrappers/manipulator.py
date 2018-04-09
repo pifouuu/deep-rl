@@ -6,12 +6,11 @@ import six
 from gym.spaces import Box
 
 class BaseNoGoal(no_goal):
-    def __init__(self, env, reward_type):
-        super(BaseNoGoal, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(BaseNoGoal, self).__init__(env, reward_type, epsilon)
         self.state_to_reached = range(22, 24)
         self.target = 'target'
         self.initial_goal = np.array([0., 0.2])
-        self.epsilon = 0.02
 
 
     def _reset(self):
@@ -34,15 +33,14 @@ class BaseNoGoal(no_goal):
         return state
 
 class Base(goal_basic):
-    def __init__(self, env, reward_type):
-        super(Base, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(Base, self).__init__(env, reward_type, epsilon)
         self.state_to_goal = range(24,26)
         self.state_to_obs = range(24)
         self.state_to_reached = range(22,24)
         self.goal_space = Box(np.array([-.4, .1]), np.array([.4, .4]))
         self.target = 'target'
         self.initial_goal = np.array([0., 0.2])
-        self.epsilon = 0.02
 
 
     def _reset(self):
@@ -66,39 +64,37 @@ class Base(goal_basic):
         return state
 
 class Ball(Base):
-    def __init__(self, env, reward_type):
-        super(Ball, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(Ball, self).__init__(env, reward_type, epsilon)
         self.target = 'target_ball'
         self.state_to_goal = range(25, 27)
         self.state_to_obs = range(25)
         self.state_to_reached = range(22, 24)
-        self.epsilon = 0.02
 
 class BallNoGoal(BaseNoGoal):
-    def __init__(self, env, reward_type):
-        super(BallNoGoal, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(BallNoGoal, self).__init__(env, reward_type, epsilon)
         self.target = 'target_ball'
         self.state_to_reached = range(22, 24)
-        self.epsilon = 0.02
 
 
 class BallCup(Base):
-    def __init__(self, env, reward_type):
-        super(BallCup, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(BallCup, self).__init__(env, reward_type, epsilon)
         self.target = 'target_ball'
         self.state_to_goal = range(28, 30)
         self.state_to_obs = range(28)
         self.state_to_reached = range(25, 27)
 
 class BallCupNoGoal(BaseNoGoal):
-    def __init__(self, env, reward_type):
-        super(BallCupNoGoal, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(BallCupNoGoal, self).__init__(env, reward_type, epsilon)
         self.target = 'target_ball'
         self.state_to_reached = range(25, 27)
 
 class Peg(Base):
-    def __init__(self, env, reward_type):
-        super(Peg, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(Peg, self).__init__(env, reward_type, epsilon)
         self.target = 'target_peg'
         self.state_to_goal = range(25, 28)
         self.state_to_obs = range(25)
@@ -131,8 +127,8 @@ class Peg(Base):
         return state
 
 class PegNoGoal(BaseNoGoal):
-    def __init__(self, env, reward_type):
-        super(PegNoGoal, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(PegNoGoal, self).__init__(env, reward_type, epsilon)
         self.target = 'target_peg'
         self.state_to_reached = range(22, 25)
         self.initial_goal = np.array([0., 0.2, 0])
@@ -161,22 +157,22 @@ class PegNoGoal(BaseNoGoal):
 
 
 class PegSlot(Peg):
-    def __init__(self, env, reward_type):
-        super(PegSlot, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(PegSlot, self).__init__(env, reward_type, epsilon)
         self.target = 'target_peg'
         self.state_to_goal = range(28, 31)
         self.state_to_obs = range(28)
         self.state_to_reached = range(25, 28)
 
 class PegSlotNoGoal(PegNoGoal):
-    def __init__(self, env, reward_type):
-        super(PegSlotNoGoal, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(PegSlotNoGoal, self).__init__(env, reward_type, epsilon)
         self.target = 'target_peg'
         self.state_to_reached = range(25, 28)
 
 class Boxes(Base):
-    def __init__(self, env, reward_type):
-        super(Boxes, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(Boxes, self).__init__(env, reward_type, epsilon)
         self.target = 'target_box'
         self.state_to_goal = range(34, 36)
         self.state_to_obs = range(34)
@@ -195,8 +191,8 @@ class Boxes(Base):
         return r, term
 
 class BoxesNoGoal(BaseNoGoal):
-    def __init__(self, env, reward_type):
-        super(BoxesNoGoal, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(BoxesNoGoal, self).__init__(env, reward_type, epsilon)
         self.target = 'target_box'
         self.state_to_reached = range(22, 34)
 
@@ -214,15 +210,15 @@ class BoxesNoGoal(BaseNoGoal):
 
 class Playroom(Base):
     #TODO
-    def __init__(self, env, reward_type):
-        super(Playroom, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(Playroom, self).__init__(env, reward_type, epsilon)
         self.target = 'target_box'
         self.state_to_goal = range(28, 30)
         self.state_to_obs = range(46)
         self.state_to_reached = range(25, 27)
 
 class PlayroomNoGoal(BaseNoGoal):
-    def __init__(self, env, reward_type):
-        super(PlayroomNoGoal, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(PlayroomNoGoal, self).__init__(env, reward_type, epsilon)
         self.target = 'target_ball'
         self.state_to_reached = range(28, 30)

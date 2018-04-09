@@ -30,6 +30,7 @@ def main(args):
              str(args['train_freq']),
              str(args['nb_train_iter']),
              str(args['reward_type']),
+             str(args['eps']),
              str(args['sampler']),
              str(args['n_cut']),
              str(args['n_points'])]
@@ -59,8 +60,8 @@ def main(args):
     # Wraps each environment in a goal_wrapper to override basic env methods and be able to access goal space properties, or modify the environment simulation according to sampled goals. The wrapper classes paths corresponding to each environment are defined in gym.envs.int
     if train_env.spec._goal_wrapper_entry_point is not None:
         wrapper_cls = load(train_env.spec._goal_wrapper_entry_point)
-        train_env = wrapper_cls(train_env, args['reward_type'])
-        test_env = wrapper_cls(test_env, args['reward_type'])
+        train_env = wrapper_cls(train_env, args['reward_type'], float(args['eps']))
+        test_env = wrapper_cls(test_env, args['reward_type'], float(args['eps']))
 
     #TODO integrate the choice of memory in environments specs in gym.env.init
     if args['memory'] == 'sarst':
@@ -170,6 +171,7 @@ if __name__ == '__main__':
     parser.add_argument('--train-freq', help='training frequency', default=1)
     parser.add_argument('--nb-train-iter', help='training iteration number', default=1)
     parser.add_argument('--reward-type', help='sparse, dense', default='sparse')
+    parser.add_argument('--eps', default=0.1)
     parser.add_argument('--sampler', help='random, initial, prioritized', default='random')
     parser.add_argument('--n-cut', help='number of regions in goal space', default=16)
     parser.add_argument('--n-points', help='number of points stored in region', default=100)

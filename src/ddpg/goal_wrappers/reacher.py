@@ -4,21 +4,19 @@ import numpy as np
 from gym.spaces import Box
 
 class ReacherNoGoal(no_goal):
-    def __init__(self, env, reward_type):
-        super(ReacherNoGoal, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(ReacherNoGoal, self).__init__(env, reward_type, epsilon)
         self.initial_goal = np.array([0, 0.1])
         self.state_to_reached = [6, 7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
-        self.epsilon = 0.02
 
 class Reacher(goal_basic):
-    def __init__(self, env, reward_type):
-        super(Reacher, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(Reacher, self).__init__(env, reward_type, epsilon)
         self.state_to_goal = [8,9]
         self.state_to_reached = [6,7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
         self.initial_goal = np.array([0, 0.1])
-        self.epsilon = 0.02
 
     def _reset(self):
         _ = self.env.reset()
@@ -44,8 +42,8 @@ class Reacher(goal_basic):
         return (np.linalg.norm(self.goal) < 0.2)
 
 class ReacherOrigin(Reacher):
-    def __init__(self, env, reward_type):
-        super(ReacherOrigin, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(ReacherOrigin, self).__init__(env, reward_type, epsilon)
 
     def eval_exp(self, _, action, agent_state_1, reward, terminal):
         vec = agent_state_1[self.state_to_reached]

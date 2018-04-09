@@ -4,8 +4,8 @@ from gym.spaces import Box
 
 
 class HcRootx(goal_basic):
-    def __init__(self, env, reward_type):
-        super(HcRootx, self).__init__(env, reward_type)
+    def __init__(self, env, reward_type, epsilon):
+        super(HcRootx, self).__init__(env, reward_type, epsilon)
         self.state_to_goal = range(6,12)
         self.state_to_obs = range(12)
         self.state_to_reached = range(6,12)
