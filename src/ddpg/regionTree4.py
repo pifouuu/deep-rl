@@ -6,12 +6,12 @@ from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
 import os
 
 
-# import matplotlib.pyplot as plt
-# import matplotlib.lines as lines
-# import matplotlib.patches as patches
-# from matplotlib import animation
-# from matplotlib.collections import PatchCollection
-# Blues = plt.get_cmap('Blues')
+import matplotlib.pyplot as plt
+import matplotlib.lines as lines
+import matplotlib.patches as patches
+from matplotlib import animation
+from matplotlib.collections import PatchCollection
+Blues = plt.get_cmap('Blues')
 
 class Region(Box):
 
@@ -107,6 +107,7 @@ class TreeMemory():
         self.lines = []
         self.patches = []
         self.points = []
+        self.history = []
 
         capacity = 1
         while capacity < max_regions:
@@ -188,6 +189,8 @@ class TreeMemory():
                 self.init_display()
             self.plot_image()
 
+        self.history.append([self.lines.copy(), self.patches.copy()])
+
     def divide(self, n):
         assert n & (n-1) == 0 #n must be a power of 2
         self._divide(1, n, 0)
@@ -233,9 +236,9 @@ class TreeMemory():
         if not region.is_leaf:
             self._update_tree(2 * idx)
             self._update_tree(2 * idx + 1)
-        # else:
-        #     if region.full and idx < self.capacity:
-        #         self.split(idx)
+        else:
+            if region.full and idx < self.capacity:
+                self.split(idx)
 
     def update_CP_tree(self):
         self._update_CP_tree(1)
@@ -253,9 +256,9 @@ class TreeMemory():
         else:
             left = self.region_array[2 * idx]
             right = self.region_array[2 * idx + 1]
-            # split_eval = self.split_eval(left, right)
-            # to_merge = left.is_leaf and right.is_leaf and split_eval < self.split_min
-            if False:
+            split_eval = self.split_eval(left, right)
+            to_merge = left.is_leaf and right.is_leaf and split_eval < self.split_min
+            if to_merge:
                 region.dim_split = None
                 region.val_split = None
                 self.region_array[2 * idx] = None
@@ -297,12 +300,13 @@ class TreeMemory():
                           ' diff=', eval_splits[split_idx])
                     self.n_leaves += 1
 
-    def compute_image(self):
+    def compute_image(self, with_points=False):
         self.lines.clear()
         self.patches.clear()
-        self._compute_image(1)
+        self.points.clear()
+        self._compute_image(1, with_points)
 
-    def _compute_image(self, idx):
+    def _compute_image(self, idx, with_points=False):
         region = self.region_array[idx]
         if len(self.figure_dims) > 1:
             low1 = region.low[self.figure_dims[1]]
@@ -315,13 +319,21 @@ class TreeMemory():
             angle = (region.low[self.figure_dims[0]], low1)
             width = region.high[self.figure_dims[0]] - region.low[self.figure_dims[0]]
             height = high1 - low1
+            # print("region ", idx, " cp : ", region.CP)
             self.patches.append({'angle': angle,
                                  'width': width,
                                  'height': height,
+                                 'max_cp': self.max_CP,
+                                 'min_cp': self.min_CP,
                                  'cp': region.CP,
+                                 'max_competence': self.max_competence,
+                                 'min_competence': self.min_competence,
                                  'competence': region.competence,
                                  'freq': region.freq
                                  })
+            if with_points:
+                for point in region.points:
+                    self.points.append(point)
         else:
             if region.dim_split == self.figure_dims[0]:
                 line1_xs = 2 * [region.val_split]
@@ -334,56 +346,56 @@ class TreeMemory():
                 self.lines.append({'xdata': line1_xs,
                                'ydata': line1_ys})
 
-            self._compute_image(2 * idx)
-            self._compute_image(2 * idx + 1)
+            self._compute_image(2 * idx, self.figure_dims)
+            self._compute_image(2 * idx + 1, self.figure_dims)
 
-    # def init_display(self):
-    #     self.figure = plt.figure()
-    #     self.ax = plt.axes()
-    #     self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
-    #     if len(self.figure_dims)>1:
-    #         self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
-    #     else:
-    #         self.ax.set_ylim(0, 1)
-    #     plt.ion()
-    #     plt.show()
-    #
-    # def plot_image(self, with_points=False):
-    #     self.ax.lines.clear()
-    #     self.ax.collections.clear()
-    #     colors = []
-    #     patch_list = []
-    #     for line_dict in self.lines:
-    #         self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
-    #                                       ydata=line_dict['ydata'],
-    #                                       linewidth=2,
-    #                                       color='blue'))
-    #     for patch_dict in self.patches:
-    #         colors.append(patch_dict['cp'])
-    #         # self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
-    #         #                       width=patch_dict['width'],
-    #         #                       height=patch_dict['height'],
-    #         #                       fill=True,
-    #         #                       facecolor=Blues(color),
-    #         #                       edgecolor=None,
-    #         #                       alpha=0.8))
-    #         patch_list.append(patches.Rectangle(xy=patch_dict['angle'],
-    #                                             width=patch_dict['width'],
-    #                                             height=patch_dict['height'],
-    #                                             fill=True,
-    #                                             edgecolor=None,
-    #                                             alpha=0.8))
-    #     # if with_points:
-    #     #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
-    #     #     sizes = [0.01 + ze for ze in z]
-    #     #     self.ax.scatter(x, y, s=sizes, c='red')
-    #     p = PatchCollection(patch_list)
-    #     p.set_array(np.array(colors))
-    #     self.ax.add_collection(p)
-    #     self.cb = self.figure.colorbar(p, ax=self.ax)
-    #     plt.draw()
-    #     plt.pause(0.001)
-    #     self.cb.remove()
+    def init_display(self):
+        self.figure = plt.figure()
+        self.ax = plt.axes()
+        self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
+        if len(self.figure_dims)>1:
+            self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
+        else:
+            self.ax.set_ylim(0, 1)
+        plt.ion()
+        plt.show()
+
+    def plot_image(self, with_points=False):
+        self.ax.lines.clear()
+        self.ax.collections.clear()
+        colors = []
+        patch_list = []
+        for line_dict in self.lines:
+            self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
+                                          ydata=line_dict['ydata'],
+                                          linewidth=2,
+                                          color='blue'))
+        for patch_dict in self.patches:
+            colors.append(patch_dict['cp'])
+            # self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
+            #                       width=patch_dict['width'],
+            #                       height=patch_dict['height'],
+            #                       fill=True,
+            #                       facecolor=Blues(color),
+            #                       edgecolor=None,
+            #                       alpha=0.8))
+            patch_list.append(patches.Rectangle(xy=patch_dict['angle'],
+                                                width=patch_dict['width'],
+                                                height=patch_dict['height'],
+                                                fill=True,
+                                                edgecolor=None,
+                                                alpha=0.8))
+        # if with_points:
+        #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
+        #     sizes = [0.01 + ze for ze in z]
+        #     self.ax.scatter(x, y, s=sizes, c='red')
+        p = PatchCollection(patch_list)
+        p.set_array(np.array(colors))
+        self.ax.add_collection(p)
+        self.cb = self.figure.colorbar(p, ax=self.ax)
+        plt.draw()
+        plt.pause(0.001)
+        self.cb.remove()
 
 
 
@@ -475,11 +487,7 @@ class zones():
             i += 1
         n_samples = self.samples_per_zone[i - 1]
 
-        if n_samples < self.zone_difficulties[i - 1]:
-            comp = 0
-        else:
-            comp = np.min([1, (n_samples - self.zone_difficulties[i - 1]) / 1000])
-
+        comp = np.min([1, (n_samples / self.zone_difficulties[i - 1])])
         self.samples_per_zone[i - 1] += 1
         return comp
 
@@ -495,7 +503,7 @@ class zones1(zones):
         self.zones = [zone1, zone2, zone3, zone4, zone5, zone6]
         self.samples_per_zone = 6 * [0]
         self.comp_per_zone = 6 * [0]
-        self.zone_difficulties = [0, 200, 400, 800, 1000, 1200]
+        self.zone_difficulties = [100, 300, 500, 700, 900, 1100]
 
 class zones2(zones):
     def __init__(self):

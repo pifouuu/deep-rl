@@ -5,13 +5,14 @@ from gym.monitoring import VideoRecorder
 import numpy as np
 from ddpg.util import load
 
-log_dir = '../log/cluster0204/ReacherGoal-v0_sarst_final_0_10_0_20_0.3_1_1_sparse_random_16_50/20180402010239_792618/'
+log_dir = '../log/local/ReacherGoal-v0_sarst_final_4_0_10_0.0001_5_0.3_1_1_sparse_initial_8_100/20180409122603_956912/'
 model = load_model(os.path.join(log_dir, 'saves', 'actor_model.h5'))
-test_env = make('ReacherGoal-v0')
+test_env = make('ManipulatorGoal-v0')
 
 if test_env.spec._goal_wrapper_entry_point is not None:
     wrapper_cls = load(test_env.spec._goal_wrapper_entry_point)
-    test_env = wrapper_cls(test_env, 'sparse')
+    test_env = wrapper_cls(test_env, 'dense')
+
 
 
 
@@ -27,13 +28,13 @@ for _ in range(20):
 
     state = test_env.reset()
     reward_sum = 0
-    for k in range(50):
+    for k in range(1000):
         test_env.render(mode='human')
         action = model.predict(np.reshape(state, (1, test_env.state_dim[0])))
         action = np.clip(action, test_env.action_space.low, test_env.action_space.high)
         state, reward, terminal, info = test_env.step(action[0])
         reward_sum += reward
-        print('reward: ', reward_sum)
+        # print('reward: ', reward_sum)
         terminal = terminal or info['past_limit']
         if terminal:
             break

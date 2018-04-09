@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-#PBS -l walltime=11:00:00
+#PBS -l walltime=00:10:00
 # Request a node per experiment to avoid competition between different TFs
-#PBS -l nodes=1:ppn=24
+#PBS -l nodes=1:ppn=1
 #PBS -V
 
 read -a var1 <<< $PARAM_NAMES
@@ -14,8 +14,8 @@ for i in ${!var1[@]}; do
     val=${var2[$i]}
     command=${command}"--$param $val "
 done
-command=${command}"--max-steps 1000 --log-dir ${log}"
-NB_TRIALS=2
+command=${command}"--log-dir ${log}"
+NB_TRIALS=1
 for TRIAL in $(seq $NB_TRIALS)
 do
   (

@@ -75,21 +75,18 @@ register(
     id='CMC-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcNoGoal',
-    max_episode_steps=200,
 )
 
 register(
     id='CMCPos-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcPos',
-    max_episode_steps=200,
 )
 
 register(
     id='CMCFull-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.cmc:CmcFull',
-    max_episode_steps=200,
 )
 
 register(
@@ -361,21 +358,18 @@ register(
     id='Reacher-v0',
     entry_point='gym.envs.mujoco:ReacherEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherNoGoal',
-    max_episode_steps=50,
 )
 
 register(
     id='ReacherGoal-v0',
     entry_point='gym.envs.mujoco:ReacherEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:Reacher',
-    max_episode_steps=50,
 )
 
 register(
     id='ReacherOriginGoal-v0',
     entry_point='gym.envs.mujoco:ReacherOriginEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherOrigin',
-    max_episode_steps=50,
 )
 
 register(
@@ -470,98 +464,84 @@ register(
     id='Manipulator-v0',
     entry_point='gym.envs.mujoco:ManipulatorEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:BaseNoGoal',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorGoal-v0',
     entry_point='gym.envs.mujoco:ManipulatorEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:Base',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorBall-v0',
     entry_point='gym.envs.mujoco:ManipulatorBallEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:BallNoGoal',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorBallGoal-v0',
     entry_point='gym.envs.mujoco:ManipulatorBallEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:Ball',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorBallCup-v0',
     entry_point='gym.envs.mujoco:ManipulatorBallCupEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:BallCupNoGoal',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorBallCupGoal-v0',
     entry_point='gym.envs.mujoco:ManipulatorBallCupEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:BallCup',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorPeg-v0',
     entry_point='gym.envs.mujoco:ManipulatorPegEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:PegNoGoal',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorPegGoal-v0',
     entry_point='gym.envs.mujoco:ManipulatorPegEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:Peg',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorPegSlot-v0',
     entry_point='gym.envs.mujoco:ManipulatorPegSlotEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:PegSlotNoGoal',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorPegSlotGoal-v0',
     entry_point='gym.envs.mujoco:ManipulatorPegSlotEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:PegSlot',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorBoxes-v0',
     entry_point='gym.envs.mujoco:ManipulatorBoxesEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:BoxesNoGoal',
-    max_episode_steps=1000,
 )
 
 register(
     id='ManipulatorBoxesGoal-v0',
     entry_point='gym.envs.mujoco:ManipulatorBoxesEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:Boxes',
-    max_episode_steps=1000,
 )
 
 register(
     id='Playroom-v0',
     entry_point='gym.envs.mujoco:PlayroomEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:PlayroomNoGoal',
-    max_episode_steps=1000,
 )
 
 register(
     id='PlayroomGoal-v0',
     entry_point='gym.envs.mujoco:PlayroomEnv',
     goal_wrapper_entry_point='ddpg.goal_wrappers.manipulator:Playroom',
-    max_episode_steps=1000,
 )
 
 

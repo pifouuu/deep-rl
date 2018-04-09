@@ -9,6 +9,7 @@ class ReacherNoGoal(no_goal):
         self.initial_goal = np.array([0, 0.1])
         self.state_to_reached = [6, 7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
+        self.epsilon = 0.02
 
 class Reacher(goal_basic):
     def __init__(self, env, reward_type):
@@ -17,6 +18,7 @@ class Reacher(goal_basic):
         self.state_to_reached = [6,7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
         self.initial_goal = np.array([0, 0.1])
+        self.epsilon = 0.02
 
     def _reset(self):
         _ = self.env.reset()

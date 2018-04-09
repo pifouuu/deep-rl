@@ -18,8 +18,9 @@ class DDPG_agent():
                  memory,
                  logger_step,
                  logger_episode,
+                 logger_memory,
                  batch_size,
-                 nb_test_steps,
+                 ep_steps,
                  max_steps,
                  log_dir,
                  save_freq,
@@ -42,11 +43,13 @@ class DDPG_agent():
 
         self.logger_step = logger_step
         self.logger_episode = logger_episode
+        self.logger_memory = logger_memory
         self.step_stats = {}
         self.episode_stats = {}
+        self.memory_stats = {}
         self.train_freq = train_freq
         self.nb_train_iter = nb_train_iter
-        self.nb_test_steps = nb_test_steps
+        self.ep_steps = ep_steps
 
         self.save_freq = save_freq
         self.eval_freq = eval_freq
@@ -196,7 +199,7 @@ class DDPG_agent():
                 self.train_env.render(mode='human')
 
             action = self.act(state0, train=True)
-            state1, reward, terminal, info = self.train_env.step(action[0])
+            state1, reward, terminal, _ = self.train_env.step(action[0])
             experience = self.memory.build_exp(state0, action, state1, reward, terminal)
             self.memory.append(experience)
 
@@ -205,17 +208,14 @@ class DDPG_agent():
             self.episode_step += 1
             state0 = state1
 
-            if (terminal or info['past_limit']):
+            if (terminal or self.episode_step >= self.ep_steps):
 
                 self.episode += 1
                 if terminal:
                     self.nb_goals_reached += 1
                 self.memory.end_episode(terminal)
-                if self.train_env.goal_parameterized:
-                    video_path = os.path.join(self.pickle_dir, 'comp_progress.pkl')
-                    with open(video_path, 'wb') as f:
-                        pickle.dump(self.memory.history, f)
                 self.log_episode_stats()
+                self.log_memory_stats()
 
                 state0 = self.reset_train()
                 self.episode_step = 0
@@ -284,6 +284,17 @@ class DDPG_agent():
 
         self.log(self.episode_stats, self.logger_episode)
 
+    def log_memory_stats(self):
+        self.memory_stats['max_CP'] = self.memory.max_CP
+        self.memory_stats['min_CP'] = self.memory.min_CP
+        self.memory_stats['max_comp'] = self.memory.max_competence
+        self.memory_stats['min_comp'] = self.memory.min_competence
+        self.memory_stats['patches'] = self.memory.patches
+        self.memory_stats['lines'] = self.memory.lines
+
+        self.log(self.memory_stats, self.logger_memory)
+
+
     def train(self):
         critic_stats = []
         actor_stats = []
@@ -301,40 +312,39 @@ class DDPG_agent():
 
 
 
-    def test(self, type=None):
-
-        if type == 'random':
-            self.test_env.set_goal_reachable()
-        elif type == 'init':
-            self.test_env.set_goal_init()
-
-        state = self.test_env.reset()
-        ep_test_rewards = []
-        ep_test_reward = 0
-
-        for _ in range(self.nb_test_steps):
-
-            if self.render_test:
-                self.test_env.render(mode='human')
-
-            action = self.act(state, train=False)
-            state, reward, terminal, info = self.test_env.step(action[0])
-            ep_test_reward += reward
-            if (terminal or info['past_limit']):
-                if type == 'random':
-                    self.test_env.set_goal_reachable()
-                elif type == 'init':
-                    self.test_env.set_goal_init()
-                state = self.test_env.reset()
-                ep_test_rewards.append(ep_test_reward)
-                ep_test_reward = 0
-
-        ep_test_rewards.append(ep_test_reward)
-        if self.test_env.rec is not None: self.test_env.rec.close()
-        return ep_test_rewards
+    # def test(self, type=None):
+    #
+    #     if type == 'random':
+    #         self.test_env.set_goal_reachable()
+    #     elif type == 'init':
+    #         self.test_env.set_goal_init()
+    #
+    #     state = self.test_env.reset()
+    #     ep_test_rewards = []
+    #     ep_test_reward = 0
+    #
+    #     for _ in range(self.nb_test_steps):
+    #
+    #         if self.render_test:
+    #             self.test_env.render(mode='human')
+    #
+    #         action = self.act(state, train=False)
+    #         state, reward, terminal, _ = self.test_env.step(action[0])
+    #         ep_test_reward += reward
+    #         if (terminal or info['past_limit']):
+    #             if type == 'random':
+    #                 self.test_env.set_goal_reachable()
+    #             elif type == 'init':
+    #                 self.test_env.set_goal_init()
+    #             state = self.test_env.reset()
+    #             ep_test_rewards.append(ep_test_reward)
+    #             ep_test_reward = 0
+    #
+    #     ep_test_rewards.append(ep_test_reward)
+    #     if self.test_env.rec is not None: self.test_env.rec.close()
+    #     return ep_test_rewards
 
     def run_test_episode(self, type):
-        ep_test_reward = 0
 
         if type == 'random':
             self.test_env.set_goal_reachable()
@@ -342,21 +352,23 @@ class DDPG_agent():
             self.test_env.set_goal_init()
 
         state = self.test_env.reset()
-        for k in range(self.nb_test_steps):
+        step = 0
+        while True:
             action = self.act(state, train=False)
-            state, reward, terminal, info = self.test_env.step(action[0])
-            terminal = terminal or info['past_limit']
-            ep_test_reward += reward
-            if terminal:
+            state, reward, terminal, _ = self.test_env.step(action[0])
+            step += 1
+            if step >= self.ep_steps:
                 break
-        return ep_test_reward
+            elif terminal:
+                return 1
+        return 0
 
-    def test2(self, type=None):
-        test_rewards = []
+    def test(self, type=None):
+        total_reached = 0
         for episode in range(10):
-            reward = self.run_test_episode(type)
-            test_rewards.append(reward)
-        return test_rewards
+            reached = self.run_test_episode(type)
+            total_reached += reached
+        return total_reached/10
 
 
 
