@@ -55,7 +55,6 @@ def main(args):
     # Make calls EnvRegistry.make, which builds the environment from its specs defined in gym.envs.init end then builds a timeLimit wrapper around the environment to set the max amount of steps to run
     train_env = make(args['env'])
     test_env = make(args['env'])
-    # test_env = Monitor(test_env, directory=save_dir)
 
     # Wraps each environment in a goal_wrapper to override basic env methods and be able to access goal space properties, or modify the environment simulation according to sampled goals. The wrapper classes paths corresponding to each environment are defined in gym.envs.int
     if train_env.spec._goal_wrapper_entry_point is not None:
@@ -184,10 +183,6 @@ if __name__ == '__main__':
     parser.add_argument('--ep-steps', help='number of steps in the environment during evaluation', default=50)
     parser.add_argument('--save-freq', help='saving models weights frequency', default=1000)
     parser.add_argument('--eval-freq', help='evaluating every n training steps', default=1000)
-
-
-
-
 
     args = vars(parser.parse_args())
     

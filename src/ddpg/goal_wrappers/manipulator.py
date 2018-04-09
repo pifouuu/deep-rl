@@ -42,6 +42,8 @@ class Base(goal_basic):
         self.goal_space = Box(np.array([-.4, .1]), np.array([.4, .4]))
         self.target = 'target'
         self.initial_goal = np.array([0., 0.2])
+        self.epsilon = 0.02
+
 
     def _reset(self):
         _ = self.env.reset()
