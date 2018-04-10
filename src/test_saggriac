@@ -18,6 +18,64 @@ import time
 
 from ddpg.regionTree4 import zones1
 
+class zones():
+    def __init__(self):
+
+        self.zones = []
+        self.samples_per_zone = []
+        self.comp_per_zone = []
+        self.zone_difficulties = []
+
+    def compute_comp(self, goal):
+        goal_zone = None
+        i = 0
+        while goal_zone is None:
+            if self.zones[i].contains(goal):
+                goal_zone = self.zones[i]
+            i += 1
+        n_samples = self.samples_per_zone[i - 1]
+
+        if n_samples < self.zone_difficulties[i - 1]:
+            comp = 0
+        else:
+            comp = np.min([1, (n_samples - self.zone_difficulties[i - 1]) / 1000])
+
+        self.samples_per_zone[i - 1] += 1
+        return comp
+
+class zones1(zones):
+    def __init__(self, maxlen, n_window, dims):
+        super(zones1, self).__init__()
+        zone1 = Region(np.array([-1.2, -0.07, -1.2, -0.07]), np.array([0.6, 0.07, -0.6, 0]), maxlen=maxlen, n_window=n_window, dims=dims)
+        zone2 = Region(np.array([-1.2, -0.07, -0.6, -0.07]), np.array([0.6, 0.07, 0, 0]), maxlen=maxlen, n_window=n_window, dims=dims)
+        zone3 = Region(np.array([-1.2, -0.07, 0, -0.07]), np.array([0.6, 0.07, 0.6, 0]),maxlen=maxlen, n_window=n_window, dims=dims)
+        zone4 = Region(np.array([-1.2, -0.07, -1.2, 0]), np.array([0.6, 0.07, -0.6, 0.07]), maxlen=maxlen, n_window=n_window, dims=dims)
+        zone5 = Region(np.array([-1.2, -0.07, -0.6, 0]), np.array([0.6, 0.07, 0, 0.07]), maxlen=maxlen, n_window=n_window, dims=dims)
+        zone6 = Region(np.array([-1.2, -0.07, 0, 0]), np.array([0.6, 0.07, 0.6, 0.07]), maxlen=maxlen, n_window=n_window, dims=dims)
+        self.zones = [zone1, zone2, zone3, zone4, zone5, zone6]
+        self.samples_per_zone = 6 * [0]
+        self.comp_per_zone = 6 * [0]
+        self.zone_difficulties = [0, 200, 400, 800, 1000, 1200]
+
+class zones2(zones):
+    def __init__(self):
+        super(zones2, self).__init__()
+        zone1 = Region(np.array([-1.2, -0.07]), np.array([0.6, 0.07]))
+        self.zones = [zone1]
+        self.samples_per_zone = [0]
+        self.comp_per_zone = [0]
+        self.zone_difficulties = [200]
+
+class zones3(zones):
+    def __init__(self):
+        super(zones3, self).__init__()
+        zone1 = Region(np.array([-1.2]), np.array([0]))
+        zone2 = Region(np.array([0]), np.array([0.6]))
+        self.zones = [zone1, zone2]
+        self.samples_per_zone = 2*[0]
+        self.comp_per_zone = 2*[0]
+        self.zone_difficulties = [200, 500]
+
 def main(args):
     """Despite following the directives of https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development, fully reproducible results could not be obtained. See here : https://github.com/keras-team/keras/issues/2280 for any improvements"""
 

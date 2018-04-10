@@ -10,7 +10,7 @@ import numpy as np
 Blues = plt.get_cmap('Blues')
 import json
 
-log_dir = '../log/local/ReacherGoal-v0_sarst_final_4_0_10_0.0001_5_0.3_1_1_sparse_initial_8_100/20180409122603_956912/log_memory/'
+log_dir = '../log/cluster0904/ReacherGoal-v0_sarst_final_4_0_10_0.0001_40_0.3_1_1_sparse_prioritized_16_100/20180409223348_116584/'
 
 fig = plt.figure()
 ax = plt.axes()
@@ -18,27 +18,22 @@ plt.ion()
 fig.show()
 
 data = []
-with open(log_dir+'progress.json') as f:
+with open(log_dir+'log_memory/progress.json','r') as f:
     for line in f:
         data.append(json.loads(line))
 
-with open(log_dir+'config.txt') as config:
-    d = json_tricks.load(config)
-    print(d["split_min"])
+ax.set_xlim(left=-0.2, right=0.2)
+ax.set_ylim(bottom=-0.2, top=0.2)
 
-# ax.set_xlim(left=-0.2, right=0.2)
-# ax.set_ylim(bottom=-0.2, top=0.2)
-
-ax.set_xlim(left=-1.2, right=0.6)
+# ax.set_xlim(left=-1.2, right=0.6)
 
 
 param = 'cp'
 
-for i in range(len(video)):
-    if i % 1 ==0:
-        l = video[i][0]
-        p = video[i][1]
-        print("iteration ", i)
+for i,d in enumerate(data):
+    if i % 10 ==0:
+        l = d['lines']
+        p = d['patches']
         ax.lines.clear()
         ax.collections.clear()
         colors = []

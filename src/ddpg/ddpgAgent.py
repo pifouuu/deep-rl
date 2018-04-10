@@ -215,7 +215,7 @@ class DDPG_agent():
                     self.nb_goals_reached += 1
                 self.memory.end_episode(terminal)
                 self.log_episode_stats()
-                self.log_memory_stats()
+
 
                 state0 = self.reset_train()
                 self.episode_step = 0
@@ -235,6 +235,7 @@ class DDPG_agent():
                         self.eval_reward_init = self.test()
 
                     self.log_step_stats()
+                    self.log_memory_stats()
 
             if self.env_step % self.save_freq == 0:
                 self.save()

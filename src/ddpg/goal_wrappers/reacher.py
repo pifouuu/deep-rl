@@ -41,6 +41,13 @@ class Reacher(goal_basic):
     def is_reachable(self):
         return (np.linalg.norm(self.goal) < 0.2)
 
+class ReacherEps(Reacher):
+    def __init__(self, env, reward_type, epsilon):
+        super(ReacherEps, self).__init__(env, reward_type, epsilon)
+        self.goal_space = Box(np.array([-0.2, -0.2, 0.01]), np.array([0.2, 0.2, 0.1]))
+
+        #TODO : goal to state
+
 class ReacherOrigin(Reacher):
     def __init__(self, env, reward_type, epsilon):
         super(ReacherOrigin, self).__init__(env, reward_type, epsilon)

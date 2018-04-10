@@ -1,92 +1,5 @@
-from collections import deque
-from gym.spaces import Box
 import numpy as np
-import itertools
-from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
-import os
-
-
-# import matplotlib.pyplot as plt
-# import matplotlib.lines as lines
-# import matplotlib.patches as patches
-# from matplotlib import animation
-# from matplotlib.collections import PatchCollection
-# Blues = plt.get_cmap('Blues')
-
-class Region(Box):
-
-    def __init__(self, low = np.array([-np.inf]), high=np.array([np.inf]), maxlen=0, n_window=0, dims=None):
-        super(Region, self).__init__(low, high)
-        self.maxlen = maxlen
-        self.points = deque(maxlen=self.maxlen)
-        self.n_window = n_window
-        self.CP = 0
-        self.competence = 0
-        self.max_competence = 0
-        self.min_competence = 0
-        self.sum_competence = 0
-        self.max_CP = 0
-        self.min_CP = 0
-        self.sum_CP = 0
-        self.dim_split = None
-        self.val_split = None
-        self.dims = dims
-        self.freq = 0
-
-    def sample(self):
-        return np.random.uniform(low=self.low[self.dims], high=self.high[self.dims])
-
-    def contains(self, x):
-        shape_ok = (x.shape == self.low[self.dims].shape)
-        low_ok = (x >= self.low[self.dims]).all()
-        high_ok = (x <= self.high[self.dims]).all()
-        return shape_ok and low_ok and high_ok
-
-    def split(self, dim, split_val):
-        low_right = np.copy(self.low)
-        low_right[dim] = split_val
-        high_left = np.copy(self.high)
-        high_left[dim] = split_val
-        left = Region(self.low, high_left, maxlen=self.maxlen, n_window = self.n_window, dims=self.dims)
-        right = Region(low_right, self.high, maxlen=self.maxlen, n_window = self.n_window, dims=self.dims)
-        left.CP = self.CP
-        right.CP = self.CP
-        left.competence = self.competence
-        right.competence = self.competence
-        for point in self.points:
-            if left.contains(point[0]):
-                left.points.append(point)
-            else:
-                right.points.append(point)
-        left.update_CP()
-        right.update_CP()
-        return left, right
-
-    def update_CP(self):
-        if self.size > 2*self.n_window:
-            len = self.size
-            q1 = [pt[1] for pt in list(itertools.islice(self.points, len-self.n_window, len))]
-            q2 = [pt[1] for pt in list(itertools.islice(self.points, len-2*self.n_window, len-self.n_window))]
-            self.CP = 1/2 + (np.sum(q1)-np.sum(q2))/(2*self.n_window)
-            self.competence = (np.sum(q1)+np.sum(q2))/(2*self.n_window)
-        self.max_CP = self.CP
-        self.max_competence = self.competence
-        self.min_competence = self.competence
-        self.sum_CP = self.CP
-        self.min_CP = self.CP
-        assert self.CP >= 0
-
-    @property
-    def size(self):
-        return len(self.points)
-
-    @property
-    def is_leaf(self):
-        return (self.dim_split is None)
-
-    @property
-    def full(self):
-        return self.size == self.maxlen
+from ddpg.regions import Region
 
 class TreeMemory():
     def __init__(self, space, dims, buffer, actor, critic, max_regions, n_split, split_min, alpha, maxlen, n_window, render, sampler):
@@ -127,12 +40,9 @@ class TreeMemory():
         self.buffer.end_episode(goal_reached)
         if self.buffer.env.goal_parameterized:
             self.sample_competence()
-            # regions = self.find_regions(self.buffer.env.goal)
-            # region_idx = np.random.choice(regions)
-            # starts = [self.buffer.env.get_start() for _ in range(1)]
             self.update_tree()
             self.update_CP_tree()
-            self.update_display()
+            self.compute_image()
 
     def sample(self, batch_size):
         return self.buffer.sample(batch_size)
@@ -149,24 +59,8 @@ class TreeMemory():
         states = np.array([np.hstack([start, goal]) for start, goal in zip(starts, region_goals)])
         a_outs = self.actor.predict(states)
         q_outs = list(self.critic.predict(states, a_outs))
-        corr_vals = [(val - self.minval) / (self.maxval - self.minval) for val in q_outs]
-        for goal, val in zip(region_goals, corr_vals):
+        for goal, val in zip(region_goals, q_outs):
             self.insert((goal, val))
-
-    # def _sample_competence(self, idx):
-    #     region = self.region_array[idx]
-    #     if region.is_leaf:
-    #         region_goals = [region.sample() for _ in range(1)]
-    #         starts = [self.buffer.env.get_start() for _ in range(1)]
-    #         states = np.array([np.hstack([start,goal]) for start,goal in zip(starts, region_goals)])
-    #         a_outs = self.actor.predict(states)
-    #         q_outs = list(self.critic.predict(states, a_outs))
-    #         corr_vals = [(val - self.minval) / (self.maxval - self.minval) for val in q_outs]
-    #         for goal, val in zip(region_goals, corr_vals):
-    #             region.points.append((goal,val))
-    #     else:
-    #         self._sample_competence(2 * idx)
-    #         self._sample_competence(2 * idx + 1)
 
     def insert(self, point):
         self._insert(point, 1)
@@ -180,13 +74,6 @@ class TreeMemory():
                 self._insert(point, 2 * idx)
             else:
                 self._insert(point, 2 * idx + 1)
-
-    def update_display(self):
-        self.compute_image()
-        if self.render:
-            if self.figure is None:
-                self.init_display()
-            self.plot_image()
 
     def divide(self, n):
         assert n & (n-1) == 0 #n must be a power of 2
@@ -337,56 +224,6 @@ class TreeMemory():
             self._compute_image(2 * idx)
             self._compute_image(2 * idx + 1)
 
-    # def init_display(self):
-    #     self.figure = plt.figure()
-    #     self.ax = plt.axes()
-    #     self.ax.set_xlim(self.root.low[self.figure_dims[0]], self.root.high[self.figure_dims[0]])
-    #     if len(self.figure_dims)>1:
-    #         self.ax.set_ylim(self.root.low[self.figure_dims[1]], self.root.high[self.figure_dims[1]])
-    #     else:
-    #         self.ax.set_ylim(0, 1)
-    #     plt.ion()
-    #     plt.show()
-    #
-    # def plot_image(self, with_points=False):
-    #     self.ax.lines.clear()
-    #     self.ax.collections.clear()
-    #     colors = []
-    #     patch_list = []
-    #     for line_dict in self.lines:
-    #         self.ax.add_line(lines.Line2D(xdata=line_dict['xdata'],
-    #                                       ydata=line_dict['ydata'],
-    #                                       linewidth=2,
-    #                                       color='blue'))
-    #     for patch_dict in self.patches:
-    #         colors.append(patch_dict['cp'])
-    #         # self.ax.add_patch(patches.Rectangle(xy=patch_dict['angle'],
-    #         #                       width=patch_dict['width'],
-    #         #                       height=patch_dict['height'],
-    #         #                       fill=True,
-    #         #                       facecolor=Blues(color),
-    #         #                       edgecolor=None,
-    #         #                       alpha=0.8))
-    #         patch_list.append(patches.Rectangle(xy=patch_dict['angle'],
-    #                                             width=patch_dict['width'],
-    #                                             height=patch_dict['height'],
-    #                                             fill=True,
-    #                                             edgecolor=None,
-    #                                             alpha=0.8))
-    #     # if with_points:
-    #     #     x, y, z = zip(*[(point.pos[0], point.pos[1], point.val) for point in self.points])
-    #     #     sizes = [0.01 + ze for ze in z]
-    #     #     self.ax.scatter(x, y, s=sizes, c='red')
-    #     p = PatchCollection(patch_list)
-    #     p.set_array(np.array(colors))
-    #     self.ax.add_collection(p)
-    #     self.cb = self.figure.colorbar(p, ax=self.ax)
-    #     plt.draw()
-    #     plt.pause(0.001)
-    #     self.cb.remove()
-
-
-
     def find_prop_region(self, sum):
         """Find the highest index `i` in the array such that
             sum(arr[0] + arr[1] + ... + arr[i - i]) <= sum
@@ -458,62 +295,6 @@ class TreeMemory():
     def sum_CP(self):
         return self.root.sum_CP
 
-class zones():
-    def __init__(self):
 
-        self.zones = []
-        self.samples_per_zone = []
-        self.comp_per_zone = []
-        self.zone_difficulties = []
-
-    def compute_comp(self, goal):
-        goal_zone = None
-        i = 0
-        while goal_zone is None:
-            if self.zones[i].contains(goal):
-                goal_zone = self.zones[i]
-            i += 1
-        n_samples = self.samples_per_zone[i - 1]
-
-        if n_samples < self.zone_difficulties[i - 1]:
-            comp = 0
-        else:
-            comp = np.min([1, (n_samples - self.zone_difficulties[i - 1]) / 1000])
-
-        self.samples_per_zone[i - 1] += 1
-        return comp
-
-class zones1(zones):
-    def __init__(self, maxlen, n_window, dims):
-        super(zones1, self).__init__()
-        zone1 = Region(np.array([-1.2, -0.07, -1.2, -0.07]), np.array([0.6, 0.07, -0.6, 0]), maxlen=maxlen, n_window=n_window, dims=dims)
-        zone2 = Region(np.array([-1.2, -0.07, -0.6, -0.07]), np.array([0.6, 0.07, 0, 0]), maxlen=maxlen, n_window=n_window, dims=dims)
-        zone3 = Region(np.array([-1.2, -0.07, 0, -0.07]), np.array([0.6, 0.07, 0.6, 0]),maxlen=maxlen, n_window=n_window, dims=dims)
-        zone4 = Region(np.array([-1.2, -0.07, -1.2, 0]), np.array([0.6, 0.07, -0.6, 0.07]), maxlen=maxlen, n_window=n_window, dims=dims)
-        zone5 = Region(np.array([-1.2, -0.07, -0.6, 0]), np.array([0.6, 0.07, 0, 0.07]), maxlen=maxlen, n_window=n_window, dims=dims)
-        zone6 = Region(np.array([-1.2, -0.07, 0, 0]), np.array([0.6, 0.07, 0.6, 0.07]), maxlen=maxlen, n_window=n_window, dims=dims)
-        self.zones = [zone1, zone2, zone3, zone4, zone5, zone6]
-        self.samples_per_zone = 6 * [0]
-        self.comp_per_zone = 6 * [0]
-        self.zone_difficulties = [0, 200, 400, 800, 1000, 1200]
-
-class zones2(zones):
-    def __init__(self):
-        super(zones2, self).__init__()
-        zone1 = Region(np.array([-1.2, -0.07]), np.array([0.6, 0.07]))
-        self.zones = [zone1]
-        self.samples_per_zone = [0]
-        self.comp_per_zone = [0]
-        self.zone_difficulties = [200]
-
-class zones3(zones):
-    def __init__(self):
-        super(zones3, self).__init__()
-        zone1 = Region(np.array([-1.2]), np.array([0]))
-        zone2 = Region(np.array([0]), np.array([0.6]))
-        self.zones = [zone1, zone2]
-        self.samples_per_zone = 2*[0]
-        self.comp_per_zone = 2*[0]
-        self.zone_difficulties = [200, 500]
 
 
