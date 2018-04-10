@@ -17,6 +17,8 @@ class Reacher(goal_basic):
         self.state_to_reached = [6,7]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
         self.initial_goal = np.array([0, 0.1])
+        self.start = np.array([1, 1, 0, 0, 0, 0, 0.2, 0.0])
+        self.goal_set = [self.find_goal_reachable() for _ in range(20)]
 
     def _reset(self):
         _ = self.env.reset()
@@ -31,12 +33,15 @@ class Reacher(goal_basic):
         if self.rec is not None: self.rec.capture_frame()
         return state
 
+    def find_goal_reachable(self):
+        while True:
+            goal = self.goal_space.sample()
+            if np.linalg.norm(goal) < 0.2:
+                break
+        return goal
 
     def set_goal_reachable(self):
-        while True:
-            self.goal = self.goal_space.sample()
-            if np.linalg.norm(self.goal) < 0.2:
-                break
+        self.goal = self.find_goal_reachable()
 
     def is_reachable(self):
         return (np.linalg.norm(self.goal) < 0.2)

@@ -139,10 +139,6 @@ class goal_basic(Wrapper):
         self.prev_state = state
         return state
 
-    def get_start(self):
-        start = self.starts[np.random.randint(len(self.starts))]
-        return start
-
     @property
     def state_dim(self):
         return (self.env.observation_space.shape[0]+self.goal_space.shape[0],)

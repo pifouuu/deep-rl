@@ -53,14 +53,86 @@ class TreeMemory():
     def build_exp(self, state, action, next_state, reward, terminal):
         return self.buffer.build_exp(state, action, next_state, reward, terminal)
 
+    def eval_goal(self, goal):
+        start = self.buffer.env.start
+        state = np.array([np.hstack([start, goal])])
+        action = self.actor.predict(state)
+        q_value = self.critic.predict(state, action)
+        return q_value
+
     def sample_competence(self):
-        region_goals = [self.root.sample() for _ in range(self.n_leaves)]
-        starts = [self.buffer.env.get_start() for _ in range(self.n_leaves)]
-        states = np.array([np.hstack([start, goal]) for start, goal in zip(starts, region_goals)])
-        a_outs = self.actor.predict(states)
-        q_outs = list(self.critic.predict(states, a_outs))
-        for goal, val in zip(region_goals, q_outs):
+        goals = [self.root.sample() for _ in range(self.n_leaves)]
+        competences = [self.eval_goal(goal) for goal in goals]
+        for goal, val in zip(goals, competences):
             self.insert((goal, val))
+
+    def find_prop_region(self, mass):
+        """Find the highest index `i` in the array such that
+            sum(arr[0] + arr[1] + ... + arr[i - i]) <= sum
+        """
+        assert 0 <= mass <= self.sum_CP + 1e-5
+        idx = 1
+        while not self.region_array[idx].is_leaf:
+            s = self.region_array[2 * idx].sum_CP
+            if s > mass:
+                idx = 2 * idx
+            else:
+                mass -= s
+                idx = 2 * idx + 1
+        return self.region_array[idx]
+
+    def sample_prop_region(self):
+        sum = self.sum_CP
+        mass = np.random.random() * sum
+        region = self.find_prop_region(mass)
+        region.freq += 1
+        sample = region.sample()
+        return sample
+
+    def sample_random_region(self):
+        sample = self.root.sample()
+        regions = self.find_regions(sample)
+        self.region_array[regions[-1]].freq += 1
+        return sample
+
+    def sample_prop_goal(self):
+        competences = [self.eval_goal(goal) for goal in self.buffer.env.goal_set]
+        sum = np.sum(competences)
+        mass = np.random.random() * sum
+        idx = 0
+        s=competences[0]
+        while mass > s:
+            idx += 1
+            s += competences[idx]
+        return self.buffer.env.goal_set[idx]
+
+    def sample_random_goal(self):
+        idx = np.random.randint(20)
+        goal = self.buffer.env.goal_set[idx]
+        return goal
+
+    def sample_goal(self):
+        if self.sampler=='prio_reg':
+            p = np.random.random()
+            if p < self.alpha:
+                return self.sample_random_region()
+            else:
+                return self.sample_prop_region()
+        elif self.sampler=='rnd_reg':
+            return self.sample_random_region()
+        elif self.sampler=='init_goal':
+            return self.buffer.env.initial_goal
+        elif self.sampler=='rnd_goal':
+            return self.sample_random_goal()
+        elif self.sampler=='prio_goal':
+            p = np.random.random()
+            if p < self.alpha:
+                return self.sample_random_goal()
+            else:
+                return self.sample_prop_goal()
+
+        else:
+            raise RuntimeError
 
     def insert(self, point):
         self._insert(point, 1)
@@ -224,48 +296,9 @@ class TreeMemory():
             self._compute_image(2 * idx)
             self._compute_image(2 * idx + 1)
 
-    def find_prop_region(self, sum):
-        """Find the highest index `i` in the array such that
-            sum(arr[0] + arr[1] + ... + arr[i - i]) <= sum
-        """
-        assert 0 <= sum <= self.sum_CP + 1e-5
-        idx = 1
-        while not self.region_array[idx].is_leaf:
-            s = self.region_array[2 * idx].sum_CP
-            if s > sum:
-                idx = 2 * idx
-            else:
-                sum -= s
-                idx = 2 * idx + 1
-        return self.region_array[idx]
 
-    def sample_prop(self):
-        sum = self.sum_CP
-        mass = np.random.random() * sum
-        region = self.find_prop_region(mass)
-        region.freq += 1
-        sample = region.sample()
-        return sample
 
-    def sample_random(self):
-        sample = self.root.sample()
-        regions = self.find_regions(sample)
-        self.region_array[regions[-1]].freq += 1
-        return sample
 
-    def sample_goal(self):
-        if self.sampler=='prioritized':
-            p = np.random.random()
-            if p < self.alpha:
-                return self.sample_random()
-            else:
-                return self.sample_prop()
-        elif self.sampler=='random':
-            return self.sample_random()
-        elif self.sampler=='initial':
-            return self.buffer.env.initial_goal
-        else:
-            raise RuntimeError
 
     @property
     def root(self):
