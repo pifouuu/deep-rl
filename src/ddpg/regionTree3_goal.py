@@ -6,6 +6,8 @@ class FixedGoalMemory():
         self.maxlen = maxlen
         self.n_window = n_window
         self.alpha = alpha
+        self.dims = dims
+        self.space = space
 
         self.buffer = buffer
         self.sampler = sampler
@@ -22,7 +24,9 @@ class FixedGoalMemory():
 
 
     def initialize(self):
-        self.goal_set = [self.buffer.env.find_goal_reachable() for _ in range(self.n_goals)]
+        obs_dummy = self.buffer.env.observation_space.low
+        self.goal_set = [np.concatenate([obs_dummy, self.buffer.env.find_goal_reachable()])
+                         for _ in range(self.n_goals)]
         self.goal_queues = [Queue(maxlen=self.maxlen, n_window=self.n_window) for _ in range(self.n_goals)]
         self.goal_freq = [0 for _ in range(self.n_goals)]
 
@@ -50,9 +54,18 @@ class FixedGoalMemory():
         return positive_q_value
 
     def update_competence(self):
-        for goal,queue in zip(self.goal_set, self.goal_queues):
+        for idx in range(self.n_goals):
+            goal = []
+            for dim in self.buffer.env.internal:
+                if dim in self.dims:
+                    val_dim = self.goal_set[idx][dim]
+                else:
+                    rnd = np.random.randint(self.n_goals)
+                    val_dim = np.linspace(self.space.low[dim], self.space.high[dim], self.n_goals)[rnd]
+                goal.append(val_dim)
+            goal = np.array(goal)
             competence = self.eval_goal(goal)
-            queue.points.append((goal,competence))
+            self.goal_queues[idx].points.append((goal,competence))
 
     def sample_prop_idx(self):
         CPs = [queue.CP for queue in self.goal_queues]
@@ -71,7 +84,16 @@ class FixedGoalMemory():
         else:
             idx = np.random.randint(self.n_goals)
         self.goal_freq[idx] += 1
-        goal = self.goal_set[idx]
+
+        goal = []
+        for dim in self.buffer.env.internal:
+            if dim in self.dims:
+                val_dim = self.goal_set[idx][dim]
+            else:
+                rnd = np.random.randint(self.n_goals)
+                val_dim = np.linspace(self.space.low[dim], self.space.high[dim], self.n_goals)[rnd]
+            goal.append(val_dim)
+        goal = np.array(goal)
         return goal
 
     def stats(self):

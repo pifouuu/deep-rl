@@ -61,10 +61,12 @@ class FixedRegionsMemory():
         return positive_q_value
 
     def update_competence(self):
-        goals = [self.root.sample() for _ in range(self.n_leaves)]
-        competences = [self.eval_goal(goal) for goal in goals]
-        for goal, val in zip(goals, competences):
-            self.insert((goal, val))
+        dims = self.buffer.env.internal
+        for idx in range(self.capacity):
+            region = self.region_array[idx + self.capacity]
+            goal = np.random.uniform(region.low[dims], region.high[dims])
+            competence = self.eval_goal(goal)
+            self.insert((goal, competence))
 
     def find_prop_region(self, mass):
         """Find the highest index `i` in the array such that
@@ -91,12 +93,10 @@ class FixedRegionsMemory():
             region = self.region_array[idx+self.capacity]
 
         region.freq += 1
-        goal = []
-        for dim in self.buffer.env.internal:
-            val_dim = np.random.uniform(region.low[dim], region.high[dim])
-            goal.append(val_dim)
+        dims = self.buffer.env.internal
+        goal = np.random.uniform(region.low[dims], region.high[dims])
 
-        return np.array(goal)
+        return goal
 
     def insert(self, point):
         self._insert(point, 1)
