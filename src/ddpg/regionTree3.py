@@ -81,33 +81,22 @@ class FixedRegionsMemory():
                 idx = 2 * idx + 1
         return self.region_array[idx]
 
-    def sample_prop_region(self):
-        sum = self.sum_CP
-        mass = np.random.random() * sum
-        region = self.find_prop_region(mass)
-        region.freq += 1
-        sample = region.sample()
-        return sample
-
-    def sample_random_region(self):
-        sample = self.root.sample()
-        regions = self.find_regions(sample)
-        self.region_array[regions[-1]].freq += 1
-        return sample
-
     def sample_goal(self):
-        if self.sampler=='init':
-            return self.buffer.env.initial_goal
-        if self.sampler=='prio':
-            p = np.random.random()
-            if p < self.alpha:
-                return self.sample_random_region()
-            else:
-                return self.sample_prop_region()
-        elif self.sampler=='rnd':
-            return self.sample_random_region()
+        if self.sampler == 'prio' and np.random.random() > self.alpha:
+            sum = self.sum_CP
+            mass = np.random.random() * sum
+            region = self.find_prop_region(mass)
         else:
-            raise RuntimeError
+            idx = np.random.randint(self.capacity)
+            region = self.region_array[idx+self.capacity]
+
+        region.freq += 1
+        goal = []
+        for dim in self.buffer.env.internal:
+            val_dim = np.random.uniform(region.low[dim], region.high[dim])
+            goal.append(val_dim)
+
+        return np.array(goal)
 
     def insert(self, point):
         self._insert(point, 1)

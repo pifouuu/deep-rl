@@ -373,6 +373,12 @@ register(
 )
 
 register(
+    id='ReacherEps-v0',
+    entry_point='gym.envs.mujoco:ReacherEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherEps',
+)
+
+register(
     id='Pusher-v0',
     entry_point='gym.envs.mujoco:PusherEnv',
     max_episode_steps=100,

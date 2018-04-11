@@ -102,7 +102,7 @@ def main(args):
 
         if args['memory'] == 'fixed_goal':
             memory = FixedGoalMemory(state_space,
-                                     train_env.state_to_goal,
+                                     train_env.internal,
                                      memory,
                                      actor,
                                      critic,
@@ -117,7 +117,7 @@ def main(args):
 
         elif args['memory'] == 'fixed_region':
             memory = FixedRegionsMemory(state_space,
-                                        train_env.state_to_goal,
+                                        train_env.internal,
                                         memory,
                                         actor,
                                         critic,

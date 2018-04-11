@@ -15,6 +15,7 @@ class FixedGoalMemory():
 
         self.goal_set = []
         self.goal_queues = []
+        self.goal_freq = []
 
         self.n_goals = N
         self.initialize()
@@ -23,6 +24,7 @@ class FixedGoalMemory():
     def initialize(self):
         self.goal_set = [self.buffer.env.find_goal_reachable() for _ in range(self.n_goals)]
         self.goal_queues = [Queue(maxlen=self.maxlen, n_window=self.n_window) for _ in range(self.n_goals)]
+        self.goal_freq = [0 for _ in range(self.n_goals)]
 
     def end_episode(self, goal_reached):
         self.buffer.end_episode(goal_reached)
@@ -52,7 +54,7 @@ class FixedGoalMemory():
             competence = self.eval_goal(goal)
             queue.points.append((goal,competence))
 
-    def sample_prop_goal(self):
+    def sample_prop_idx(self):
         CPs = [queue.CP for queue in self.goal_queues]
         sum = np.sum(CPs)
         mass = np.random.random() * sum
@@ -61,26 +63,16 @@ class FixedGoalMemory():
         while mass > s:
             idx += 1
             s += CPs[idx]
-        return self.goal_set[idx]
-
-    def sample_random_goal(self):
-        idx = np.random.randint(self.n_goals)
-        goal = self.goal_set[idx]
-        return goal
+        return idx
 
     def sample_goal(self):
-        if self.sampler=='init':
-            return self.buffer.env.initial_goal
-        elif self.sampler=='rnd':
-            return self.sample_random_goal()
-        elif self.sampler=='prio':
-            p = np.random.random()
-            if p < self.alpha:
-                return self.sample_random_goal()
-            else:
-                return self.sample_prop_goal()
+        if self.sampler == 'prio' and np.random.random() > self.alpha:
+            idx = self.sample_prop_idx()
         else:
-            raise RuntimeError
+            idx = np.random.randint(self.n_goals)
+        self.goal_freq[idx] += 1
+        goal = self.goal_set[idx]
+        return goal
 
     def stats(self):
         stats = {}

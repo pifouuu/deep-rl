@@ -13,8 +13,10 @@ class ReacherNoGoal(no_goal):
 class Reacher(goal_basic):
     def __init__(self, env, reward_type, epsilon):
         super(Reacher, self).__init__(env, reward_type, epsilon)
+        self.internal = [8,9]
         self.state_to_goal = [8,9]
         self.state_to_reached = [6,7]
+        self.goal_to_target = [0,1]
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
         self.initial_goal = np.array([0, 0.1])
         self.start = np.array([1, 1, 0, 0, 0, 0, 0.2, 0.0])
@@ -24,10 +26,9 @@ class Reacher(goal_basic):
         _ = self.env.reset()
         qpos = self.unwrapped.model.data.qpos.flatten()
         qvel = self.unwrapped.model.data.qvel.flatten()
-        qpos[[2,3]] = self.goal
+        qpos[[2,3]] = self.goal[self.goal_to_target]
         self.unwrapped.set_state(qpos, qvel)
         obs = self.unwrapped._get_obs()
-        self.starts.append(obs)
         state = self.add_goal(obs, self.goal)
         self.prev_state = state
         if self.rec is not None: self.rec.capture_frame()
@@ -36,7 +37,7 @@ class Reacher(goal_basic):
     def find_goal_reachable(self):
         while True:
             goal = self.goal_space.sample()
-            if np.linalg.norm(goal) < 0.2:
+            if np.linalg.norm(goal[self.goal_to_target]) < 0.2:
                 break
         return goal
 
@@ -44,14 +45,29 @@ class Reacher(goal_basic):
         self.goal = self.find_goal_reachable()
 
     def is_reachable(self):
-        return (np.linalg.norm(self.goal) < 0.2)
+        return (np.linalg.norm(self.goal[self.goal_to_target]) < 0.2)
 
 class ReacherEps(Reacher):
     def __init__(self, env, reward_type, epsilon):
         super(ReacherEps, self).__init__(env, reward_type, epsilon)
         self.goal_space = Box(np.array([-0.2, -0.2, 0.01]), np.array([0.2, 0.2, 0.1]))
+        self.initial_goal = np.array([0, 0.1, epsilon])
+        self.internal = [8, 9, 10]
+        self.internal_to_epsilon = [10]
 
-        #TODO : goal to state
+    def eval_exp(self, _, action, agent_state_1, reward, terminal):
+        goal_reached = agent_state_1[self.state_to_reached]
+        goal = agent_state_1[self.state_to_goal]
+        vec = goal - goal_reached
+        d = np.linalg.norm(vec)
+        term = d < agent_state_1[self.internal_to_epsilon]
+        r = 0
+        if not term:
+            if self.reward_type == 'sparse':
+                r = -1
+            elif self.reward_type == 'dense':
+                r = - d
+        return r, term
 
 class ReacherOrigin(Reacher):
     def __init__(self, env, reward_type, epsilon):
