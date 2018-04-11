@@ -286,14 +286,8 @@ class DDPG_agent():
         self.log(self.episode_stats, self.logger_episode)
 
     def log_memory_stats(self):
-        self.memory_stats['max_CP'] = self.memory.max_CP
-        self.memory_stats['min_CP'] = self.memory.min_CP
-        self.memory_stats['max_comp'] = self.memory.max_competence
-        self.memory_stats['min_comp'] = self.memory.min_competence
-        self.memory_stats['patches'] = self.memory.patches
-        self.memory_stats['lines'] = self.memory.lines
-
-        self.log(self.memory_stats, self.logger_memory)
+        memory_stats = self.memory.stats()
+        self.log(memory_stats, self.logger_memory)
 
 
     def train(self):

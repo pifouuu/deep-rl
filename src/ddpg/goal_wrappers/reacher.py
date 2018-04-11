@@ -18,7 +18,7 @@ class Reacher(goal_basic):
         self.goal_space = Box(np.array([-0.2, -0.2]), np.array([0.2, 0.2]))
         self.initial_goal = np.array([0, 0.1])
         self.start = np.array([1, 1, 0, 0, 0, 0, 0.2, 0.0])
-        self.goal_set = [self.find_goal_reachable() for _ in range(20)]
+
 
     def _reset(self):
         _ = self.env.reset()

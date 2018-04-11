@@ -5,7 +5,9 @@ import argparse
 import pprint as pp
 from ddpg.logger import Logger
 from ddpg.memory import SARSTMemory, EpisodicHerSARSTMemory
-from ddpg.regionTree3 import TreeMemory
+from ddpg.regionTree3 import FixedRegionsMemory
+from ddpg.regionTree3_goal import FixedGoalMemory
+
 import datetime
 from ddpg.networks import ActorNetwork, CriticNetwork
 from ddpg.ddpgAgent import DDPG_agent
@@ -20,7 +22,7 @@ def main(args):
 
     params = [str(args['env']),
              str(args['memory']),
-             str(args['strategy']),
+             str(args['her']),
              str(args['n_her_goals']),
              str(args['alpha']),
              str(args['n_split']),
@@ -32,7 +34,7 @@ def main(args):
              str(args['reward_type']),
              str(args['eps']),
              str(args['sampler']),
-             str(args['n_cut']),
+             str(args['N']),
              str(args['n_points'])]
 
 
@@ -64,13 +66,11 @@ def main(args):
         test_env = wrapper_cls(test_env, args['reward_type'], float(args['eps']))
 
     #TODO integrate the choice of memory in environments specs in gym.env.init
-    if args['memory'] == 'sarst':
+    if args['her'] == 'no':
         memory = SARSTMemory(train_env, limit=int(1e6))
-    elif args['memory'] == 'hsarst':
-        memory = EpisodicHerSARSTMemory(train_env, limit=int(1e6), strategy=args['strategy'],
-                                        n_her_goals=int(args['n_her_goals']))
     else:
-        raise Exception('No existing memory defined')
+        memory = EpisodicHerSARSTMemory(train_env, limit=int(1e6), strategy=args['her'],
+                                        n_her_goals=int(args['n_her_goals']))
 
     low = np.concatenate([train_env.observation_space.low, train_env.goal_space.low])
     high = np.concatenate([train_env.observation_space.high, train_env.goal_space.high])
@@ -100,21 +100,38 @@ def main(args):
                                float(args['tau']),
                                float(args['critic_lr']))
 
-        memory = TreeMemory(state_space,
-                            train_env.state_to_goal,
-                            memory,
-                            actor,
-                            critic,
-                            max_regions=int(args['n_cut']),
-                            n_split=int(args['n_split']),
-                            split_min=float(args['split_min']),
-                            alpha=float(args['alpha']),
-                            maxlen=int(args['n_points']),
-                            n_window=int(args['n_window']),
-                            render=args['render_memory'],
-                            sampler=args['sampler'])
-        if train_env.goal_parameterized:
-            memory.divide(int(args['n_cut']))
+        if args['memory'] == 'fixed_goal':
+            memory = FixedGoalMemory(state_space,
+                                     train_env.state_to_goal,
+                                     memory,
+                                     actor,
+                                     critic,
+                                     N=int(args['N']),
+                                     n_split=int(args['n_split']),
+                                     split_min=float(args['split_min']),
+                                     alpha=float(args['alpha']),
+                                     maxlen=int(args['n_points']),
+                                     n_window=int(args['n_window']),
+                                     render=args['render_memory'],
+                                     sampler=args['sampler'])
+
+        elif args['memory'] == 'fixed_region':
+            memory = FixedRegionsMemory(state_space,
+                                        train_env.state_to_goal,
+                                        memory,
+                                        actor,
+                                        critic,
+                                        N=int(args['N']),
+                                        n_split=int(args['n_split']),
+                                        split_min=float(args['split_min']),
+                                        alpha=float(args['alpha']),
+                                        maxlen=int(args['n_points']),
+                                        n_window=int(args['n_window']),
+                                        render=args['render_memory'],
+                                        sampler=args['sampler'])
+
+        else:
+            raise RuntimeError
 
         agent = DDPG_agent(sess,
                            actor,
@@ -160,8 +177,8 @@ if __name__ == '__main__':
     boolean_flag(parser, 'target-clip', default=True)
 
     parser.add_argument('--env', help='choose the gym env', default='CMCPos-v0')
-    parser.add_argument('--memory', help='type of memory to use', default='sarst')
-    parser.add_argument('--strategy', help='hindsight strategy: final, episode or future', default='final')
+    parser.add_argument('--memory', help='type of memory to use', default='fixed_goal')
+    parser.add_argument('--her', help='hindsight strategy: no, final, episode or future', default='no')
     parser.add_argument('--n-her-goals', default=4)
     parser.add_argument('--alpha', default=0)
     parser.add_argument('--n-split', help='number of split comparisons', default=10)
@@ -173,7 +190,7 @@ if __name__ == '__main__':
     parser.add_argument('--reward-type', help='sparse, dense', default='sparse')
     parser.add_argument('--eps', default=0.1)
     parser.add_argument('--sampler', help='random, initial, prioritized', default='random')
-    parser.add_argument('--n-cut', help='number of regions in goal space', default=16)
+    parser.add_argument('--N', help='number of regions in goal space', default=16)
     parser.add_argument('--n-points', help='number of points stored in region', default=100)
 
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=500000)
