@@ -373,9 +373,21 @@ register(
 )
 
 register(
-    id='ReacherEps-v0',
+    id='ReacherEps_x_y-v0',
     entry_point='gym.envs.mujoco:ReacherEnv',
-    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherEps',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherEps_x_y',
+)
+
+register(
+    id='ReacherEps_e-v0',
+    entry_point='gym.envs.mujoco:ReacherEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherEps_e',
+)
+
+register(
+    id='ReacherEps_x_y_e-v0',
+    entry_point='gym.envs.mujoco:ReacherEnv',
+    goal_wrapper_entry_point='ddpg.goal_wrappers.reacher:ReacherEps_x_y_e',
 )
 
 register(

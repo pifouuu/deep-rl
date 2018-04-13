@@ -102,7 +102,7 @@ def main(args):
 
         if args['memory'] == 'fixed_goal':
             memory = FixedGoalMemory(state_space,
-                                     [8,10],
+                                     train_env.dims_curri,
                                      memory,
                                      actor,
                                      critic,
@@ -117,7 +117,7 @@ def main(args):
 
         elif args['memory'] == 'fixed_region':
             memory = FixedRegionsMemory(state_space,
-                                        [8,10],
+                                        train_env.dims_curri,
                                         memory,
                                         actor,
                                         critic,
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     parser.add_argument('--alpha', default=0)
     parser.add_argument('--n-split', help='number of split comparisons', default=10)
     parser.add_argument('--split-min', help='minimum cp difference to allow split', default=0.0001)
-    parser.add_argument('--n-window', help='length of running window used to compute cp', default=5)
+    parser.add_argument('--n-window', help='length of running window used to compute cp', default=45)
     parser.add_argument('--sigma', help="amount of exploration", default=0.3)
     parser.add_argument('--train-freq', help='training frequency', default=1)
     parser.add_argument('--nb-train-iter', help='training iteration number', default=1)
@@ -200,7 +200,7 @@ if __name__ == '__main__':
                         default=None)
     parser.add_argument('--resume-step', help='resume_step', default=None)
     parser.add_argument('--ep-steps', help='number of steps in the environment during evaluation', default=50)
-    parser.add_argument('--save-freq', help='saving models weights frequency', default=1000)
+    parser.add_argument('--save-freq', help='saving models weights frequency', default=10000)
     parser.add_argument('--eval-freq', help='evaluating every n training steps', default=1000)
 
     args = vars(parser.parse_args())

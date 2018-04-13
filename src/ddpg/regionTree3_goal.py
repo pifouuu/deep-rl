@@ -25,7 +25,7 @@ class FixedGoalMemory():
 
     def initialize(self):
         obs_dummy = self.buffer.env.observation_space.low
-        self.goal_set = [np.concatenate([obs_dummy, self.buffer.env.find_goal_reachable()])
+        self.goal_set = [np.concatenate([obs_dummy, self.buffer.env.sample_goal_reachable('uni','uni')])
                          for _ in range(self.n_goals)]
         self.goal_queues = [Queue(maxlen=self.maxlen, n_window=self.n_window) for _ in range(self.n_goals)]
         self.goal_freq = [0 for _ in range(self.n_goals)]
@@ -78,8 +78,10 @@ class FixedGoalMemory():
             s += CPs[idx]
         return idx
 
+
+
     def sample_goal(self):
-        if self.sampler == 'prio' and np.random.random() > self.alpha:
+        if np.random.random() > self.alpha:
             idx = self.sample_prop_idx()
         else:
             idx = np.random.randint(self.n_goals)
@@ -90,14 +92,25 @@ class FixedGoalMemory():
             if dim in self.dims:
                 val_dim = self.goal_set[idx][dim]
             else:
-                rnd = np.random.randint(self.n_goals)
-                val_dim = np.linspace(self.space.low[dim], self.space.high[dim], self.n_goals)[rnd]
+                if self.sampler == 'init':
+                    m = self.buffer.env.observation_space.low.shape[0]
+                    val_dim = self.buffer.env.initial_goal[dim-m]
+                elif self.sampler == 'disc':
+                    rnd = np.random.randint(self.n_goals)
+                    val_dim = np.linspace(self.space.low[dim], self.space.high[dim], self.n_goals)[rnd]
+                elif self.sampler == 'uni':
+                    val_dim = np.random.uniform(self.space.low[dim], self.space.high[dim])
+                else:
+                    raise RuntimeError
             goal.append(val_dim)
         goal = np.array(goal)
         return goal
 
     def stats(self):
         stats = {}
+        stats['list_CP'] = self.list_CP
+        stats['list_comp'] = self.list_competence
+        stats['list_freq'] = self.goal_freq
         stats['max_CP'] = self.max_CP
         stats['min_CP'] = self.min_CP
         stats['max_comp'] = self.max_competence
@@ -105,17 +118,25 @@ class FixedGoalMemory():
         return stats
 
     @property
+    def list_CP(self):
+        return [queue.CP for queue in self.goal_queues]
+
+    @property
+    def list_competence(self):
+        return [queue.competence for queue in self.goal_queues]
+
+    @property
     def min_CP(self):
-        return np.min([queue.CP for queue in self.goal_queues])
+        return np.min(self.list_CP)
 
     @property
     def max_CP(self):
-        return np.max([queue.CP for queue in self.goal_queues])
+        return np.max(self.list_CP)
 
     @property
     def max_competence(self):
-        return np.max([queue.competence for queue in self.goal_queues])
+        return np.max(self.list_competence)
 
     @property
     def min_competence(self):
-        return np.min([queue.competence for queue in self.goal_queues])
+        return np.min(self.list_competence)

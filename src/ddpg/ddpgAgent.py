@@ -229,10 +229,13 @@ class DDPG_agent():
                 if self.env_step % self.eval_freq == 0:
 
                     if self.test_env.goal_parameterized:
-                        self.eval_reward_random = self.test('random')
-                        self.eval_reward_init = self.test('init')
+                        self.eval_reward_1 = self.test('init', 'init')
+                        self.eval_reward_2 = self.test('init', 'uni')
+                        self.eval_reward_3 = self.test('uni', 'init')
+                        self.eval_reward_4 = self.test('uni', 'uni')
+
                     else:
-                        self.eval_reward_init = self.test()
+                        raise RuntimeError
 
                     self.log_step_stats()
                     self.log_memory_stats()
@@ -264,9 +267,10 @@ class DDPG_agent():
 
         self.step_stats['training_step'] = self.train_step
         self.step_stats['env_step'] = self.env_step
-        self.step_stats['reward_init'] = np.mean(self.eval_reward_init)
-        if self.test_env.goal_parameterized:
-            self.step_stats['reward_rnd'] = np.mean(self.eval_reward_random)
+        self.step_stats['reward_1'] = np.mean(self.eval_reward_1)
+        self.step_stats['reward_2'] = np.mean(self.eval_reward_2)
+        self.step_stats['reward_3'] = np.mean(self.eval_reward_3)
+        self.step_stats['reward_4'] = np.mean(self.eval_reward_4)
 
         self.log(self.step_stats, self.logger_step)
 
@@ -339,12 +343,9 @@ class DDPG_agent():
     #     if self.test_env.rec is not None: self.test_env.rec.close()
     #     return ep_test_rewards
 
-    def run_test_episode(self, type):
+    def run_test_episode(self, curri, n_curri):
 
-        if type == 'random':
-            self.test_env.set_goal_reachable()
-        elif type == 'init':
-            self.test_env.set_goal_init()
+        self.test_env.goal = self.test_env.sample_goal_reachable(curri, n_curri)
 
         state = self.test_env.reset()
         step = 0
@@ -358,10 +359,10 @@ class DDPG_agent():
                 return 1
         return 0
 
-    def test(self, type=None):
+    def test(self, curri, n_curri):
         total_reached = 0
         for episode in range(10):
-            reached = self.run_test_episode(type)
+            reached = self.run_test_episode(curri, n_curri)
             total_reached += reached
         return total_reached/10
 
