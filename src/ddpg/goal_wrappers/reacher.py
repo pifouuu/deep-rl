@@ -38,19 +38,19 @@ class Reacher(goal_basic):
     def sample_goal(self, curri='uni', n_curri='uni'):
         goal = []
         m = self.observation_space.low.shape[0]
-        for dim in [d-m for d in self.internal]:
+        for dim in self.internal:
             if dim in self.dims_curri:
                 if curri == 'init':
-                    val_dim = self.initial_goal[dim]
+                    val_dim = self.initial_goal[dim-m]
                 elif curri == 'uni':
-                    val_dim = np.random.uniform(self.goal_space.low[dim], self.goal_space.high[dim])
+                    val_dim = np.random.uniform(self.goal_space.low[dim-m], self.goal_space.high[dim-m])
                 else:
                     raise RuntimeError
             else:
                 if n_curri == 'init':
-                    val_dim = self.initial_goal[dim]
+                    val_dim = self.initial_goal[dim-m]
                 elif n_curri == 'uni':
-                    val_dim = np.random.uniform(self.goal_space.low[dim], self.goal_space.high[dim])
+                    val_dim = np.random.uniform(self.goal_space.low[dim-m], self.goal_space.high[dim-m])
                 else:
                     raise RuntimeError
             goal.append(val_dim)

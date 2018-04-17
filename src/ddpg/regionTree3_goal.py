@@ -34,6 +34,9 @@ class FixedGoalMemory():
         self.buffer.end_episode(goal_reached)
         if self.buffer.env.goal_parameterized:
             self.update_competence()
+            for queue in self.goal_queues:
+                queue.update_CP()
+
 
     def sample(self, batch_size):
         return self.buffer.sample(batch_size)
@@ -81,19 +84,25 @@ class FixedGoalMemory():
 
 
     def sample_goal(self):
-        if np.random.random() > self.alpha:
-            idx = self.sample_prop_idx()
+        obs_dummy = self.buffer.env.observation_space.low
+        m = obs_dummy.shape[0]
+        if self.n_goals != 0:
+            if np.random.random() > self.alpha:
+                idx = self.sample_prop_idx()
+            else:
+                idx = np.random.randint(self.n_goals)
+            self.goal_freq[idx] += 1
+            drawn_goal = self.goal_set[idx]
         else:
-            idx = np.random.randint(self.n_goals)
-        self.goal_freq[idx] += 1
+            drawn_goal = np.concatenate([obs_dummy, self.buffer.env.sample_goal_reachable('uni','uni')])
 
         goal = []
+
         for dim in self.buffer.env.internal:
             if dim in self.dims:
-                val_dim = self.goal_set[idx][dim]
+                val_dim = drawn_goal[dim]
             else:
                 if self.sampler == 'init':
-                    m = self.buffer.env.observation_space.low.shape[0]
                     val_dim = self.buffer.env.initial_goal[dim-m]
                 elif self.sampler == 'disc':
                     rnd = np.random.randint(self.n_goals)
@@ -127,16 +136,32 @@ class FixedGoalMemory():
 
     @property
     def min_CP(self):
-        return np.min(self.list_CP)
+        try:
+            res = np.min(self.list_CP)
+        except:
+            res = 0
+        return res
 
     @property
     def max_CP(self):
-        return np.max(self.list_CP)
+        try:
+            res = np.max(self.list_CP)
+        except:
+            res = 0
+        return res
 
     @property
     def max_competence(self):
-        return np.max(self.list_competence)
+        try:
+            res = np.max(self.list_competence)
+        except:
+            res = 0
+        return res
 
     @property
     def min_competence(self):
-        return np.min(self.list_competence)
+        try:
+            res = np.min(self.list_competence)
+        except:
+            res = 0
+        return res

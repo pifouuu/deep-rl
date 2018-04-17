@@ -5,19 +5,19 @@ import numpy as np
 
 class Queue():
     def __init__(self, maxlen=0, n_window=0):
-        self.maxlen = maxlen
-        self.points = deque(maxlen=self.maxlen)
+        self.maxlen = 2*n_window
+        self.points = deque(maxlen=2*n_window)
         self.n_window = n_window
-        self.CP = 0
-        self.competence = 0
+        self.CP = 0.1
+        self.competence = 0.1
 
     def update_CP(self):
-        if self.size > 2*self.n_window:
+        if self.size >= 2*self.n_window:
             len = self.size
             q1 = [pt[1] for pt in list(itertools.islice(self.points, len-self.n_window, len))]
             q2 = [pt[1] for pt in list(itertools.islice(self.points, len-2*self.n_window, len-self.n_window))]
             self.CP = np.abs(np.sum(q1) - np.sum(q2)) / (2 * self.n_window)
-            self.competence = np.sum(q1) / (2 * self.n_window)
+            self.competence = np.sum(q1) / (self.n_window)
 
     @property
     def size(self):
