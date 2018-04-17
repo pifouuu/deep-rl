@@ -30,7 +30,7 @@ class FixedGoalMemory():
         elif self.n_goals == 0:
             self.goal_set = []
         else:
-            self.goal_set = [np.concatenate([obs_dummy, self.buffer.env.sample_goal_reachable('uni','uni')])
+            self.goal_set = [np.concatenate([obs_dummy, self.buffer.env.sample_goal()])
                          for _ in range(self.n_goals)]
 
         self.goal_queues = [Queue(maxlen=self.maxlen, n_window=self.n_window) for _ in range(self.n_goals)]
@@ -93,7 +93,7 @@ class FixedGoalMemory():
         obs_dummy = self.buffer.env.observation_space.low
         m = obs_dummy.shape[0]
         if self.n_goals == 0:
-            drawn_goal = np.concatenate([obs_dummy, self.buffer.env.sample_goal_reachable('uni', 'uni')])
+            drawn_goal = np.concatenate([obs_dummy, self.buffer.env.sample_goal()])
         elif self.n_goals == 1:
             self.goal_freq[0] += 1
             drawn_goal = self.goal_set[0]

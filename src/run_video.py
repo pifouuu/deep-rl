@@ -23,7 +23,7 @@ rec = VideoRecorder(test_env, base_path=base_path)
 test_env.rec = rec
 
 for _ in range(20):
-    test_env.goal = test_env.sample_goal_reachable()
+    test_env.goal = test_env.sample_goal()
     test_env.goal[2]=0.02
 
     print(test_env.goal)

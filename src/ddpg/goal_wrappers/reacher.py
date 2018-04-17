@@ -35,44 +35,15 @@ class Reacher(goal_basic):
         if self.rec is not None: self.rec.capture_frame()
         return state
 
-    def sample_goal(self, curri='uni', n_curri='uni'):
-        goal = []
-        m = self.observation_space.low.shape[0]
-        for dim in self.internal:
-            if dim in self.dims_curri:
-                if curri == 'init':
-                    val_dim = self.initial_goal[dim-m]
-                elif curri == 'uni':
-                    val_dim = np.random.uniform(self.goal_space.low[dim-m], self.goal_space.high[dim-m])
-                else:
-                    raise RuntimeError
-            else:
-                if n_curri == 'init':
-                    val_dim = self.initial_goal[dim-m]
-                elif n_curri == 'uni':
-                    val_dim = np.random.uniform(self.goal_space.low[dim-m], self.goal_space.high[dim-m])
-                else:
-                    raise RuntimeError
-            goal.append(val_dim)
-        goal = np.array(goal)
-        return goal
-
-    def sample_goal_reachable(self, curri='uni', n_curri='uni'):
+    def sample_goal(self):
         while True:
-            goal = self.sample_goal(curri, n_curri)
+            goal = np.random.uniform(self.goal_space.low, self.goal_space.high)
             if np.linalg.norm(goal[self.goal_to_target]) < 0.2:
                 break
         return goal
 
-    # def find_goal_reachable(self):
-    #     while True:
-    #         goal = self.goal_space.sample()
-    #         if np.linalg.norm(goal[self.goal_to_target]) < 0.2:
-    #             break
-    #     return goal
-    #
-    # def set_goal_reachable(self):
-    #     self.goal = self.find_goal_reachable()
+    def sample_test_goal(self):
+        return self.sample_goal()
 
     def is_reachable(self):
         return (np.linalg.norm(self.goal[self.goal_to_target]) < 0.2)
@@ -99,6 +70,11 @@ class ReacherEps_x_y(Reacher):
             elif self.reward_type == 'dense':
                 r = - d
         return r, term
+
+    def sample_test_goal(self):
+        goal = self.sample_goal()
+        goal[[2]] = self.initial_goal[[2]]
+        return goal
 
 class ReacherEps_e(ReacherEps_x_y):
     def __init__(self, env, reward_type, epsilon):

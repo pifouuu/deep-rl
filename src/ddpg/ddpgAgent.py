@@ -229,10 +229,11 @@ class DDPG_agent():
                 if self.env_step % self.eval_freq == 0:
 
                     if self.test_env.goal_parameterized:
-                        self.eval_reward_1 = self.test('init', 'init')
-                        self.eval_reward_2 = self.test('init', 'uni')
-                        self.eval_reward_3 = self.test('uni', 'init')
-                        self.eval_reward_4 = self.test('uni', 'uni')
+                        self.eval_reward = self.test()
+                        # self.eval_reward_1 = self.test('init', 'init')
+                        # self.eval_reward_2 = self.test('init', 'uni')
+                        # self.eval_reward_3 = self.test('uni', 'init')
+                        # self.eval_reward_4 = self.test('uni', 'uni')
 
                     else:
                         raise RuntimeError
@@ -267,10 +268,8 @@ class DDPG_agent():
 
         self.step_stats['training_step'] = self.train_step
         self.step_stats['env_step'] = self.env_step
-        self.step_stats['reward_1'] = np.mean(self.eval_reward_1)
-        self.step_stats['reward_2'] = np.mean(self.eval_reward_2)
-        self.step_stats['reward_3'] = np.mean(self.eval_reward_3)
-        self.step_stats['reward_4'] = np.mean(self.eval_reward_4)
+        self.step_stats['reward'] = np.mean(self.eval_reward)
+
 
         self.log(self.step_stats, self.logger_step)
 
@@ -343,9 +342,9 @@ class DDPG_agent():
     #     if self.test_env.rec is not None: self.test_env.rec.close()
     #     return ep_test_rewards
 
-    def run_test_episode(self, curri, n_curri):
+    def run_test_episode(self):
 
-        self.test_env.goal = self.test_env.sample_goal_reachable(curri, n_curri)
+        self.test_env.goal = self.test_env.sample_test_goal()
 
         state = self.test_env.reset()
         step = 0
@@ -359,10 +358,10 @@ class DDPG_agent():
                 return 1
         return 0
 
-    def test(self, curri, n_curri):
+    def test(self):
         total_reached = 0
         for episode in range(10):
-            reached = self.run_test_episode(curri, n_curri)
+            reached = self.run_test_episode()
             total_reached += reached
         return total_reached/10
 
