@@ -25,8 +25,14 @@ class FixedGoalMemory():
 
     def initialize(self):
         obs_dummy = self.buffer.env.observation_space.low
-        self.goal_set = [np.concatenate([obs_dummy, self.buffer.env.sample_goal_reachable('uni','uni')])
+        if self.n_goals == 1:
+            self.goal_set = [np.concatenate([obs_dummy, self.buffer.env.initial_goal])]
+        elif self.n_goals == 0:
+            self.goal_set = []
+        else:
+            self.goal_set = [np.concatenate([obs_dummy, self.buffer.env.sample_goal_reachable('uni','uni')])
                          for _ in range(self.n_goals)]
+
         self.goal_queues = [Queue(maxlen=self.maxlen, n_window=self.n_window) for _ in range(self.n_goals)]
         self.goal_freq = [0 for _ in range(self.n_goals)]
 
@@ -86,15 +92,18 @@ class FixedGoalMemory():
     def sample_goal(self):
         obs_dummy = self.buffer.env.observation_space.low
         m = obs_dummy.shape[0]
-        if self.n_goals != 0:
+        if self.n_goals == 0:
+            drawn_goal = np.concatenate([obs_dummy, self.buffer.env.sample_goal_reachable('uni', 'uni')])
+        elif self.n_goals == 1:
+            self.goal_freq[0] += 1
+            drawn_goal = self.goal_set[0]
+        else:
             if np.random.random() > self.alpha:
                 idx = self.sample_prop_idx()
             else:
                 idx = np.random.randint(self.n_goals)
             self.goal_freq[idx] += 1
             drawn_goal = self.goal_set[idx]
-        else:
-            drawn_goal = np.concatenate([obs_dummy, self.buffer.env.sample_goal_reachable('uni','uni')])
 
         goal = []
 
