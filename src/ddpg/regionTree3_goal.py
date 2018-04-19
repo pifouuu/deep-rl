@@ -126,7 +126,7 @@ class FixedGoalMemory():
 
     def stats(self):
         stats = {}
-        stats['list_goal'] = self.goal_set
+        stats['list_goal'] = [goal[self.buffer.env.internal] for goal in self.goal_set]
         stats['list_CP'] = self.list_CP
         stats['list_comp'] = self.list_competence
         stats['list_freq'] = self.goal_freq
