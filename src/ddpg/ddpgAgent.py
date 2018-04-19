@@ -290,6 +290,7 @@ class DDPG_agent():
 
     def log_memory_stats(self):
         memory_stats = self.memory.stats()
+        memory_stats['episode'] = self.episode
         self.log(memory_stats, self.logger_memory)
 
 
