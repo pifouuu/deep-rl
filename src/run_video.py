@@ -5,9 +5,9 @@ from gym.monitoring import VideoRecorder
 import numpy as np
 from ddpg.util import load
 
-log_dir = '../log/cluster1604/ReacherEps_e-v0_fixed_goal_no_4_0.5_10_0.0001_45_0.3_1_1_sparse_0.02_uni_16_100/20180414201947_029665/'
+log_dir = '../log/cluster1804/ReacherGoal-v0_fixed_goal_no_4_1_10_0.0001_10_0.3_1_1_sparse_0.02_uni_1000_100/20180417182320_658384/'
 model = load_model(os.path.join(log_dir, 'saves', 'target_actor_model.h5'))
-test_env = make('ReacherEps_e-v0')
+test_env = make('ReacherGoal-v0')
 
 if test_env.spec._goal_wrapper_entry_point is not None:
     wrapper_cls = load(test_env.spec._goal_wrapper_entry_point)
@@ -23,8 +23,7 @@ rec = VideoRecorder(test_env, base_path=base_path)
 test_env.rec = rec
 
 for _ in range(20):
-    test_env.goal = test_env.sample_goal()
-    test_env.goal[2]=0.02
+    test_env.goal = test_env.sample_test_goal()
 
     print(test_env.goal)
 
