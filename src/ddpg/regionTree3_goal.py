@@ -19,7 +19,7 @@ class FixedGoalMemory():
         self.goal_queues = []
         self.goal_freq = []
 
-        self.n_goals = N
+        self.n_goals = len(self.buffer.env.eps)
         self.initialize()
 
 
@@ -30,8 +30,10 @@ class FixedGoalMemory():
         elif self.n_goals == 0:
             self.goal_set = []
         else:
-            self.goal_set = [np.concatenate([obs_dummy, self.buffer.env.sample_goal()])
-                         for _ in range(self.n_goals)]
+            x_y = self.buffer.env.goal_to_target
+            self.goal_set = [np.array(list(obs_dummy)+list(self.buffer.env.sample_goal()[x_y])+[eps])
+                             for eps in self.buffer.env.eps]
+
 
         self.goal_queues = [Queue(maxlen=self.maxlen, n_window=self.n_window) for _ in range(self.n_goals)]
         self.goal_freq = [0 for _ in range(self.n_goals)]
@@ -69,8 +71,7 @@ class FixedGoalMemory():
                 if dim in self.dims:
                     val_dim = self.goal_set[idx][dim]
                 else:
-                    rnd = np.random.randint(self.n_goals)
-                    val_dim = np.linspace(self.space.low[dim], self.space.high[dim], self.n_goals)[rnd]
+                    val_dim = np.random.uniform(self.space.low[dim], self.space.high[dim])
                 goal.append(val_dim)
             goal = np.array(goal)
             competence = self.eval_goal(goal)

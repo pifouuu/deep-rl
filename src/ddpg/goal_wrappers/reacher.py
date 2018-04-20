@@ -51,7 +51,7 @@ class Reacher(goal_basic):
 class ReacherEps_x_y(Reacher):
     def __init__(self, env, reward_type, epsilon):
         super(ReacherEps_x_y, self).__init__(env, reward_type, epsilon)
-        self.goal_space = Box(np.array([-0.2, -0.2, 0.01]), np.array([0.2, 0.2, 0.1]))
+        self.goal_space = Box(np.array([-0.2, -0.2, 0.02]), np.array([0.2, 0.2, 0.08]))
         self.initial_goal = np.array([0, 0.1, epsilon])
         self.internal = [8, 9, 10]
         self.internal_to_epsilon = [10]
@@ -80,6 +80,7 @@ class ReacherEps_e(ReacherEps_x_y):
     def __init__(self, env, reward_type, epsilon):
         super(ReacherEps_e, self).__init__(env, reward_type, epsilon)
         self.dims_curri = [10]
+        self.eps = [0.02, 0.04, 0.06, 0.08]
 
 class ReacherEps_x_y_e(ReacherEps_x_y):
     def __init__(self, env, reward_type, epsilon):
