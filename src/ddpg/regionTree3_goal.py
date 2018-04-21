@@ -19,7 +19,7 @@ class FixedGoalMemory():
         self.goal_queues = []
         self.goal_freq = []
 
-        self.n_goals = len(self.buffer.env.eps)
+        self.n_goals = N
         self.initialize()
 
 
