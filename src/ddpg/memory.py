@@ -123,31 +123,81 @@ class EpisodicHerSARSTMemory(SARSTMemory):
         self.data.append(buffer_item)
 
     def end_episode(self, goal_reached):
-        if self.strategy == 'final' and (not goal_reached):
-            final_state = self.data[-1]['state1']
-            for buffer_item in self.data:
-                new_buffer_item = self.env.change_goal(buffer_item, final_state)
-                super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
-        elif self.strategy == 'episode':
-            indices = range(0, len(self.data))
-            random_indices = rnd.sample(indices, np.min([self.n_her_goals, len(indices)]))
-            final_states = [self.data[i]['state1'] for i in list(random_indices)]
-            for final_state in final_states:
-                for buffer_item in self.data:
-                    new_buffer_item = self.env.change_goal(buffer_item, final_state)
-                    super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
-        elif self.strategy == 'future':
+        if self.strategy == 'future':
             for idx, buffer_item in enumerate(self.data):
                 indices = range(idx, len(self.data))
                 future_indices = rnd.sample(indices, np.min([self.n_her_goals, len(indices)]))
                 final_states = [self.data[i]['state1'] for i in list(future_indices)]
                 for final_state in final_states:
-                    new_buffer_item = self.env.change_goal(buffer_item, final_state)
-                    super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
-        else:
-            print('error her strategy')
-            return
+                    res = buffer_item
+                    res['state0'][[8,9]] = final_state[[6,7]]
+                    res['state1'][[8,9]] = final_state[[6,7]]
+                    res['reward'], res['terminal'] = self.env.eval_exp(res['state0'],
+                                                                   res['action'],
+                                                                   res['state1'],
+                                                                   res['reward'],
+                                                                   res['terminal'])
+                    super(EpisodicHerSARSTMemory, self).append(res)
+        if self.strategy == 'eps':
+            for buffer_item in self.data:
+                cur_eps = buffer_item['state0'][[10]]
+                for epsilon in [eps for eps in self.env.eps if eps>cur_eps]:
+                    res = buffer_item
+                    res['state0'][[10]] = epsilon
+                    res['state1'][[10]] = epsilon
+                    res['reward'], res['terminal'] = self.env.eval_exp(res['state0'],
+                                                                       res['action'],
+                                                                       res['state1'],
+                                                                       res['reward'],
+                                                                       res['terminal'])
+                    super(EpisodicHerSARSTMemory, self).append(res)
+        if self.strategy == 'future_eps':
+            for idx, buffer_item in enumerate(self.data):
+                indices = range(idx, len(self.data))
+                future_indices = rnd.sample(indices, np.min([self.n_her_goals, len(indices)]))
+                final_states = [self.data[i]['state1'] for i in list(future_indices)]
+                for final_state in final_states:
+                    cur_eps = buffer_item['state0'][[10]]
+                    for epsilon in [eps for eps in self.env.eps if eps>cur_eps]:
+                        res = buffer_item
+                        res['state0'][[10]] = epsilon
+                        res['state1'][[10]] = epsilon
+                        res['state0'][[8, 9]] = final_state[[6, 7]]
+                        res['state1'][[8, 9]] = final_state[[6, 7]]
+                        res['reward'], res['terminal'] = self.env.eval_exp(res['state0'],
+                                                                           res['action'],
+                                                                           res['state1'],
+                                                                           res['reward'],
+                                                                           res['terminal'])
+                        super(EpisodicHerSARSTMemory, self).append(res)
         self.data = []
+
+    # def end_episode(self, goal_reached):
+    #     if self.strategy == 'final' and (not goal_reached):
+    #         final_state = self.data[-1]['state1']
+    #         for buffer_item in self.data:
+    #             new_buffer_item = self.env.change_goal(buffer_item, final_state)
+    #             super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
+    #     elif self.strategy == 'episode':
+    #         indices = range(0, len(self.data))
+    #         random_indices = rnd.sample(indices, np.min([self.n_her_goals, len(indices)]))
+    #         final_states = [self.data[i]['state1'] for i in list(random_indices)]
+    #         for final_state in final_states:
+    #             for buffer_item in self.data:
+    #                 new_buffer_item = self.env.change_goal(buffer_item, final_state)
+    #                 super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
+    #     elif self.strategy == 'future':
+    #         for idx, buffer_item in enumerate(self.data):
+    #             indices = range(idx, len(self.data))
+    #             future_indices = rnd.sample(indices, np.min([self.n_her_goals, len(indices)]))
+    #             final_states = [self.data[i]['state1'] for i in list(future_indices)]
+    #             for final_state in final_states:
+    #                 new_buffer_item = self.env.change_goal(buffer_item, final_state)
+    #                 super(EpisodicHerSARSTMemory, self).append(new_buffer_item)
+    #     else:
+    #         print('error her strategy')
+    #         return
+    #     self.data = []
 
 # def _demo():
 #     buffer = Memory({'state0':(1,)}, 400)

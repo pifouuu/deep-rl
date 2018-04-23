@@ -107,6 +107,7 @@ def main(args):
                                      actor,
                                      critic,
                                      N=int(args['N']),
+                                     beta=float(args['beta']),
                                      n_split=int(args['n_split']),
                                      split_min=float(args['split_min']),
                                      alpha=float(args['alpha']),
@@ -192,6 +193,7 @@ if __name__ == '__main__':
     parser.add_argument('--sampler', help='random, initial, prioritized', default='uni')
     parser.add_argument('--N', help='number of regions in goal space', default=0)
     parser.add_argument('--n-points', help='number of points stored in region', default=100)
+    parser.add_argument('--beta', default=1)
 
     parser.add_argument('--max-steps', help='max num of episodes to do while training', default=500000)
     parser.add_argument('--log-dir', help='directory for storing run info',

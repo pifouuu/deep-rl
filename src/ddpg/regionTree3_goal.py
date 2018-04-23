@@ -1,14 +1,15 @@
 import numpy as np
 from ddpg.regions import Queue
+import math
 
 class FixedGoalMemory():
-    def __init__(self, space, dims, buffer, actor, critic, N, n_split, split_min, alpha, maxlen, n_window, render, sampler):
+    def __init__(self, space, dims, buffer, actor, critic, N, beta, n_split, split_min, alpha, maxlen, n_window, render, sampler):
         self.maxlen = maxlen
         self.n_window = n_window
         self.alpha = alpha
         self.dims = dims
         self.space = space
-
+        self.beta = beta
         self.buffer = buffer
         self.sampler = sampler
 
@@ -82,7 +83,7 @@ class FixedGoalMemory():
     #         self.goal_queues[idx].points.append((goal,competence))
 
     def sample_prop_idx(self):
-        CPs = [queue.CP for queue in self.goal_queues]
+        CPs = [math.pow(queue.CP, self.beta) for queue in self.goal_queues]
         sum = np.sum(CPs)
         mass = np.random.random() * sum
         idx = 0
