@@ -229,15 +229,9 @@ class DDPG_agent():
 
                 if self.env_step % self.eval_freq == 0:
 
-                    if self.test_env.goal_parameterized:
-                        self.eval_reward = self.test()
-                        # self.eval_reward_1 = self.test('init', 'init')
-                        # self.eval_reward_2 = self.test('init', 'uni')
-                        # self.eval_reward_3 = self.test('uni', 'init')
-                        # self.eval_reward_4 = self.test('uni', 'uni')
-
-                    else:
-                        raise RuntimeError
+                    competences = self.test()
+                    self.eval_rewards = competences
+                    self.memory.train(competences)
 
                     self.log_step_stats()
                     self.log_memory_stats()
@@ -269,7 +263,7 @@ class DDPG_agent():
 
         self.step_stats['training_step'] = self.train_step
         self.step_stats['env_step'] = self.env_step
-        self.step_stats['reward'] = np.mean(self.eval_reward)
+        self.step_stats['reward_list'] = self.eval_rewards
 
 
         self.log(self.step_stats, self.logger_step)
@@ -292,6 +286,7 @@ class DDPG_agent():
     def log_memory_stats(self):
         memory_stats = self.memory.stats()
         memory_stats['episode'] = self.episode
+        memory_stats['env_step'] = self.env_step
         self.log(memory_stats, self.logger_memory)
 
 
@@ -310,43 +305,9 @@ class DDPG_agent():
         self.train_step += self.nb_train_iter
         return np.array(critic_stats), np.array(actor_stats)
 
+    def run_test_episode(self, goal):
 
-
-    # def test(self, type=None):
-    #
-    #     if type == 'random':
-    #         self.test_env.set_goal_reachable()
-    #     elif type == 'init':
-    #         self.test_env.set_goal_init()
-    #
-    #     state = self.test_env.reset()
-    #     ep_test_rewards = []
-    #     ep_test_reward = 0
-    #
-    #     for _ in range(self.nb_test_steps):
-    #
-    #         if self.render_test:
-    #             self.test_env.render(mode='human')
-    #
-    #         action = self.act(state, train=False)
-    #         state, reward, terminal, _ = self.test_env.step(action[0])
-    #         ep_test_reward += reward
-    #         if (terminal or info['past_limit']):
-    #             if type == 'random':
-    #                 self.test_env.set_goal_reachable()
-    #             elif type == 'init':
-    #                 self.test_env.set_goal_init()
-    #             state = self.test_env.reset()
-    #             ep_test_rewards.append(ep_test_reward)
-    #             ep_test_reward = 0
-    #
-    #     ep_test_rewards.append(ep_test_reward)
-    #     if self.test_env.rec is not None: self.test_env.rec.close()
-    #     return ep_test_rewards
-
-    def run_test_episode(self):
-
-        self.test_env.goal = self.test_env.sample_test_goal()
+        self.test_env.goal = goal
 
         state = self.test_env.reset()
         step = 0
@@ -361,11 +322,16 @@ class DDPG_agent():
         return 0
 
     def test(self):
-        total_reached = 0
-        for episode in range(10):
-            reached = self.run_test_episode()
-            total_reached += reached
-        return total_reached/10
+        goals = [self.test_env.sample_goal() for _ in range(10)]
+        competences = [0 for eps in self.test_env.eps]
+        for i,epsilon in enumerate(self.test_env.eps):
+            for goal in goals:
+                goal[2] = epsilon
+                reached = self.run_test_episode(goal)
+                competences[i] += reached
+            competences[i] /= 10
+        return competences
+
 
 
 

@@ -8,8 +8,8 @@ class Queue():
         self.maxlen = 2*n_window
         self.points = deque(maxlen=2*n_window)
         self.n_window = n_window
-        self.CP = 0.1
-        self.competence = 0.1
+        self.CP = 0.001
+        self.competence = 0.001
 
     def update_CP(self):
         if self.size >= 2*self.n_window:

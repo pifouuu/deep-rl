@@ -40,11 +40,15 @@ class FixedGoalMemory():
 
     def end_episode(self, goal_reached):
         self.buffer.end_episode(goal_reached)
-        if self.buffer.env.goal_parameterized:
-            self.update_competence()
-            for queue in self.goal_queues:
-                queue.update_CP()
+        # if self.buffer.env.goal_parameterized:
+        #     self.update_competence()
+        #     for queue in self.goal_queues:
+        #         queue.update_CP()
 
+    def train(self, competences):
+        for idx, (competence, epsilon) in enumerate(zip(competences, self.buffer.env.eps)):
+            self.goal_queues[idx].points.append((epsilon, competence))
+            self.goal_queues[idx].update_CP()
 
     def sample(self, batch_size):
         return self.buffer.sample(batch_size)
@@ -55,27 +59,27 @@ class FixedGoalMemory():
     def build_exp(self, state, action, next_state, reward, terminal):
         return self.buffer.build_exp(state, action, next_state, reward, terminal)
 
-    def eval_goal(self, goal):
-        start = self.buffer.env.start
-        state = np.array([np.hstack([start, goal])])
-        action = self.actor.predict(state)
-        q_value = self.critic.predict(state, action)
-        q_value = np.squeeze(q_value)
-        positive_q_value = q_value + 50
-        return positive_q_value
+    # def eval_goal(self, goal):
+    #     start = self.buffer.env.start
+    #     state = np.array([np.hstack([start, goal])])
+    #     action = self.actor.predict(state)
+    #     q_value = self.critic.predict(state, action)
+    #     q_value = np.squeeze(q_value)
+    #     positive_q_value = q_value + 50
+    #     return positive_q_value
 
-    def update_competence(self):
-        for idx in range(self.n_goals):
-            goal = []
-            for dim in self.buffer.env.internal:
-                if dim in self.dims:
-                    val_dim = self.goal_set[idx][dim]
-                else:
-                    val_dim = np.random.uniform(self.space.low[dim], self.space.high[dim])
-                goal.append(val_dim)
-            goal = np.array(goal)
-            competence = self.eval_goal(goal)
-            self.goal_queues[idx].points.append((goal,competence))
+    # def update_competence(self):
+    #     for idx in range(self.n_goals):
+    #         goal = []
+    #         for dim in self.buffer.env.internal:
+    #             if dim in self.dims:
+    #                 val_dim = self.goal_set[idx][dim]
+    #             else:
+    #                 val_dim = np.random.uniform(self.space.low[dim], self.space.high[dim])
+    #             goal.append(val_dim)
+    #         goal = np.array(goal)
+    #         competence = self.eval_goal(goal)
+    #         self.goal_queues[idx].points.append((goal,competence))
 
     def sample_prop_idx(self):
         CPs = [queue.CP for queue in self.goal_queues]
