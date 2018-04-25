@@ -35,7 +35,8 @@ def main(args):
              str(args['eps']),
              str(args['sampler']),
              str(args['N']),
-             str(args['n_points'])]
+             str(args['n_points']),
+             str(args['beta'])]
 
 
     now = datetime.datetime.now().strftime("%Y%m%d%H%M%S_%f")

@@ -47,9 +47,10 @@ class FixedGoalMemory():
         #         queue.update_CP()
 
     def train(self, competences):
-        for idx, (competence, epsilon) in enumerate(zip(competences, self.buffer.env.eps)):
-            self.goal_queues[idx].points.append((epsilon, competence))
-            self.goal_queues[idx].update_CP()
+        if self.n_goals > 1:
+            for idx, (competence, epsilon) in enumerate(zip(competences, self.buffer.env.eps)):
+                self.goal_queues[idx].points.append((epsilon, competence))
+                self.goal_queues[idx].update_CP()
 
     def sample(self, batch_size):
         return self.buffer.sample(batch_size)
